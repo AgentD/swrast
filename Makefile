@@ -1,4 +1,6 @@
-CFLAGS = -ansi -pedantic -Wall -Wextra -O3 -Ofast -msse2 -ffast-math
+CONFFLAGS = -D_BSD_SOURCE
+OPTFLAGS = -O3 -Ofast -msse2 -ffast-math
+CFLAGS = -ansi -pedantic -Wall -Wextra $(CONFFLAGS) $(OPTFLAGS)
 
 a.out: framebuffer.o rasterizer.o transform.o window.o test.o
 	$(CC) $^ -lX11 -lm -o $@

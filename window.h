@@ -15,6 +15,7 @@ typedef struct
 {
     Atom atom_wm_delete;
     Display* dpy;
+    XImage* img;
     Window wnd;
     GC gc;
 }

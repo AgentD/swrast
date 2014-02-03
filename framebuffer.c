@@ -58,10 +58,10 @@ void framebuffer_clear( framebuffer* fb, unsigned char r, unsigned char g,
 
         for( ptr=fb->color, i=0; i<count; ++i, ptr+=4 )
         {
-            ptr[0] = r;
-            ptr[1] = g;
-            ptr[2] = b;
-            ptr[3] = a;
+            ptr[ RED   ] = r;
+            ptr[ GREEN ] = g;
+            ptr[ BLUE  ] = b;
+            ptr[ ALPHA ] = a;
         }
     }
 }

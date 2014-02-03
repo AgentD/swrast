@@ -1,6 +1,7 @@
 #include "window.h"
 
 #include <stdlib.h>
+#include <unistd.h>
 
 
 
@@ -63,6 +64,19 @@ window* window_create( unsigned int width, unsigned int height )
         return NULL;
     }
 
+    /********** create XImage structure **********/
+    wnd->img = XCreateImage( wnd->dpy, NULL, 24, ZPixmap, 0, 0,
+			                 width, height, 32, 0 );
+
+    if( !wnd->img )
+    {
+        XFreeGC( wnd->dpy, wnd->gc );
+        XDestroyWindow( wnd->dpy, wnd->wnd );
+        XCloseDisplay( wnd->dpy );
+        free( wnd );
+        return NULL;
+    }
+
     return wnd;
 }
 
@@ -70,6 +84,7 @@ void window_destroy( window* wnd )
 {
     if( wnd )
     {
+        XDestroyImage( wnd->img );
         XFreeGC( wnd->dpy, wnd->gc );
         XDestroyWindow( wnd->dpy, wnd->wnd );
         XCloseDisplay( wnd->dpy );
@@ -101,19 +116,13 @@ int window_handle_events( window* wnd )
 
 void window_display_framebuffer( window* wnd, framebuffer* fb )
 {
-    unsigned char* scan;
-    int x, y;
+    /* copy framebuffer data */
+    wnd->img->data = (char*)fb->color;
+    XPutImage( wnd->dpy, wnd->wnd, wnd->gc, wnd->img,
+               0, 0, 0, 0, fb->width, fb->height );
+    wnd->img->data = NULL;
 
-    /* TODO: do it the propper way (this is a very slow hack) */
-    for( scan=fb->color, y=0; y<fb->height; ++y )
-    {
-        for( x=0; x<fb->width; ++x, scan+=4 )
-        {
-            XSetForeground( wnd->dpy, wnd->gc,
-                            (scan[0]<<16)|(scan[1]<<8)|(scan[2]) );
-
-            XDrawPoint( wnd->dpy, wnd->wnd, wnd->gc, x, y );
-        }
-    }
+    /* wait for ~16.666 ms -> ~60 fps */
+    usleep( 16666 );
 }
 

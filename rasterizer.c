@@ -21,10 +21,10 @@ typedef void (* pixel_fun )( vertex*, unsigned char*, float* );
 
 static void pixel( vertex* v, unsigned char* color, float* depth )
 {
-    color[0] = v->r;
-    color[1] = v->g;
-    color[2] = v->b;
-    color[3] = v->a;
+    color[RED  ] = v->r;
+    color[GREEN] = v->g;
+    color[BLUE ] = v->b;
+    color[ALPHA] = v->a;
 
     depth[0] = (v->z + 1.0f) * 0.5f;
 }
@@ -35,10 +35,10 @@ static void pixel_depth( vertex* v, unsigned char* color, float* depth )
 
     if( v->z < depth[0] )
     {
-        color[0] = v->r;
-        color[1] = v->g;
-        color[2] = v->b;
-        color[3] = v->a;
+        color[RED  ] = v->r;
+        color[GREEN] = v->g;
+        color[BLUE ] = v->b;
+        color[ALPHA] = v->a;
 
         depth[0] = v->z;
     }
@@ -54,10 +54,10 @@ static void pixel_blend( vertex* v, unsigned char* color, float* depth )
     b  = v->b * a;
     a  = v->a * a;
 
-    color[0] = (color[0]*ia + r) >> 8;
-    color[1] = (color[1]*ia + g) >> 8;
-    color[2] = (color[2]*ia + b) >> 8;
-    color[3] = (color[3]*ia + a) >> 8;
+    color[RED  ] = (color[RED  ]*ia + r) >> 8;
+    color[GREEN] = (color[GREEN]*ia + g) >> 8;
+    color[BLUE ] = (color[BLUE ]*ia + b) >> 8;
+    color[ALPHA] = (color[ALPHA]*ia + a) >> 8;
 
     depth[0] = (v->z + 1.0f) * 0.5f;
 }
@@ -76,10 +76,10 @@ static void pixel_depth_blend( vertex* v, unsigned char* color, float* depth )
         b  = v->b * a;
         a  = v->a * a;
 
-        color[0] = (color[0]*ia + r) >> 8;
-        color[1] = (color[1]*ia + g) >> 8;
-        color[2] = (color[2]*ia + b) >> 8;
-        color[3] = (color[3]*ia + a) >> 8;
+        color[RED  ] = (color[RED  ]*ia + r) >> 8;
+        color[GREEN] = (color[GREEN]*ia + g) >> 8;
+        color[BLUE ] = (color[BLUE ]*ia + b) >> 8;
+        color[ALPHA] = (color[ALPHA]*ia + a) >> 8;
 
         *depth = v->z;
     }
