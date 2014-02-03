@@ -26,12 +26,12 @@ static void pixel( vertex* v, unsigned char* color, float* depth )
     color[BLUE ] = v->b;
     color[ALPHA] = v->a;
 
-    depth[0] = (v->z + 1.0f) * 0.5f;
+    depth[0] = (1.0f - v->z) * 0.5f;
 }
 
 static void pixel_depth( vertex* v, unsigned char* color, float* depth )
 {
-    v->z = (v->z + 1.0f) * 0.5f;
+    v->z = (1.0f - v->z) * 0.5f;
 
     if( v->z < depth[0] )
     {
@@ -59,13 +59,13 @@ static void pixel_blend( vertex* v, unsigned char* color, float* depth )
     color[BLUE ] = (color[BLUE ]*ia + b) >> 8;
     color[ALPHA] = (color[ALPHA]*ia + a) >> 8;
 
-    depth[0] = (v->z + 1.0f) * 0.5f;
+    depth[0] = (1.0f - v->z) * 0.5f;
 }
 
 static void pixel_depth_blend( vertex* v, unsigned char* color, float* depth )
 {
     unsigned int r, g, b, a, ia;
-    v->z = (v->z + 1.0f) * 0.5f;
+    v->z = (1.0f - v->z) * 0.5f;
 
     if( v->z < depth[0] )
     {
@@ -81,7 +81,7 @@ static void pixel_depth_blend( vertex* v, unsigned char* color, float* depth )
         color[BLUE ] = (color[BLUE ]*ia + b) >> 8;
         color[ALPHA] = (color[ALPHA]*ia + a) >> 8;
 
-        *depth = v->z;
+        depth[0] = v->z;
     }
 }
 
