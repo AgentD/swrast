@@ -119,8 +119,9 @@ void rasterizer_get_state( rasterizer_state* state )
 void triangle_rasterize( const triangle* t, framebuffer* fb )
 {
     float a, b, c, f0, f1, f2, f3, f4, f5, f6, f7, f8, *dscan, *dptr;
-    int x, y, x0, x1, x2, y0, y1, y2, bl, br, bt, bb;
+    int x, y, x0, x1, x2, y0, y1, y2, bl, br, bt, bb, i;
     unsigned char *scan, *ptr;
+    unsigned char tex[4];
     vertex v;
 
     /* convert to raster coordinates */
@@ -184,10 +185,27 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
             v.z = t->v0.z*a + t->v1.z*b + t->v2.z*c;
             v.w = t->v0.w*a + t->v1.w*b + t->v2.w*c;
 
+            v.s = t->v0.s*a + t->v1.s*b + t->v2.s*c;
+            v.t = t->v0.t*a + t->v1.t*b + t->v2.t*c;
+
             v.r = t->v0.r*a + t->v1.r*b + t->v2.r*c;
             v.g = t->v0.g*a + t->v1.g*b + t->v2.g*c;
             v.b = t->v0.b*a + t->v1.b*b + t->v2.b*c;
             v.a = t->v0.a*a + t->v1.a*b + t->v2.a*c;
+
+            /* apply texture values */
+            for( i=0; i<MAX_TEXTURES; ++i )
+            {
+                if( rs_state.texture_enable[ i ] )
+                {
+                    texture_sample( rs_state.textures[ i ], v.s, v.t, tex );
+
+                    v.r = (tex[0] * v.r) >> 8;
+                    v.g = (tex[1] * v.g) >> 8;
+                    v.b = (tex[2] * v.b) >> 8;
+                    v.a = (tex[3] * v.a) >> 8;
+                }
+            }
 
             /* draw pixel to framebuffer */
             draw_pixel( &v, ptr, dptr );

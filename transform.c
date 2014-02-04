@@ -24,6 +24,10 @@ static void vertex_transform( const vertex* in, vertex* out,
     out->g = in->g;
     out->b = in->b;
     out->a = in->a;
+
+    /* copy texture coordinates */
+    out->s = in->s;
+    out->t = in->t;
 }
 
 /****************************************************************************/

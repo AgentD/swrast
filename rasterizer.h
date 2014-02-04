@@ -4,6 +4,11 @@
 
 
 #include "framebuffer.h"
+#include "texture.h"
+
+
+
+#define MAX_TEXTURES 1
 
 
 
@@ -11,6 +16,7 @@ typedef struct
 {
     float x, y, z, w;
     unsigned char r, g, b, a;
+    float s, t;
 }
 vertex;
 
@@ -29,6 +35,12 @@ typedef struct
 
     /** \brief Non-zero to enable alpha blending, zero to disable */
     int alpha_blend;
+
+    /** \brief Non-zero to enable a texture layer, zero to disable */
+    int texture_enable[MAX_TEXTURES];
+
+    /** \brief Pointer to textures for different texture layers */
+    texture* textures[MAX_TEXTURES];
 }
 rasterizer_state;
 
