@@ -37,17 +37,17 @@ int main( void )
     t0.v1.s = 1.0; t0.v1.t = 1.0;
     t0.v2.s = 0.5; t0.v2.t = 0.0;
 
-    t0.v0.r = 0xFF; t0.v0.g = 0x00; t0.v0.b = 0x00; t0.v0.a = 0xFF;
-    t0.v1.r = 0x00; t0.v1.g = 0xFF; t0.v1.b = 0x00; t0.v1.a = 0xFF;
-    t0.v2.r = 0x00; t0.v2.g = 0x00; t0.v2.b = 0xFF; t0.v2.a = 0xFF;
+    t0.v0.r = 1.0; t0.v0.g = 0.0; t0.v0.b = 0.0; t0.v0.a = 1.0;
+    t0.v1.r = 0.0; t0.v1.g = 1.0; t0.v1.b = 0.0; t0.v1.a = 1.0;
+    t0.v2.r = 0.0; t0.v2.g = 0.0; t0.v2.b = 1.0; t0.v2.a = 1.0;
 
     t1.v0.x = 0.0f; t1.v0.y = -2.0f; t1.v0.z = -2.0f; t1.v0.w = 1.0f;
     t1.v1.x = 0.0f; t1.v1.y = -2.0f; t1.v1.z =  2.0f; t1.v1.w = 1.0f;
     t1.v2.x = 0.0f; t1.v2.y =  2.0f; t1.v2.z =  0.0f; t1.v2.w = 1.0f;
 
-    t1.v0.r = 0xFF; t1.v0.g = 0xFF; t1.v0.b = 0x00; t1.v0.a = 0x80;
-    t1.v1.r = 0xFF; t1.v1.g = 0xFF; t1.v1.b = 0x00; t1.v1.a = 0x80;
-    t1.v2.r = 0xFF; t1.v2.g = 0xFF; t1.v2.b = 0x00; t1.v2.a = 0x80;
+    t1.v0.r = 1.0; t1.v0.g = 1.0; t1.v0.b = 0.0; t1.v0.a = 0.5;
+    t1.v1.r = 1.0; t1.v1.g = 1.0; t1.v1.b = 0.0; t1.v1.a = 0.5;
+    t1.v2.r = 1.0; t1.v2.g = 1.0; t1.v2.b = 0.0; t1.v2.a = 0.5;
 
     /* intialize projection matrix */
     far    = 0.5f;

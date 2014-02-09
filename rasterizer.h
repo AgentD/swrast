@@ -15,7 +15,7 @@
 typedef struct
 {
     float x, y, z, w;
-    unsigned char r, g, b, a;
+    float r, g, b, a;
     float s, t;
 }
 vertex;

@@ -21,10 +21,10 @@ typedef void (* pixel_fun )( vertex*, unsigned char*, float* );
 
 static void pixel( vertex* v, unsigned char* color, float* depth )
 {
-    color[RED  ] = v->r;
-    color[GREEN] = v->g;
-    color[BLUE ] = v->b;
-    color[ALPHA] = v->a;
+    color[RED  ] = v->r * 255.0;
+    color[GREEN] = v->g * 255.0;
+    color[BLUE ] = v->b * 255.0;
+    color[ALPHA] = v->a * 255.0;
 
     depth[0] = (1.0f - v->z) * 0.5f;
 }
@@ -35,10 +35,10 @@ static void pixel_depth( vertex* v, unsigned char* color, float* depth )
 
     if( v->z < depth[0] )
     {
-        color[RED  ] = v->r;
-        color[GREEN] = v->g;
-        color[BLUE ] = v->b;
-        color[ALPHA] = v->a;
+        color[RED  ] = v->r * 255.0;
+        color[GREEN] = v->g * 255.0;
+        color[BLUE ] = v->b * 255.0;
+        color[ALPHA] = v->a * 255.0;
 
         depth[0] = v->z;
     }
@@ -47,17 +47,17 @@ static void pixel_depth( vertex* v, unsigned char* color, float* depth )
 static void pixel_blend( vertex* v, unsigned char* color, float* depth )
 {
     unsigned int r, g, b, a, ia;
-    a  = v->a;
+    a  = v->a * 255.0;
     ia = 0xFF - a;
     r  = v->r * a;
     g  = v->g * a;
     b  = v->b * a;
     a  = v->a * a;
 
-    color[RED  ] = (color[RED  ]*ia + r) >> 8;
-    color[GREEN] = (color[GREEN]*ia + g) >> 8;
-    color[BLUE ] = (color[BLUE ]*ia + b) >> 8;
-    color[ALPHA] = (color[ALPHA]*ia + a) >> 8;
+    color[RED  ] = ((color[RED  ]*ia) >> 8) + r;
+    color[GREEN] = ((color[GREEN]*ia) >> 8) + g;
+    color[BLUE ] = ((color[BLUE ]*ia) >> 8) + b;
+    color[ALPHA] = ((color[ALPHA]*ia) >> 8) + a;
 
     depth[0] = (1.0f - v->z) * 0.5f;
 }
@@ -69,17 +69,17 @@ static void pixel_depth_blend( vertex* v, unsigned char* color, float* depth )
 
     if( v->z < depth[0] )
     {
-        a  = v->a;
+        a  = v->a * 255.0;
         ia = 0xFF - a;
         r  = v->r * a;
         g  = v->g * a;
         b  = v->b * a;
         a  = v->a * a;
 
-        color[RED  ] = (color[RED  ]*ia + r) >> 8;
-        color[GREEN] = (color[GREEN]*ia + g) >> 8;
-        color[BLUE ] = (color[BLUE ]*ia + b) >> 8;
-        color[ALPHA] = (color[ALPHA]*ia + a) >> 8;
+        color[RED  ] = ((color[RED  ]*ia) >> 8) + r;
+        color[GREEN] = ((color[GREEN]*ia) >> 8) + g;
+        color[BLUE ] = ((color[BLUE ]*ia) >> 8) + b;
+        color[ALPHA] = ((color[ALPHA]*ia) >> 8) + a;
 
         depth[0] = v->z;
     }
@@ -131,6 +131,9 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
     A.w = 1.0/A.w; A.x *= A.w; A.y *= A.w; A.z *= A.w; A.s *= A.w; A.t *= A.w;
     B.w = 1.0/B.w; B.x *= B.w; B.y *= B.w; B.z *= B.w; B.s *= B.w; B.t *= B.w;
     C.w = 1.0/C.w; C.x *= C.w; C.y *= C.w; C.z *= C.w; C.s *= C.w; C.t *= C.w;
+    A.r *= A.w; A.g *= A.w; A.b *= A.w; A.a *= A.w;
+    B.r *= B.w; B.g *= B.w; B.b *= B.w; B.a *= B.w;
+    C.r *= C.w; C.g *= C.w; C.b *= C.w; C.a *= C.w;
 
     /* convert to raster coordinates */
     x0 = (1.0f + A.x) * 0.5f * fb->width;
@@ -196,10 +199,10 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
             v.s = (A.s*a + B.s*b + C.s*c) * v.w;
             v.t = (A.t*a + B.t*b + C.t*c) * v.w;
 
-            v.r = A.r*a + B.r*b + C.r*c;
-            v.g = A.g*a + B.g*b + C.g*c;
-            v.b = A.b*a + B.b*b + C.b*c;
-            v.a = A.a*a + B.a*b + C.a*c;
+            v.r = (A.r*a + B.r*b + C.r*c) * v.w;
+            v.g = (A.g*a + B.g*b + C.g*c) * v.w;
+            v.b = (A.b*a + B.b*b + C.b*c) * v.w;
+            v.a = (A.a*a + B.a*b + C.a*c) * v.w;
 
             /* apply texture values */
             for( i=0; i<MAX_TEXTURES; ++i )
@@ -208,10 +211,10 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
                 {
                     texture_sample( rs_state.textures[ i ], v.s, v.t, tex );
 
-                    v.r = (tex[0] * v.r) >> 8;
-                    v.g = (tex[1] * v.g) >> 8;
-                    v.b = (tex[2] * v.b) >> 8;
-                    v.a = (tex[3] * v.a) >> 8;
+                    v.r *= (tex[0]/255.0);
+                    v.g *= (tex[1]/255.0);
+                    v.b *= (tex[2]/255.0);
+                    v.a *= (tex[3]/255.0);
                 }
             }
 
