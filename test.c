@@ -1,6 +1,6 @@
+#include "inputassembler.h"
 #include "framebuffer.h"
 #include "rasterizer.h"
-#include "transform.h"
 #include "texture.h"
 #include "window.h"
 
@@ -8,12 +8,40 @@
 
 
 
+float vbo[60] =
+{
+    /* colorfull opaque triangle */
+    -2.0f, -2.0f,  0.0f,  1.0f,
+     1.0f,  0.0f,  0.0f,  1.0f,
+     0.0f,  1.0f,
+
+     2.0f, -2.0f,  0.0f,  1.0f,
+     0.0f,  1.0f,  0.0f,  1.0f,
+     1.0f,  1.0f,
+
+     0.0f,  2.0f,  0.0f,  1.0f,
+     0.0f,  0.0f,  1.0f,  1.0f,
+     0.5f,  0.0f,
+
+    /* yellow transparent triangle */
+     0.0f, -2.0f, -2.0f,  1.0f,
+     1.0f,  1.0f,  0.0f,  0.5f,
+     0.0f,  0.0f,
+
+     0.0f, -2.0f,  2.0f,  1.0f,
+     1.0f,  1.0f,  0.0f,  0.5f,
+     0.0f,  0.0f,
+
+     0.0f,  2.0f,  0.0f,  1.0f,
+     1.0f,  1.0f,  0.0f,  0.5f,
+     0.0f,  0.0f
+};
+
 int main( void )
 {
-    float a = 0.0f, c, s, m[16], p[16], far, near, aspect, f, iNF;
+    float a = 0.0f, c, s, m[16], far, near, aspect, f, iNF;
     rasterizer_state rs;
     unsigned char* ptr;
-    triangle t0, t1, t;
     unsigned int x, y;
     framebuffer* fb;
     texture* tex;
@@ -29,26 +57,6 @@ int main( void )
         return -1;
     }
 
-    t0.v0.x = -2.0f; t0.v0.y = -2.0f; t0.v0.z = 0.0f; t0.v0.w = 1.0f;
-    t0.v1.x =  2.0f; t0.v1.y = -2.0f; t0.v1.z = 0.0f; t0.v1.w = 1.0f;
-    t0.v2.x =  0.0f; t0.v2.y =  2.0f; t0.v2.z = 0.0f; t0.v2.w = 1.0f;
-
-    t0.v0.s[0] = 0.0; t0.v0.t[0] = 1.0;
-    t0.v1.s[0] = 1.0; t0.v1.t[0] = 1.0;
-    t0.v2.s[0] = 0.5; t0.v2.t[0] = 0.0;
-
-    t0.v0.r = 1.0; t0.v0.g = 0.0; t0.v0.b = 0.0; t0.v0.a = 1.0;
-    t0.v1.r = 0.0; t0.v1.g = 1.0; t0.v1.b = 0.0; t0.v1.a = 1.0;
-    t0.v2.r = 0.0; t0.v2.g = 0.0; t0.v2.b = 1.0; t0.v2.a = 1.0;
-
-    t1.v0.x = 0.0f; t1.v0.y = -2.0f; t1.v0.z = -2.0f; t1.v0.w = 1.0f;
-    t1.v1.x = 0.0f; t1.v1.y = -2.0f; t1.v1.z =  2.0f; t1.v1.w = 1.0f;
-    t1.v2.x = 0.0f; t1.v2.y =  2.0f; t1.v2.z =  0.0f; t1.v2.w = 1.0f;
-
-    t1.v0.r = 1.0; t1.v0.g = 1.0; t1.v0.b = 0.0; t1.v0.a = 0.5;
-    t1.v1.r = 1.0; t1.v1.g = 1.0; t1.v1.b = 0.0; t1.v1.a = 0.5;
-    t1.v2.r = 1.0; t1.v2.g = 1.0; t1.v2.b = 0.0; t1.v2.a = 0.5;
-
     /* intialize projection matrix */
     far    = 0.5f;
     near   = 500.0f;
@@ -56,10 +64,12 @@ int main( void )
     f      = 1.0 / tan( 60.0f * (3.14159265359f/180.0f) * 0.5f );
 	iNF    = 1.0 / ( near - far );
 
-    p[0]=f/aspect; p[4]=0.0f; p[ 8]= 0.0f;           p[12]=0.0f;
-    p[1]=0.0f;     p[5]=f;    p[ 9]= 0.0f;           p[13]=0.0f;
-    p[2]=0.0f;     p[6]=0.0f; p[10]= (far+near)*iNF; p[14]=2.0f*far*near*iNF;
-    p[3]=0.0f;     p[7]=0.0f; p[11]=-1.0f;           p[15]=0.0f;
+    m[0]=f/aspect; m[4]=0.0f; m[ 8]= 0.0f;           m[12]=0.0f;
+    m[1]=0.0f;     m[5]=f;    m[ 9]= 0.0f;           m[13]=0.0f;
+    m[2]=0.0f;     m[6]=0.0f; m[10]= (far+near)*iNF; m[14]=2.0f*far*near*iNF;
+    m[3]=0.0f;     m[7]=0.0f; m[11]=-1.0f;           m[15]=0.0f;
+
+    ia_set_projection_matrix( m );
 
     /* create and initialize texture */
     tex = texture_create( 64, 64 );
@@ -76,12 +86,14 @@ int main( void )
         }
     }
 
-    /* initialize rasterizer state */
+    /* initialize state */
     rs.alpha_blend       = 1;
     rs.depth_test        = 1;
-    rs.texture_enable[0] = 0;
+    rs.texture_enable[0] = 1;
     rs.textures[0]       = tex;
     rasterizer_set_state( &rs );
+
+    ia_set_vertex_format( VF_POSITION_F4 | VF_COLOR_F4 | VF_TEX0 );
 
     /************* drawing loop *************/
     while( window_handle_events( w ) )
@@ -90,7 +102,7 @@ int main( void )
         framebuffer_clear( fb, 0, 0, 0, 0xFF );
         framebuffer_clear_depth( fb, 1.0 );
 
-        /* create transformation matrix */
+        /* update modelview matrix */
         c = cos( a ), s = sin( a );
         a += 0.02f;
 
@@ -99,20 +111,10 @@ int main( void )
         m[2] =   -s; m[6] = 0.0f; m[10] =    c; m[14] =-10.0f;
         m[3] = 0.0f; m[7] = 0.0f; m[11] = 0.0f; m[15] =  1.0f;
 
+        ia_set_modelview_matrix( m );
+
         /* rasterize triangles */
-        rs.texture_enable[0] = 1;
-        rasterizer_set_state( &rs );
-
-        triangle_transform( &t0, &t, m );
-        triangle_transform( &t, &t, p );
-        triangle_rasterize( &t, fb );
-
-        rs.texture_enable[0] = 0;
-        rasterizer_set_state( &rs );
-
-        triangle_transform( &t1, &t, m );
-        triangle_transform( &t, &t, p );
-        triangle_rasterize( &t, fb );
+        ia_draw_triangles( fb, vbo, 6 );
 
         /* copy to window */
         window_display_framebuffer( w, fb );
