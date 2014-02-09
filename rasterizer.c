@@ -124,16 +124,25 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
     unsigned char tex[4];
     vertex A, B, C, v;
 
-    A = t->v0;
-    B = t->v1;
-    C = t->v2;
+    if( t->v0.w<=0.0 || t->v1.w<=0.0 || t->v2.w<=0.0 )
+        return;
 
-    A.w = 1.0/A.w; A.x *= A.w; A.y *= A.w; A.z *= A.w; A.s *= A.w; A.t *= A.w;
-    B.w = 1.0/B.w; B.x *= B.w; B.y *= B.w; B.z *= B.w; B.s *= B.w; B.t *= B.w;
-    C.w = 1.0/C.w; C.x *= C.w; C.y *= C.w; C.z *= C.w; C.s *= C.w; C.t *= C.w;
-    A.r *= A.w; A.g *= A.w; A.b *= A.w; A.a *= A.w;
-    B.r *= B.w; B.g *= B.w; B.b *= B.w; B.a *= B.w;
-    C.r *= C.w; C.g *= C.w; C.b *= C.w; C.a *= C.w;
+    /* prepare triangle vertices */
+    A.w = 1.0/t->v0.w;
+    B.w = 1.0/t->v1.w;
+    C.w = 1.0/t->v2.w;
+
+    A.x=t->v0.x*A.w; A.y=t->v0.y*A.w; A.z=t->v0.z*A.w;
+    A.r=t->v0.r*A.w; A.g=t->v0.g*A.w; A.b=t->v0.b*A.w; A.a=t->v0.a*A.w;
+    A.s=t->v0.s*A.w; A.t=t->v0.t*A.w;
+
+    B.x=t->v1.x*B.w; B.y=t->v1.y*B.w; B.z=t->v1.z*B.w;
+    B.r=t->v1.r*B.w; B.g=t->v1.g*B.w; B.b=t->v1.b*B.w; B.a=t->v1.a*B.w;
+    B.s=t->v1.s*B.w; B.t=t->v1.t*B.w;
+
+    C.x=t->v2.x*C.w; C.y=t->v2.y*C.w; C.z=t->v2.z*C.w;
+    C.r=t->v2.r*C.w; C.g=t->v2.g*C.w; C.b=t->v2.b*C.w; C.a=t->v2.a*C.w;
+    C.s=t->v2.s*C.w; C.t=t->v2.t*C.w;
 
     /* convert to raster coordinates */
     x0 = (1.0f + A.x) * 0.5f * fb->width;
@@ -190,12 +199,19 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
             if( a<0.0f || a>1.0f || b<0.0f || b>1.0f || c<0.0f || c>1.0f )
                 continue;
 
-            /* interpolate vertex values */
+            /* interpolate vertex coordinates and perform clipping */
             v.x = A.x*a + B.x*b + C.x*c;
             v.y = A.y*a + B.y*b + C.y*c;
             v.z = A.z*a + B.z*b + C.z*c;
             v.w = 1.0 / (A.w*a + B.w*b + C.w*c);
 
+            if( v.w<=0 || v.x>v.w || v.y>v.w || v.z>v.w )
+                continue;
+
+            if( v.x<-v.w || v.y<-v.w || v.z<-v.w )
+                continue;
+
+            /* interpolate vertex attributes */
             v.s = (A.s*a + B.s*b + C.s*c) * v.w;
             v.t = (A.t*a + B.t*b + C.t*c) * v.w;
 
