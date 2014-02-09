@@ -17,13 +17,6 @@
 void triangle_transform( const triangle* in, triangle* out,
                          const float* matrix );
 
-/**
- * \brief Perform perspective division on the vertices of a triangle
- *
- * \param t A pointer to a triangle structure
- */
-void triangle_perspective_divide( triangle* t );
-
 
 
 #endif /* TRANSFORM_H */

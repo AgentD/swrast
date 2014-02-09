@@ -43,29 +43,3 @@ void triangle_transform( const triangle* in, triangle* out,
     }
 }
 
-void triangle_perspective_divide( triangle* t )
-{
-    float iw;
-
-    if( t )
-    {
-        iw = 1.0f / t->v0.w;
-        t->v0.x *= iw;
-        t->v0.y *= iw;
-        t->v0.z *= iw;
-        t->v0.w = 1.0f;
-
-        iw = 1.0f / t->v1.w;
-        t->v1.x *= iw;
-        t->v1.y *= iw;
-        t->v1.z *= iw;
-        t->v1.w = 1.0f;
-
-        iw = 1.0f / t->v2.w;
-        t->v2.x *= iw;
-        t->v2.y *= iw;
-        t->v2.z *= iw;
-        t->v2.w = 1.0f;
-    }
-}
-

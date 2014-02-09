@@ -122,15 +122,23 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
     int x, y, x0, x1, x2, y0, y1, y2, bl, br, bt, bb, i;
     unsigned char *scan, *ptr;
     unsigned char tex[4];
-    vertex v;
+    vertex A, B, C, v;
+
+    A = t->v0;
+    B = t->v1;
+    C = t->v2;
+
+    A.w = 1.0/A.w; A.x *= A.w; A.y *= A.w; A.z *= A.w; A.s *= A.w; A.t *= A.w;
+    B.w = 1.0/B.w; B.x *= B.w; B.y *= B.w; B.z *= B.w; B.s *= B.w; B.t *= B.w;
+    C.w = 1.0/C.w; C.x *= C.w; C.y *= C.w; C.z *= C.w; C.s *= C.w; C.t *= C.w;
 
     /* convert to raster coordinates */
-    x0 = (1.0f + t->v0.x) * 0.5f * fb->width;
-    y0 = (1.0f - t->v0.y) * 0.5f * fb->height;
-    x1 = (1.0f + t->v1.x) * 0.5f * fb->width;
-    y1 = (1.0f - t->v1.y) * 0.5f * fb->height;
-    x2 = (1.0f + t->v2.x) * 0.5f * fb->width;
-    y2 = (1.0f - t->v2.y) * 0.5f * fb->height;
+    x0 = (1.0f + A.x) * 0.5f * fb->width;
+    y0 = (1.0f - A.y) * 0.5f * fb->height;
+    x1 = (1.0f + B.x) * 0.5f * fb->width;
+    y1 = (1.0f - B.y) * 0.5f * fb->height;
+    x2 = (1.0f + C.x) * 0.5f * fb->width;
+    y2 = (1.0f - C.y) * 0.5f * fb->height;
 
     /* compute bounding rectangle */
     bl = MIN( x0, x1, x2 );
@@ -180,18 +188,18 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
                 continue;
 
             /* interpolate vertex values */
-            v.x = t->v0.x*a + t->v1.x*b + t->v2.x*c;
-            v.y = t->v0.y*a + t->v1.y*b + t->v2.y*c;
-            v.z = t->v0.z*a + t->v1.z*b + t->v2.z*c;
-            v.w = t->v0.w*a + t->v1.w*b + t->v2.w*c;
+            v.x = A.x*a + B.x*b + C.x*c;
+            v.y = A.y*a + B.y*b + C.y*c;
+            v.z = A.z*a + B.z*b + C.z*c;
+            v.w = 1.0 / (A.w*a + B.w*b + C.w*c);
 
-            v.s = t->v0.s*a + t->v1.s*b + t->v2.s*c;
-            v.t = t->v0.t*a + t->v1.t*b + t->v2.t*c;
+            v.s = (A.s*a + B.s*b + C.s*c) * v.w;
+            v.t = (A.t*a + B.t*b + C.t*c) * v.w;
 
-            v.r = t->v0.r*a + t->v1.r*b + t->v2.r*c;
-            v.g = t->v0.g*a + t->v1.g*b + t->v2.g*c;
-            v.b = t->v0.b*a + t->v1.b*b + t->v2.b*c;
-            v.a = t->v0.a*a + t->v1.a*b + t->v2.a*c;
+            v.r = A.r*a + B.r*b + C.r*c;
+            v.g = A.g*a + B.g*b + C.g*c;
+            v.b = A.b*a + B.b*b + C.b*c;
+            v.a = A.a*a + B.a*b + C.a*c;
 
             /* apply texture values */
             for( i=0; i<MAX_TEXTURES; ++i )

@@ -105,7 +105,6 @@ int main( void )
 
         triangle_transform( &t0, &t, m );
         triangle_transform( &t, &t, p );
-        triangle_perspective_divide( &t );
         triangle_rasterize( &t, fb );
 
         rs.texture_enable[0] = 0;
@@ -113,7 +112,6 @@ int main( void )
 
         triangle_transform( &t1, &t, m );
         triangle_transform( &t, &t, p );
-        triangle_perspective_divide( &t );
         triangle_rasterize( &t, fb );
 
         /* copy to window */
