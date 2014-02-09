@@ -16,7 +16,7 @@ typedef struct
 {
     float x, y, z, w;
     float r, g, b, a;
-    float s, t;
+    float s[MAX_TEXTURES], t[MAX_TEXTURES];
 }
 vertex;
 
@@ -62,6 +62,12 @@ void rasterizer_get_state( rasterizer_state* state );
 
 /**
  * \brief Rasterize a triangle
+ *
+ * This function rasterizes to a frame buffer after applying all
+ * transformations to the triangle but BEFORE perspective division.
+ * The function does perspective divsion internally. The w coordinate
+ * before perpective division is needed for perspective correct
+ * interpolation.
  *
  * \param t  A pointer to a triangle structure
  * \param fb A pointer to a frame buffer structure

@@ -134,15 +134,19 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
 
     A.x=t->v0.x*A.w; A.y=t->v0.y*A.w; A.z=t->v0.z*A.w;
     A.r=t->v0.r*A.w; A.g=t->v0.g*A.w; A.b=t->v0.b*A.w; A.a=t->v0.a*A.w;
-    A.s=t->v0.s*A.w; A.t=t->v0.t*A.w;
 
     B.x=t->v1.x*B.w; B.y=t->v1.y*B.w; B.z=t->v1.z*B.w;
     B.r=t->v1.r*B.w; B.g=t->v1.g*B.w; B.b=t->v1.b*B.w; B.a=t->v1.a*B.w;
-    B.s=t->v1.s*B.w; B.t=t->v1.t*B.w;
 
     C.x=t->v2.x*C.w; C.y=t->v2.y*C.w; C.z=t->v2.z*C.w;
     C.r=t->v2.r*C.w; C.g=t->v2.g*C.w; C.b=t->v2.b*C.w; C.a=t->v2.a*C.w;
-    C.s=t->v2.s*C.w; C.t=t->v2.t*C.w;
+
+    for( i=0; i<MAX_TEXTURES; ++i )
+    {
+        A.s[i]=t->v0.s[i]*A.w; A.t[i]=t->v0.t[i]*A.w;
+        B.s[i]=t->v1.s[i]*B.w; B.t[i]=t->v1.t[i]*B.w;
+        C.s[i]=t->v2.s[i]*C.w; C.t[i]=t->v2.t[i]*C.w;
+    }
 
     /* convert to raster coordinates */
     x0 = (1.0f + A.x) * 0.5f * fb->width;
@@ -212,9 +216,6 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
                 continue;
 
             /* interpolate vertex attributes */
-            v.s = (A.s*a + B.s*b + C.s*c) * v.w;
-            v.t = (A.t*a + B.t*b + C.t*c) * v.w;
-
             v.r = (A.r*a + B.r*b + C.r*c) * v.w;
             v.g = (A.g*a + B.g*b + C.g*c) * v.w;
             v.b = (A.b*a + B.b*b + C.b*c) * v.w;
@@ -225,7 +226,10 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
             {
                 if( rs_state.texture_enable[ i ] )
                 {
-                    texture_sample( rs_state.textures[ i ], v.s, v.t, tex );
+                    v.s[i] = (A.s[i]*a + B.s[i]*b + C.s[i]*c) * v.w;
+                    v.t[i] = (A.t[i]*a + B.t[i]*b + C.t[i]*c) * v.w;
+
+                    texture_sample(rs_state.textures[i], v.s[i], v.t[i], tex);
 
                     v.r *= (tex[0]/255.0);
                     v.g *= (tex[1]/255.0);

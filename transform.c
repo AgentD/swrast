@@ -6,6 +6,7 @@ static void vertex_transform( const vertex* in, vertex* out,
                               const float* m )
 {
     float x, y, z, w;
+    int i;
 
     /* cache input position as output may point to input */
     x = in->x;
@@ -26,8 +27,11 @@ static void vertex_transform( const vertex* in, vertex* out,
     out->a = in->a;
 
     /* copy texture coordinates */
-    out->s = in->s;
-    out->t = in->t;
+    for( i=0; i<MAX_TEXTURES; ++i )
+    {
+        out->s[i] = in->s[i];
+        out->t[i] = in->t[i];
+    }
 }
 
 /****************************************************************************/
