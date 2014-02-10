@@ -3,8 +3,10 @@
 #include "rasterizer.h"
 #include "texture.h"
 #include "window.h"
+#include "3ds.h"
 
 #include <math.h>
+#include <stdlib.h>
 
 
 
@@ -40,9 +42,13 @@ float vbo[60] =
 int main( void )
 {
     float a = 0.0f, c, s, m[16], far, near, aspect, f, iNF;
+    unsigned int teapot_vertices, teapot_indices;
+    unsigned short* teapot_ibo;
     rasterizer_state rs;
     unsigned char* ptr;
+    int teapot_format;
     unsigned int x, y;
+    void* teapot_vbo;
     framebuffer* fb;
     texture* tex;
     window* w;
@@ -56,6 +62,10 @@ int main( void )
         framebuffer_destroy( fb );
         return -1;
     }
+
+    /* load model file */
+    load_3ds( "teapot.3ds", &teapot_vbo, &teapot_ibo, &teapot_format,
+              &teapot_vertices, &teapot_indices );
 
     /* intialize projection matrix */
     far    = 0.5f;
@@ -86,15 +96,6 @@ int main( void )
         }
     }
 
-    /* initialize state */
-    rs.alpha_blend       = 1;
-    rs.depth_test        = 1;
-    rs.texture_enable[0] = 1;
-    rs.textures[0]       = tex;
-    rasterizer_set_state( &rs );
-
-    ia_set_vertex_format( VF_POSITION_F4 | VF_COLOR_F4 | VF_TEX0 );
-
     /************* drawing loop *************/
     while( window_handle_events( w ) )
     {
@@ -102,7 +103,7 @@ int main( void )
         framebuffer_clear( fb, 0, 0, 0, 0xFF );
         framebuffer_clear_depth( fb, 1.0 );
 
-        /* update modelview matrix */
+        /* rasterize triangles */
         c = cos( a ), s = sin( a );
         a += 0.02f;
 
@@ -111,10 +112,34 @@ int main( void )
         m[2] =   -s; m[6] = 0.0f; m[10] =    c; m[14] =-10.0f;
         m[3] = 0.0f; m[7] = 0.0f; m[11] = 0.0f; m[15] =  1.0f;
 
-        ia_set_modelview_matrix( m );
+        rs.alpha_blend       = 1;
+        rs.depth_test        = 1;
+        rs.texture_enable[0] = 1;
+        rs.textures[0]       = tex;
+        rasterizer_set_state( &rs );
 
-        /* rasterize triangles */
+        ia_set_modelview_matrix( m );
+        ia_set_vertex_format( VF_POSITION_F4 | VF_COLOR_F4 | VF_TEX0 );
         ia_draw_triangles( fb, vbo, 6 );
+
+        /* rasterize teapot */
+        m[0] =    c*0.05f; m[4] = 0.0f;  m[ 8] =    s*0.05f; m[12] =  2.0f;
+        m[1] = 0.0f;       m[5] = 0.05f; m[ 9] = 0.0f;       m[13] = -1.0f;
+        m[2] =   -s*0.05f; m[6] = 0.0f;  m[10] =    c*0.05f; m[14] = -5.0f;
+        m[3] = 0.0f;       m[7] = 0.0f;  m[11] = 0.0f;       m[15] =  1.0f;
+
+        rs.alpha_blend       = 0;
+        rs.depth_test        = 1;
+        rs.texture_enable[0] = 0;
+        rs.textures[0]       = 0;
+        rasterizer_set_state( &rs );
+
+        ia_set_modelview_matrix( m );
+        ia_set_vertex_format( teapot_format );
+        ia_draw_triangles( fb, vbo, 6 );
+
+        ia_draw_triangles_indexed( fb, teapot_vbo, teapot_vertices,
+                                       teapot_ibo, teapot_indices );
 
         /* copy to window */
         window_display_framebuffer( w, fb );
@@ -124,6 +149,8 @@ int main( void )
     texture_destroy( tex );
     framebuffer_destroy( fb );
     window_destroy( w );
+    free( teapot_vbo );
+    free( teapot_ibo );
     return 0;
 }
 
