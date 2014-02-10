@@ -75,6 +75,10 @@ static unsigned char* read_vertex( vertex* v, unsigned char* ptr )
         ptr += 4*sizeof(float);
     }
 
+    /* decode surface normal */
+         if( vertex_format & VF_NORMAL_F3 ) { ptr += 3*sizeof(float); }
+    else if( vertex_format & VF_NORMAL_F4 ) { ptr += 4*sizeof(float); }
+
     /* decode color */
     if( vertex_format & VF_COLOR_F3 )
     {
@@ -166,6 +170,9 @@ void ia_draw_triangles_indexed( framebuffer* fb, void* ptr,
          if( vertex_format & VF_POSITION_F2 ) { vsize += 2*sizeof(float); }
     else if( vertex_format & VF_POSITION_F3 ) { vsize += 3*sizeof(float); }
     else if( vertex_format & VF_POSITION_F4 ) { vsize += 4*sizeof(float); }
+
+         if( vertex_format & VF_NORMAL_F3 ) { vsize += 3*sizeof(float); }
+    else if( vertex_format & VF_NORMAL_F4 ) { vsize += 4*sizeof(float); }
 
          if( vertex_format & VF_COLOR_F3  ) { vsize += 3*sizeof(float); }
     else if( vertex_format & VF_COLOR_F4  ) { vsize += 4*sizeof(float); }
