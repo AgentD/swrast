@@ -1,5 +1,5 @@
 CONFFLAGS = -D_BSD_SOURCE
-OPTFLAGS = -O3 -Ofast -msse2 -ffast-math
+OPTFLAGS = -O3 -msse2
 CFLAGS = -ansi -pedantic -Wall -Wextra $(CONFFLAGS) $(OPTFLAGS)
 
 a.out: inputassembler.o framebuffer.o rasterizer.o texture.o window.o test.o\
