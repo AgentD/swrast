@@ -14,7 +14,6 @@ typedef enum
     VF_POSITION_F4 = 0x0004,    /**< \brief 4 component float position */
 
     VF_NORMAL_F3 = 0x0010,      /**< \brief 3 component float normal */
-    VF_NORMAL_F4 = 0x0020,      /**< \brief 4 component float normal */
 
     VF_COLOR_F3 = 0x0100,       /**< \brief 3 component float color */
     VF_COLOR_F4 = 0x0200,       /**< \brief 4 component float color */
