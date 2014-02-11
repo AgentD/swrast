@@ -8,6 +8,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 
@@ -52,6 +53,7 @@ int main( void )
     void* teapot_vbo;
     framebuffer* fb;
     texture* tex;
+    tl_state tl;
     window* w;
 
     /************* initalisation *************/
@@ -97,6 +99,28 @@ int main( void )
         }
     }
 
+    /* initialize T&L state */
+    memset( &tl, 0, sizeof(tl_state) );
+
+    tl.light[0].enable = 1;
+    tl.light[0].diffuse[0] = 1.0f;
+    tl.light[0].diffuse[1] = 1.0f;
+    tl.light[0].diffuse[2] = 1.0f;
+    tl.light[0].specular[0] = 1.0f;
+    tl.light[0].specular[1] = 1.0f;
+    tl.light[0].specular[2] = 1.0f;
+    tl.light[0].attenuation_constant = 1.0f;
+
+    tl.light[0].enable = 1;
+
+    tl.material.diffuse[0] = 0.5f;
+    tl.material.diffuse[1] = 0.5f;
+    tl.material.diffuse[2] = 0.5f;
+    tl.material.specular[0] = 0.5f;
+    tl.material.specular[1] = 0.5f;
+    tl.material.specular[2] = 0.5f;
+    tl.material.shininess = 127;
+
     /************* drawing loop *************/
     while( window_handle_events( w ) )
     {
@@ -118,6 +142,8 @@ int main( void )
         rs.texture_enable[0] = 1;
         rs.textures[0]       = tex;
         rasterizer_set_state( &rs );
+        tl.light_enable = 0;
+        tl_set_state( &tl );
 
         tl_set_modelview_matrix( m );
         ia_set_vertex_format( VF_POSITION_F4 | VF_COLOR_F4 | VF_TEX0 );
@@ -134,6 +160,8 @@ int main( void )
         rs.texture_enable[0] = 0;
         rs.textures[0]       = 0;
         rasterizer_set_state( &rs );
+        tl.light_enable = 1;
+        tl_set_state( &tl );
 
         tl_set_modelview_matrix( m );
         ia_set_vertex_format( teapot_format );
