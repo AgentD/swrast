@@ -1,0 +1,89 @@
+
+  About
+  *****
+
+ Tho whom it may concern: this directory contains a just-for-fun software
+ rasterizer written in C89, started on a boring holiday week when I was sick.
+
+ The entire source code is released into the public domain.
+
+ The rasterizer currently supports the following features:
+  - Triangle rasterization
+  - Vertex buffers and index buffers
+  - Fixed function OpenGL(R) style transform & lighting with model view &
+    projection matrix and up to 8 indipendend light sources and 
+  - Gouraud shading
+  - Perspective correct interpolation of vertex attributes
+  - Multpile texture layers with nearest neighbour sampling
+  - Depth buffering
+  - Alpha blending
+  - Multiple framebuffer objects (can be used for e.g. render to texture)
+
+
+  Rendering Pipeline
+  ******************
+
+     _________________
+    | Input Assembler |     Vertices are decoded from buffer and
+    |_________________|     assembled into a triangle structure.
+           _| |_
+     ______\___/______
+    |Transform & Light|     Triangles are transformed with modelview and
+    |_________________|     projection matrix. Lighting values for each
+           _| |_            vertex are computed in viewspace.
+     ______\___/______
+    |  Rasterization  |     Pixels are generated from triangles in screen
+    |_________________|     space after perspective divide. Vertex attributes
+           _| |_            are interpolated over the triangle area.
+     ______\___/______
+    |    Texturing    |     Texture color values are fetched and multiplied
+    |_________________|     to the pixel color values.
+           _| |_
+     ______\___/______
+    |    Depth test   |     The interolated depth value is compared to the
+    |_________________|     depth buffer value. Pixels are dropped if the
+           _| |_            depth value is greater or equal.
+     ______\___/______
+    |   Framebuffer   |     The pixel color is alpha blended onto framebuffer.
+    |     blending    |
+    |_________________|
+
+ Lighting, texturing, depth test and blending can be turned on and off or
+ configured.
+
+
+  Source code overview
+  ********************
+
+    inputassembler.h    -   Implementation of the input assembler stage
+    inputassembler.c
+
+    tl.h                -   Implementation of the T&L stage
+    tl.c
+
+    rasterizer.h        -   Implementation of the rasterizer stage and
+    rasterizer.c            everything that follows (texturing, depth test,
+                            blending)
+
+    texture.h           -   Implementation of texture objects
+    texture.c
+
+    framebuffer.h       -   Implementation of framebuffer objects
+    framebuffer.c
+
+    window.h            -   A simple Xlib based window implementation for
+    window.c                testing. Handles a window and blits a framebuffer
+
+    3ds.h               -   A quick & dirty 3ds loader for testing
+    3ds.c
+
+    test.c              -   A small test program
+
+
+  License
+  *******
+
+ All source code in this directory is released into the public domain.
+ I, David Oberhollenzer, will not assert any copyright claims on the
+ documents in this directory.
+
