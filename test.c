@@ -4,6 +4,7 @@
 #include "texture.h"
 #include "window.h"
 #include "3ds.h"
+#include "tl.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -79,7 +80,7 @@ int main( void )
     m[2]=0.0f;     m[6]=0.0f; m[10]= (far+near)*iNF; m[14]=2.0f*far*near*iNF;
     m[3]=0.0f;     m[7]=0.0f; m[11]=-1.0f;           m[15]=0.0f;
 
-    ia_set_projection_matrix( m );
+    tl_set_projection_matrix( m );
 
     /* create and initialize texture */
     tex = texture_create( 64, 64 );
@@ -118,7 +119,7 @@ int main( void )
         rs.textures[0]       = tex;
         rasterizer_set_state( &rs );
 
-        ia_set_modelview_matrix( m );
+        tl_set_modelview_matrix( m );
         ia_set_vertex_format( VF_POSITION_F4 | VF_COLOR_F4 | VF_TEX0 );
         ia_draw_triangles( fb, vbo, 6 );
 
@@ -134,7 +135,7 @@ int main( void )
         rs.textures[0]       = 0;
         rasterizer_set_state( &rs );
 
-        ia_set_modelview_matrix( m );
+        tl_set_modelview_matrix( m );
         ia_set_vertex_format( teapot_format );
         ia_draw_triangles( fb, vbo, 6 );
 

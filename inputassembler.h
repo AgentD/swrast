@@ -30,22 +30,6 @@ VERTEX_FORMAT;
 
 
 /**
- * \brief Set the currently active model view matrix
- *
- * \param f A pointer to an array of 16 float values, representing a 4x4
- *          matrix, stored in column-major order
- */
-void ia_set_modelview_matrix( float* f );
-
-/**
- * \brief Set the currently active projection matrix
- *
- * \param f A pointer to an array of 16 float values, representing a 4x4
- *          matrix, stored in column-major order
- */
-void ia_set_projection_matrix( float* f );
-
-/**
  * \brief Set the vertex format for the next vertex stream
  *
  * \param format A combination of VERTEX_FORMAT flags
