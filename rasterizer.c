@@ -14,9 +14,10 @@
 
 typedef struct
 {
-    float z, w;
+    float w;
     float s[MAX_TEXTURES], t[MAX_TEXTURES];
     unsigned char r, g, b, a;
+    int d;
 }
 rs_vertex;
 
@@ -27,34 +28,34 @@ rs_vertex;
  *  rasterizer configurations (blending, depth test, etc...)                *
  ****************************************************************************/
 
-typedef void (* pixel_fun )( const rs_vertex*, unsigned char*, float* );
+typedef void (* pixel_fun )( const rs_vertex*, unsigned char*, int* );
 
-static void pixel( const rs_vertex* v, unsigned char* color, float* depth )
+static void pixel( const rs_vertex* v, unsigned char* color, int* depth )
 {
     color[RED  ] = v->r;
     color[GREEN] = v->g;
     color[BLUE ] = v->b;
     color[ALPHA] = v->a;
 
-    depth[0] = v->z;
+    depth[0] = v->d;
 }
 
 static void pixel_depth( const rs_vertex* v, unsigned char* color,
-                         float* depth )
+                         int* depth )
 {
-    if( v->z < depth[0] )
+    if( v->d < depth[0] )
     {
         color[RED  ] = v->r;
         color[GREEN] = v->g;
         color[BLUE ] = v->b;
         color[ALPHA] = v->a;
 
-        depth[0] = v->z;
+        depth[0] = v->d;
     }
 }
 
 static void pixel_blend( const rs_vertex* v, unsigned char* color,
-                         float* depth )
+                         int* depth )
 {
     unsigned int a, ia;
     a  = v->a;
@@ -65,15 +66,15 @@ static void pixel_blend( const rs_vertex* v, unsigned char* color,
     color[BLUE ] = (color[BLUE ]*ia + v->b*a) >> 8;
     color[ALPHA] = (color[ALPHA]*ia + v->a*a) >> 8;
 
-    depth[0] = v->z;
+    depth[0] = v->d;
 }
 
 static void pixel_depth_blend( const rs_vertex* v, unsigned char* color,
-                               float* depth )
+                               int* depth )
 {
     unsigned int a, ia;
 
-    if( v->z < depth[0] )
+    if( v->d < depth[0] )
     {
         a  = v->a;
         ia = 0xFF - a;
@@ -83,7 +84,7 @@ static void pixel_depth_blend( const rs_vertex* v, unsigned char* color,
         color[BLUE ] = (color[BLUE ]*ia + v->b*a) >> 8;
         color[ALPHA] = (color[ALPHA]*ia + v->a*a) >> 8;
 
-        depth[0] = v->z;
+        depth[0] = v->d;
     }
 }
 
@@ -120,32 +121,33 @@ void rasterizer_get_state( rasterizer_state* state )
 
 void triangle_rasterize( const triangle* t, framebuffer* fb )
 {
-    float a, b, c, f0, f1, f2, f3, f4, f5, f6, f7, f8, *dscan, *dptr;
+    float a, b, c, f0, f1, f2, f3, f4, f5, f6, f7, f8;
     int x, y, x0, x1, x2, y0, y1, y2, bl, br, bt, bb, i;
     unsigned char *scan, *ptr;
     unsigned char tex[4];
     rs_vertex A, B, C, v;
+    int *dscan, *dptr;
 
     if( t->v0.w<=0.0 || t->v1.w<=0.0 || t->v2.w<=0.0 )
         return;
 
     /* prepare triangle vertices */
     A.w = 1.0/t->v0.w;
-    A.z = t->v0.z*A.w;
+    A.d = DEPTH_MAX_HALF - (t->v0.z*DEPTH_MAX_HALF*A.w);
     A.r = t->v0.r*A.w;
     A.g = t->v0.g*A.w;
     A.b = t->v0.b*A.w;
     A.a = t->v0.a*A.w;
 
     B.w = 1.0/t->v1.w;
-    B.z = t->v1.z*B.w;
+    B.d = DEPTH_MAX_HALF - (t->v1.z*DEPTH_MAX_HALF*B.w);
     B.r = t->v1.r*B.w;
     B.g = t->v1.g*B.w;
     B.b = t->v1.b*B.w;
     B.a = t->v1.a*B.w;
 
     C.w = 1.0/t->v2.w;
-    C.z = t->v2.z*C.w;
+    C.d = DEPTH_MAX_HALF - (t->v2.z*DEPTH_MAX_HALF*C.w);
     C.r = t->v2.r*C.w;
     C.g = t->v2.g*C.w;
     C.b = t->v2.b*C.w;
@@ -214,13 +216,11 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
                 continue;
 
             /* interpolate vertex coordinates and perform clipping */
-            v.z = A.z*a + B.z*b + C.z*c;
+            v.d = A.d*a + B.d*b + C.d*c;
             v.w = 1.0 / (A.w*a + B.w*b + C.w*c);
 
-            if( v.w<=0 || v.z>1.0f || v.z<-1.0f )
+            if( v.w<=0 || v.d>DEPTH_MAX || v.d<0 )
                 continue;
-
-            v.z = (1.0f - v.z) * 0.5f;
 
             /* interpolate vertex attributes */
             v.r = (A.r*a + B.r*b + C.r*c) * v.w;

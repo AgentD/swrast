@@ -24,7 +24,7 @@ framebuffer* framebuffer_create( unsigned int width, unsigned int height )
     }
 
     /* try to allocate the depth buffer */
-    fb->depth = malloc( width*height*sizeof(float) );
+    fb->depth = malloc( width*height*sizeof(int) );
 
     if( !fb->depth )
     {
@@ -69,15 +69,18 @@ void framebuffer_clear( framebuffer* fb, unsigned char r, unsigned char g,
 void framebuffer_clear_depth( framebuffer* fb, float value )
 {
     unsigned int i, count;
-    float* ptr;
+    int* ptr;
+    int v;
 
     if( fb )
     {
         count = fb->height*fb->width;
+        value = value<0.0f ? 0.0f : (value>1.0f ? 1.0f : value);
+        v = value * DEPTH_MAX;
 
         for( ptr=fb->depth, i=0; i<count; ++i, ++ptr )
         {
-            *ptr = value;
+            *ptr = v;
         }
     }
 }

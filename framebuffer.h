@@ -19,10 +19,15 @@
 
 
 
+#define DEPTH_MAX 0x00FFFFFF
+#define DEPTH_MAX_HALF 0x007FFFFF
+
+
+
 typedef struct
 {
     unsigned char* color;
-    float* depth;
+    int* depth;
     int width;
     int height;
 }
