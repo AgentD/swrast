@@ -15,9 +15,9 @@
 typedef struct
 {
     float x, y, z, w;
-    float r, g, b, a;
     float nx, ny, nz;
     float s[MAX_TEXTURES], t[MAX_TEXTURES];
+    unsigned char r, g, b, a;
 }
 vertex;
 

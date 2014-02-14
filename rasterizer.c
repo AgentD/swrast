@@ -16,7 +16,7 @@ typedef struct
 {
     float z, w;
     float s[MAX_TEXTURES], t[MAX_TEXTURES];
-    float r, g, b, a;
+    unsigned char r, g, b, a;
 }
 rs_vertex;
 
@@ -31,10 +31,10 @@ typedef void (* pixel_fun )( const rs_vertex*, unsigned char*, float* );
 
 static void pixel( const rs_vertex* v, unsigned char* color, float* depth )
 {
-    color[RED  ] = v->r * 255.0;
-    color[GREEN] = v->g * 255.0;
-    color[BLUE ] = v->b * 255.0;
-    color[ALPHA] = v->a * 255.0;
+    color[RED  ] = v->r;
+    color[GREEN] = v->g;
+    color[BLUE ] = v->b;
+    color[ALPHA] = v->a;
 
     depth[0] = v->z;
 }
@@ -44,10 +44,10 @@ static void pixel_depth( const rs_vertex* v, unsigned char* color,
 {
     if( v->z < depth[0] )
     {
-        color[RED  ] = v->r * 255.0;
-        color[GREEN] = v->g * 255.0;
-        color[BLUE ] = v->b * 255.0;
-        color[ALPHA] = v->a * 255.0;
+        color[RED  ] = v->r;
+        color[GREEN] = v->g;
+        color[BLUE ] = v->b;
+        color[ALPHA] = v->a;
 
         depth[0] = v->z;
     }
@@ -56,18 +56,14 @@ static void pixel_depth( const rs_vertex* v, unsigned char* color,
 static void pixel_blend( const rs_vertex* v, unsigned char* color,
                          float* depth )
 {
-    unsigned int r, g, b, a, ia;
-    a  = v->a * 255.0;
+    unsigned int a, ia;
+    a  = v->a;
     ia = 0xFF - a;
-    r  = v->r * a;
-    g  = v->g * a;
-    b  = v->b * a;
-    a  = v->a * a;
 
-    color[RED  ] = ((color[RED  ]*ia) >> 8) + r;
-    color[GREEN] = ((color[GREEN]*ia) >> 8) + g;
-    color[BLUE ] = ((color[BLUE ]*ia) >> 8) + b;
-    color[ALPHA] = ((color[ALPHA]*ia) >> 8) + a;
+    color[RED  ] = (color[RED  ]*ia + v->r*a) >> 8;
+    color[GREEN] = (color[GREEN]*ia + v->g*a) >> 8;
+    color[BLUE ] = (color[BLUE ]*ia + v->b*a) >> 8;
+    color[ALPHA] = (color[ALPHA]*ia + v->a*a) >> 8;
 
     depth[0] = v->z;
 }
@@ -75,21 +71,17 @@ static void pixel_blend( const rs_vertex* v, unsigned char* color,
 static void pixel_depth_blend( const rs_vertex* v, unsigned char* color,
                                float* depth )
 {
-    unsigned int r, g, b, a, ia;
+    unsigned int a, ia;
 
     if( v->z < depth[0] )
     {
-        a  = v->a * 255.0;
+        a  = v->a;
         ia = 0xFF - a;
-        r  = v->r * a;
-        g  = v->g * a;
-        b  = v->b * a;
-        a  = v->a * a;
 
-        color[RED  ] = ((color[RED  ]*ia) >> 8) + r;
-        color[GREEN] = ((color[GREEN]*ia) >> 8) + g;
-        color[BLUE ] = ((color[BLUE ]*ia) >> 8) + b;
-        color[ALPHA] = ((color[ALPHA]*ia) >> 8) + a;
+        color[RED  ] = (color[RED  ]*ia + v->r*a) >> 8;
+        color[GREEN] = (color[GREEN]*ia + v->g*a) >> 8;
+        color[BLUE ] = (color[BLUE ]*ia + v->b*a) >> 8;
+        color[ALPHA] = (color[ALPHA]*ia + v->a*a) >> 8;
 
         depth[0] = v->z;
     }
@@ -246,10 +238,10 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
 
                     texture_sample(rs_state.textures[i], v.s[i], v.t[i], tex);
 
-                    v.r *= (tex[0]/255.0);
-                    v.g *= (tex[1]/255.0);
-                    v.b *= (tex[2]/255.0);
-                    v.a *= (tex[3]/255.0);
+                    v.r = (v.r*tex[0]) >> 8;
+                    v.g = (v.g*tex[1]) >> 8;
+                    v.b = (v.b*tex[2]) >> 8;
+                    v.a = (v.a*tex[3]) >> 8;
                 }
             }
 
