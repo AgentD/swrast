@@ -1,4 +1,5 @@
 #include "rasterizer.h"
+#include "compare.h"
 
 
 
@@ -40,20 +41,6 @@ static void pixel( const rs_vertex* v, unsigned char* color, int* depth )
     depth[0] = v->d;
 }
 
-static void pixel_depth( const rs_vertex* v, unsigned char* color,
-                         int* depth )
-{
-    if( v->d < depth[0] )
-    {
-        color[RED  ] = v->r;
-        color[GREEN] = v->g;
-        color[BLUE ] = v->b;
-        color[ALPHA] = v->a;
-
-        depth[0] = v->d;
-    }
-}
-
 static void pixel_blend( const rs_vertex* v, unsigned char* color,
                          int* depth )
 {
@@ -69,45 +56,20 @@ static void pixel_blend( const rs_vertex* v, unsigned char* color,
     depth[0] = v->d;
 }
 
-static void pixel_depth_blend( const rs_vertex* v, unsigned char* color,
-                               int* depth )
-{
-    unsigned int a, ia;
-
-    if( v->d < depth[0] )
-    {
-        a  = v->a;
-        ia = 0xFF - a;
-
-        color[RED  ] = (color[RED  ]*ia + v->r*a) >> 8;
-        color[GREEN] = (color[GREEN]*ia + v->g*a) >> 8;
-        color[BLUE ] = (color[BLUE ]*ia + v->b*a) >> 8;
-        color[ALPHA] = (color[ALPHA]*ia + v->a*a) >> 8;
-
-        depth[0] = v->d;
-    }
-}
-
 /****************************************************************************
  *  Rasterizer state control functions                                      *
  ****************************************************************************/
 
 static pixel_fun draw_pixel = pixel;
 static rasterizer_state rs_state;
-
+static compare_fun depth_fun;
 
 void rasterizer_set_state( const rasterizer_state* state )
 {
     rs_state = (*state);
 
-    if( rs_state.alpha_blend )
-    {
-        draw_pixel = rs_state.depth_test ? pixel_depth_blend : pixel_blend;
-    }
-    else
-    {
-        draw_pixel = rs_state.depth_test ? pixel_depth : pixel;
-    }
+    depth_fun = get_compare_function( rs_state.depth_test );
+    draw_pixel = rs_state.alpha_blend ? pixel_blend : pixel;
 }
 
 void rasterizer_get_state( rasterizer_state* state )
@@ -220,6 +182,10 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
             v.w = 1.0 / (A.w*a + B.w*b + C.w*c);
 
             if( v.w<=0 || v.d>DEPTH_MAX || v.d<0 )
+                continue;
+
+            /* depth test */
+            if( !depth_fun( v.d, dptr[0] ) )
                 continue;
 
             /* interpolate vertex attributes */

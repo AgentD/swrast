@@ -2,6 +2,7 @@
 #include "framebuffer.h"
 #include "rasterizer.h"
 #include "texture.h"
+#include "compare.h"
 #include "window.h"
 #include "3ds.h"
 #include "tl.h"
@@ -138,7 +139,7 @@ int main( void )
         m[3] = 0.0f; m[7] = 0.0f; m[11] = 0.0f; m[15] =  1.0f;
 
         rs.alpha_blend       = 1;
-        rs.depth_test        = 1;
+        rs.depth_test        = COMPARE_LESS_EQUAL;
         rs.texture_enable[0] = 1;
         rs.textures[0]       = tex;
         rasterizer_set_state( &rs );
@@ -156,7 +157,7 @@ int main( void )
         m[3] = 0.0f;       m[7] = 0.0f;  m[11] = 0.0f;       m[15] =  1.0f;
 
         rs.alpha_blend       = 0;
-        rs.depth_test        = 1;
+        rs.depth_test        = COMPARE_LESS_EQUAL;
         rs.texture_enable[0] = 0;
         rs.textures[0]       = 0;
         rasterizer_set_state( &rs );

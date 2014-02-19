@@ -31,7 +31,7 @@ triangle;
 
 typedef struct
 {
-    /** \brief Non-zero to enable depth testing, zero to disable */
+    /** \brief Depth test comparison function */
     int depth_test;
 
     /** \brief Non-zero to enable alpha blending, zero to disable */
