@@ -9,13 +9,14 @@
 
  The rasterizer currently supports the following features:
   - Triangle rasterization
+  - Configurable back face culling (cull by vertex winding)
   - Vertex buffers and index buffers
   - Fixed function OpenGL(R) style transform & lighting with model view &
     projection matrix and up to 8 indipendend light sources and 
   - Gouraud shading
   - Perspective correct interpolation of vertex attributes
   - Multpile texture layers with nearest neighbour sampling
-  - Depth buffering
+  - Depth buffering (OpenGL(R) style comparison function)
   - Alpha blending
   - Multiple framebuffer objects (can be used for e.g. render to texture)
 
@@ -70,6 +71,9 @@
 
     framebuffer.h       -   Implementation of framebuffer objects
     framebuffer.c
+
+    compare.h           -   Implementation of comparison functions
+    compare.c
 
     window.h            -   A simple Xlib based window implementation for
     window.c                testing. Handles a window and blits a framebuffer
