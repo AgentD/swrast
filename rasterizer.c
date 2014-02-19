@@ -90,7 +90,26 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
     rs_vertex A, B, C, v;
     int *dscan, *dptr;
 
+    if( rs_state.cull_cw && rs_state.cull_ccw )
+        return;
+
+    if( rs_state.depth_test==COMPARE_NEVER )
+        return;
+
     if( t->v0.w<=0.0 || t->v1.w<=0.0 || t->v2.w<=0.0 )
+        return;
+
+    /* culling */
+    f0 = t->v1.x - t->v0.x;     /* (f0,f1) = v1.xy - v0.xy */
+    f1 = t->v1.y - t->v0.y;
+
+    f2 = t->v2.x - t->v0.x;     /* (f3,f4) = v2.xy - v0.xy */
+    f3 = t->v2.y - t->v0.y;
+
+    f4 = f0*f3;                 /* ((f0,f1,0) x (f2,f3,0)).z */
+    f5 = f1*f2;
+
+    if( ((f4<=f5) && rs_state.cull_cw) || ((f4>=f5) && rs_state.cull_ccw) )
         return;
 
     /* prepare triangle vertices */

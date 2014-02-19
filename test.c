@@ -141,6 +141,8 @@ int main( void )
         rs.alpha_blend       = 1;
         rs.depth_test        = COMPARE_LESS_EQUAL;
         rs.texture_enable[0] = 1;
+        rs.cull_cw           = 0;
+        rs.cull_ccw          = 0;
         rs.textures[0]       = tex;
         rasterizer_set_state( &rs );
         tl.light_enable = 0;
@@ -160,6 +162,8 @@ int main( void )
         rs.depth_test        = COMPARE_LESS_EQUAL;
         rs.texture_enable[0] = 0;
         rs.textures[0]       = 0;
+        rs.cull_cw           = 1;
+        rs.cull_ccw          = 0;
         rasterizer_set_state( &rs );
         tl.light_enable = 1;
         tl_set_state( &tl );

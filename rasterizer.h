@@ -37,6 +37,12 @@ typedef struct
     /** \brief Non-zero to enable alpha blending, zero to disable */
     int alpha_blend;
 
+    /** \brief Non-zero to cull counter clockwise triangles */
+    int cull_ccw;
+
+    /** \brief Non-zero to cull clockwise triangles */
+    int cull_cw;
+
     /** \brief Non-zero to enable a texture layer, zero to disable */
     int texture_enable[MAX_TEXTURES];
 
