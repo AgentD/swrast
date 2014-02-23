@@ -51,7 +51,7 @@ static void pixel_blend( const rs_vertex* v, unsigned char* color,
     color[RED  ] = (color[RED  ]*ia + v->r*a) >> 8;
     color[GREEN] = (color[GREEN]*ia + v->g*a) >> 8;
     color[BLUE ] = (color[BLUE ]*ia + v->b*a) >> 8;
-    color[ALPHA] = (color[ALPHA]*ia + v->a*a) >> 8;
+    color[ALPHA] = (color[ALPHA]*ia + (v->a<<8)) >> 8;
 
     depth[0] = v->d;
 }
