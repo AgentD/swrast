@@ -1,5 +1,6 @@
 #include "rasterizer.h"
-#include "compare.h"
+#include "texture.h"
+#include "pixel.h"
 
 
 
@@ -13,63 +14,15 @@
 
 
 
-typedef struct
-{
-    float w;
-    float s[MAX_TEXTURES], t[MAX_TEXTURES];
-    unsigned char r, g, b, a;
-    int d;
-}
-rs_vertex;
-
-
-
-/****************************************************************************
- *  Various implementations of the pixel draw function for differnet        *
- *  rasterizer configurations (blending, depth test, etc...)                *
- ****************************************************************************/
-
-typedef void (* pixel_fun )( const rs_vertex*, unsigned char*, int* );
-
-static void pixel( const rs_vertex* v, unsigned char* color, int* depth )
-{
-    color[RED  ] = v->r;
-    color[GREEN] = v->g;
-    color[BLUE ] = v->b;
-    color[ALPHA] = v->a;
-
-    depth[0] = v->d;
-}
-
-static void pixel_blend( const rs_vertex* v, unsigned char* color,
-                         int* depth )
-{
-    unsigned int a, ia;
-    a  = v->a;
-    ia = 0xFF - a;
-
-    color[RED  ] = (color[RED  ]*ia + v->r*a) >> 8;
-    color[GREEN] = (color[GREEN]*ia + v->g*a) >> 8;
-    color[BLUE ] = (color[BLUE ]*ia + v->b*a) >> 8;
-    color[ALPHA] = (color[ALPHA]*ia + (v->a<<8)) >> 8;
-
-    depth[0] = v->d;
-}
-
 /****************************************************************************
  *  Rasterizer state control functions                                      *
  ****************************************************************************/
 
-static pixel_fun draw_pixel = pixel;
 static rasterizer_state rs_state;
-static compare_fun depth_fun;
 
 void rasterizer_set_state( const rasterizer_state* state )
 {
     rs_state = (*state);
-
-    depth_fun = get_compare_function( rs_state.depth_test );
-    draw_pixel = rs_state.alpha_blend ? pixel_blend : pixel;
 }
 
 void rasterizer_get_state( rasterizer_state* state )
@@ -86,14 +39,11 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
     float a, b, c, f0, f1, f2, f3, f4, f5, f6, f7, f8;
     int x, y, x0, x1, x2, y0, y1, y2, bl, br, bt, bb, i;
     unsigned char *scan, *ptr;
-    unsigned char tex[4];
     rs_vertex A, B, C, v;
     int *dscan, *dptr;
 
+    /* sanity check */
     if( rs_state.cull_cw && rs_state.cull_ccw )
-        return;
-
-    if( rs_state.depth_test==COMPARE_NEVER )
         return;
 
     if( t->v0.w<=0.0 || t->v1.w<=0.0 || t->v2.w<=0.0 )
@@ -203,35 +153,20 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
             if( v.w<=0 || v.d>DEPTH_MAX || v.d<0 )
                 continue;
 
-            /* depth test */
-            if( !depth_fun( v.d, dptr[0] ) )
-                continue;
-
             /* interpolate vertex attributes */
             v.r = (A.r*a + B.r*b + C.r*c) * v.w;
             v.g = (A.g*a + B.g*b + C.g*c) * v.w;
             v.b = (A.b*a + B.b*b + C.b*c) * v.w;
             v.a = (A.a*a + B.a*b + C.a*c) * v.w;
 
-            /* apply texture values */
             for( i=0; i<MAX_TEXTURES; ++i )
             {
-                if( rs_state.texture_enable[ i ] )
-                {
-                    v.s[i] = (A.s[i]*a + B.s[i]*b + C.s[i]*c) * v.w;
-                    v.t[i] = (A.t[i]*a + B.t[i]*b + C.t[i]*c) * v.w;
-
-                    texture_sample(rs_state.textures[i], v.s[i], v.t[i], tex);
-
-                    v.r = (v.r*tex[0]) >> 8;
-                    v.g = (v.g*tex[1]) >> 8;
-                    v.b = (v.b*tex[2]) >> 8;
-                    v.a = (v.a*tex[3]) >> 8;
-                }
+                v.s[i] = (A.s[i]*a + B.s[i]*b + C.s[i]*c) * v.w;
+                v.t[i] = (A.t[i]*a + B.t[i]*b + C.t[i]*c) * v.w;
             }
 
             /* draw pixel to framebuffer */
-            draw_pixel( &v, ptr, dptr );
+            pixel_draw( &v, ptr, dptr );
         }
     }
 }

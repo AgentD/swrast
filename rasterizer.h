@@ -4,7 +4,6 @@
 
 
 #include "framebuffer.h"
-#include "texture.h"
 
 
 
@@ -23,6 +22,15 @@ vertex;
 
 typedef struct
 {
+    float w;
+    float s[MAX_TEXTURES], t[MAX_TEXTURES];
+    unsigned char r, g, b, a;
+    int d;
+}
+rs_vertex;
+
+typedef struct
+{
     vertex v0;
     vertex v1;
     vertex v2;
@@ -31,23 +39,11 @@ triangle;
 
 typedef struct
 {
-    /** \brief Depth test comparison function */
-    int depth_test;
-
-    /** \brief Non-zero to enable alpha blending, zero to disable */
-    int alpha_blend;
-
     /** \brief Non-zero to cull counter clockwise triangles */
     int cull_ccw;
 
     /** \brief Non-zero to cull clockwise triangles */
     int cull_cw;
-
-    /** \brief Non-zero to enable a texture layer, zero to disable */
-    int texture_enable[MAX_TEXTURES];
-
-    /** \brief Pointer to textures for different texture layers */
-    texture* textures[MAX_TEXTURES];
 }
 rasterizer_state;
 

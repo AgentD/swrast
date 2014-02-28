@@ -4,6 +4,7 @@
 #include "texture.h"
 #include "compare.h"
 #include "window.h"
+#include "pixel.h"
 #include "3ds.h"
 #include "tl.h"
 
@@ -53,6 +54,7 @@ int main( void )
     unsigned int x, y;
     void* teapot_vbo;
     framebuffer* fb;
+    pixel_state pp;
     texture* tex;
     tl_state tl;
     window* w;
@@ -102,6 +104,8 @@ int main( void )
 
     /* initialize T&L state */
     memset( &tl, 0, sizeof(tl_state) );
+    memset( &pp, 0, sizeof(pixel_state) );
+    memset( &rs, 0, sizeof(rasterizer_state) );
 
     tl.light[0].enable = 1;
     tl.light[0].diffuse[0] = 1.0f;
@@ -138,13 +142,14 @@ int main( void )
         m[2] =   -s; m[6] = 0.0f; m[10] =    c; m[14] =-10.0f;
         m[3] = 0.0f; m[7] = 0.0f; m[11] = 0.0f; m[15] =  1.0f;
 
-        rs.alpha_blend       = 1;
-        rs.depth_test        = COMPARE_LESS_EQUAL;
-        rs.texture_enable[0] = 1;
+        pp.alpha_blend       = 1;
+        pp.depth_test        = COMPARE_LESS_EQUAL;
+        pp.texture_enable[0] = 1;
+        pp.textures[0]       = tex;
         rs.cull_cw           = 0;
         rs.cull_ccw          = 0;
-        rs.textures[0]       = tex;
         rasterizer_set_state( &rs );
+        pixel_set_state( &pp );
         tl.light_enable = 0;
         tl_set_state( &tl );
 
@@ -158,13 +163,14 @@ int main( void )
         m[2] =   -s*0.05f; m[6] = 0.0f;  m[10] =    c*0.05f; m[14] = -5.0f;
         m[3] = 0.0f;       m[7] = 0.0f;  m[11] = 0.0f;       m[15] =  1.0f;
 
-        rs.alpha_blend       = 0;
-        rs.depth_test        = COMPARE_LESS_EQUAL;
-        rs.texture_enable[0] = 0;
-        rs.textures[0]       = 0;
+        pp.alpha_blend       = 0;
+        pp.depth_test        = COMPARE_LESS_EQUAL;
+        pp.texture_enable[0] = 0;
+        pp.textures[0]       = 0;
         rs.cull_cw           = 1;
         rs.cull_ccw          = 0;
         rasterizer_set_state( &rs );
+        pixel_set_state( &pp );
         tl.light_enable = 1;
         tl_set_state( &tl );
 

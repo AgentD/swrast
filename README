@@ -37,13 +37,13 @@
     |_________________|     space after perspective divide. Vertex attributes
            _| |_            are interpolated over the triangle area.
      ______\___/______
-    |    Texturing    |     Texture color values are fetched and multiplied
-    |_________________|     to the pixel color values.
-           _| |_
-     ______\___/______
     |    Depth test   |     The interolated depth value is compared to the
     |_________________|     depth buffer value. Pixels are dropped if the
            _| |_            depth value is greater or equal.
+     ______\___/______
+    |    Texturing    |     Texture color values are fetched and multiplied
+    |_________________|     to the pixel color values.
+           _| |_
      ______\___/______
     |   Framebuffer   |     The pixel color is alpha blended onto framebuffer.
     |     blending    |
@@ -62,9 +62,11 @@
     tl.h                -   Implementation of the T&L stage
     tl.c
 
-    rasterizer.h        -   Implementation of the rasterizer stage and
-    rasterizer.c            everything that follows (texturing, depth test,
-                            blending)
+    rasterizer.h        -   Implementation of the rasterizer stage
+    rasterizer.c
+
+    pixel.h             -   Implementation of pixel processing (texturing,
+    pixel.c                 depth test and blending)
 
     texture.h           -   Implementation of texture objects
     texture.c
