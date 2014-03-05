@@ -11,7 +11,7 @@ inputassembler.o: inputassembler.c inputassembler.h framebuffer.h\
 framebuffer.o: framebuffer.c framebuffer.h
 rasterizer.o: rasterizer.c rasterizer.h framebuffer.h texture.h compare.h\
 				pixel.h
-texture.o: texture.c texture.h
+texture.o: texture.c texture.h framebuffer.h
 compare.o: compare.c compare.h
 window.o: window.c window.h framebuffer.h
 pixel.o: pixel.c pixel.h rasterizer.h

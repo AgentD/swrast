@@ -70,10 +70,10 @@ static void fetch_texture_colors( const rs_vertex* v, unsigned char* color )
         {
             texture_sample( pp_state.textures[i], v->s[i], v->t[i], tex );
 
-            color[ RED   ] = (color[ RED   ]*tex[0]) >> 8;
-            color[ GREEN ] = (color[ GREEN ]*tex[1]) >> 8;
-            color[ BLUE  ] = (color[ BLUE  ]*tex[2]) >> 8;
-            color[ ALPHA ] = (color[ ALPHA ]*tex[3]) >> 8;
+            color[ RED   ] = (color[ RED   ]*tex[ RED   ]) >> 8;
+            color[ GREEN ] = (color[ GREEN ]*tex[ GREEN ]) >> 8;
+            color[ BLUE  ] = (color[ BLUE  ]*tex[ BLUE  ]) >> 8;
+            color[ ALPHA ] = (color[ ALPHA ]*tex[ ALPHA ]) >> 8;
         }
     }
 }

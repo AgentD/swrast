@@ -1,3 +1,4 @@
+#include "framebuffer.h"
 #include "texture.h"
 
 #include <stdlib.h>
@@ -48,10 +49,10 @@ void texture_sample( texture* t, float x, float y, unsigned char* out )
 
         ptr = t->data + (Y*t->width + X)*4;
 
-        out[0] = ptr[0];
-        out[1] = ptr[1];
-        out[2] = ptr[2];
-        out[3] = ptr[3];
+        out[RED  ] = ptr[ RED   ];
+        out[GREEN] = ptr[ GREEN ];
+        out[BLUE ] = ptr[ BLUE  ];
+        out[ALPHA] = ptr[ ALPHA ];
     }
 }
 

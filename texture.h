@@ -35,7 +35,8 @@ void texture_destroy( texture* t );
  * \param t   A pointer to a texture structure
  * \param x   A value in the range [0,1]. 0=left, 1=right
  * \param y   A value in the range [0,1]. 0=top, 1=bottom
- * \param out A pointer to write the resulting color value to
+ * \param out A pointer to write the resulting color value to. The color is
+ *            returned in the color ordering used by the framebuffer.
  */
 void texture_sample( texture* t, float x, float y, unsigned char* out );
 
