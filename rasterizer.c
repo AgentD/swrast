@@ -36,8 +36,9 @@ void rasterizer_get_state( rasterizer_state* state )
 
 void triangle_rasterize( const triangle* t, framebuffer* fb )
 {
-    float a, b, c, f0, f1, f2, f3, f4, f5, f6, f7, f8;
     int x, y, x0, x1, x2, y0, y1, y2, bl, br, bt, bb, i;
+    int f0, f1, f2, f3, f4, f5, f6, f7, f8;
+    float a, b, c, f9, f10, f11;
     unsigned char *scan, *ptr;
     rs_vertex A, B, C, v;
     int *dscan, *dptr;
@@ -50,16 +51,10 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
         return;
 
     /* culling */
-    f0 = t->v1.x - t->v0.x;     /* (f0,f1) = v1.xy - v0.xy */
-    f1 = t->v1.y - t->v0.y;
+    f10 = (t->v1.x - t->v0.x)*(t->v2.y - t->v0.y);
+    f11 = (t->v1.y - t->v0.y)*(t->v2.x - t->v0.x);
 
-    f2 = t->v2.x - t->v0.x;     /* (f3,f4) = v2.xy - v0.xy */
-    f3 = t->v2.y - t->v0.y;
-
-    f4 = f0*f3;                 /* ((f0,f1,0) x (f2,f3,0)).z */
-    f5 = f1*f2;
-
-    if( ((f4<=f5) && rs_state.cull_cw) || ((f4>=f5) && rs_state.cull_ccw) )
+    if( ((f10<=f11)&&rs_state.cull_cw) || ((f10>=f11)&&rs_state.cull_ccw) )
         return;
 
     /* prepare triangle vertices */
@@ -120,13 +115,9 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
     f1 = x2*y0 - x0*y2; f4 = y2-y0; f7 = x0-x2;
     f2 = x0*y1 - x1*y0; f5 = y0-y1; f8 = x1-x0;
 
-    a = 1.0f / (f3*x0 + f6*y0 + f0);
-    b = 1.0f / (f4*x1 + f7*y1 + f1);
-    c = 1.0f / (f5*x2 + f8*y2 + f2);
-
-    f3 *= a; f6 *= a; f0 *= a;
-    f4 *= b; f7 *= b; f1 *= b;
-    f5 *= c; f8 *= c; f2 *= c;
+    f9  = 1.0 / (f3*x0 + f6*y0 + f0);
+    f10 = 1.0 / (f4*x1 + f7*y1 + f1);
+    f11 = 1.0 / (f5*x2 + f8*y2 + f2);
 
     /* iterate over scanlines in the bounding rectangle */
     scan  = fb->color + (bt*fb->width + bl) * 4;
@@ -138,9 +129,9 @@ void triangle_rasterize( const triangle* t, framebuffer* fb )
         for( dptr=dscan, ptr=scan, x=bl; x<=br; ++x, ptr+=4, ++dptr )
         {
             /* determine baricentric coordinates of current pixel */
-            a = f3*x + f6*y + f0;
-            b = f4*x + f7*y + f1;
-            c = f5*x + f8*y + f2;
+            a = (f3*x + f6*y + f0) * f9;
+            b = (f4*x + f7*y + f1) * f10;
+            c = (f5*x + f8*y + f2) * f11;
 
             /* skip invalid coordinates (outside of triangle) */
             if( a<0.0f || a>1.0f || b<0.0f || b>1.0f || c<0.0f || c>1.0f )
