@@ -39,7 +39,7 @@
      ______\___/______
     |    Depth test   |     The interolated depth value is compared to the
     |_________________|     depth buffer value. Pixels are dropped if the
-           _| |_            depth value is greater or equal.
+           _| |_            specified comparison opartation returns false.
      ______\___/______
     |    Texturing    |     Texture color values are fetched and multiplied
     |_________________|     to the pixel color values.
