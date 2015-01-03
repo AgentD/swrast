@@ -2,7 +2,6 @@
 #include "framebuffer.h"
 #include "rasterizer.h"
 #include "texture.h"
-#include "compare.h"
 #include "window.h"
 #include "pixel.h"
 #include "3ds.h"
