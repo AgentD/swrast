@@ -75,7 +75,7 @@ void rasterizer_get_state( rasterizer_state* state );
  * \param t  A pointer to a triangle structure
  * \param fb A pointer to a frame buffer structure
  */
-void triangle_rasterize( const triangle* t, framebuffer* fb );
+void rasterizer_process_triangle( const triangle* t, framebuffer* fb );
 
 
 

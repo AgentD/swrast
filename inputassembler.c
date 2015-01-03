@@ -124,8 +124,8 @@ void ia_draw_triangles( framebuffer* fb, void* ptr, unsigned int vertexcount )
         ptr = read_vertex( &(t.v0), ptr );
         ptr = read_vertex( &(t.v1), ptr );
         ptr = read_vertex( &(t.v2), ptr );
-        tl_transform_and_shade_triangle( &t );
-        triangle_rasterize( &t, fb );
+        tl_transform_and_light_triangle( &t );
+        rasterizer_process_triangle( &t, fb );
     }
 }
 
@@ -184,8 +184,8 @@ void ia_draw_triangles_indexed( framebuffer* fb, void* ptr,
         read_vertex( &(t.v2), ((unsigned char*)ptr) + vsize*index );
 
         /* rasterize */
-        tl_transform_and_shade_triangle( &t );
-        triangle_rasterize( &t, fb );
+        tl_transform_and_light_triangle( &t );
+        rasterizer_process_triangle( &t, fb );
     }
 }
 

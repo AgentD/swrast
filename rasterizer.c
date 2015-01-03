@@ -34,7 +34,7 @@ void rasterizer_get_state( rasterizer_state* state )
  *  Triangle rasterisation function                                         *
  ****************************************************************************/
 
-void triangle_rasterize( const triangle* t, framebuffer* fb )
+void rasterizer_process_triangle( const triangle* t, framebuffer* fb )
 {
     int x, y, x0, x1, x2, y0, y1, y2, bl, br, bt, bb, i;
     int f0, f1, f2, f3, f4, f5, f6, f7, f8;

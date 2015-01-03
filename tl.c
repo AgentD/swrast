@@ -198,7 +198,7 @@ static void light_vertex( vertex* v )
     v->b = color[2]*v->b;
 }
 
-static void transform_vertex( vertex* v )
+static void process_vertex( vertex* v )
 {
     float x, y, z, w;
 
@@ -236,10 +236,10 @@ static void transform_vertex( vertex* v )
     v->w = proj[3]*x + proj[7]*y + proj[11]*z + proj[15]*w;
 }
 
-void tl_transform_and_shade_triangle( triangle* t )
+void tl_transform_and_light_triangle( triangle* t )
 {
-    transform_vertex( &(t->v0) );
-    transform_vertex( &(t->v1) );
-    transform_vertex( &(t->v2) );
+    process_vertex( &(t->v0) );
+    process_vertex( &(t->v1) );
+    process_vertex( &(t->v2) );
 }
 

@@ -73,7 +73,7 @@ void tl_set_state( const tl_state* s );
  *
  * \param t A pointer to a triangle structure
  */
-void tl_transform_and_shade_triangle( triangle* t );
+void tl_transform_and_light_triangle( triangle* t );
 
 
 
