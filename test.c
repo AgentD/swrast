@@ -46,15 +46,12 @@ float vbo[60] =
 int main( void )
 {
     float a = 0.0f, c, s, m[16], far, near, aspect, f, iNF;
-    unsigned int teapot_vertices, teapot_indices;
-    unsigned short* teapot_ibo;
     rasterizer_state rs;
     unsigned char* ptr;
-    int teapot_format;
     unsigned int x, y;
-    void* teapot_vbo;
     framebuffer* fb;
     pixel_state pp;
+    mesh* teapot;
     texture* tex;
     tl_state tl;
     window* w;
@@ -69,9 +66,7 @@ int main( void )
         return -1;
     }
 
-    /* load model file */
-    load_3ds( "teapot.3ds", &teapot_vbo, &teapot_ibo, &teapot_format,
-              &teapot_vertices, &teapot_indices );
+    teapot = load_3ds( "teapot.3ds" );
 
     /* intialize projection matrix */
     far    = 0.5f;
@@ -175,11 +170,11 @@ int main( void )
         tl_set_state( &tl );
 
         tl_set_modelview_matrix( m );
-        ia_set_vertex_format( teapot_format );
+        ia_set_vertex_format( teapot->format );
         ia_draw_triangles( fb, vbo, 6 );
 
-        ia_draw_triangles_indexed( fb, teapot_vbo, teapot_vertices,
-                                       teapot_ibo, teapot_indices );
+        ia_draw_triangles_indexed( fb, teapot->vertexbuffer, teapot->vertices,
+                                       teapot->indexbuffer, teapot->indices );
 
         /* copy to window */
         window_display_framebuffer( w, fb );
@@ -189,8 +184,9 @@ int main( void )
     texture_destroy( tex );
     framebuffer_destroy( fb );
     window_destroy( w );
-    free( teapot_vbo );
-    free( teapot_ibo );
+    free( teapot->vertexbuffer );
+    free( teapot->indexbuffer );
+    free( teapot );
     return 0;
 }
 

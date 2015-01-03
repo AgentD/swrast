@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 
 
@@ -29,46 +30,91 @@
 
 
 
-int load_3ds( const char* filename,
-              void** vertexbuffer,
-              unsigned short** indexbuffer,
-              int* format,
-              unsigned int* vertices,
-              unsigned int* indices )
+static void recompute_normals( mesh* this, int vs )
 {
-    uint16_t chunk_name;
-    uint32_t chunk_size;
-    uint32_t chunk_start;
-    float* vertex_data = 0;
-    float* texture_data = 0;
-    unsigned int i;
-    FILE* fp;
+    float v1[3], v2[3], nx, ny, nz, l;
+    unsigned int i, a, b, c;
 
-    /* parameter sanity checks */
-    if( !filename || !vertexbuffer || !indexbuffer ||
-        !format   || !vertices     || !indices )
+    for( i=0; i<this->indices; i+=3 )
     {
-        return 0;
+        a = this->indexbuffer[i  ];
+        b = this->indexbuffer[i+1];
+        c = this->indexbuffer[i+2];
+
+        v1[0] = this->vertexbuffer[vs*a  ] - this->vertexbuffer[vs*b  ];
+        v1[1] = this->vertexbuffer[vs*a+1] - this->vertexbuffer[vs*b+1];
+        v1[2] = this->vertexbuffer[vs*a+2] - this->vertexbuffer[vs*b+2];
+
+        v2[0] = this->vertexbuffer[vs*a  ] - this->vertexbuffer[vs*c  ];
+        v2[1] = this->vertexbuffer[vs*a+1] - this->vertexbuffer[vs*c+1];
+        v2[2] = this->vertexbuffer[vs*a+2] - this->vertexbuffer[vs*c+2];
+
+        nx = v1[1]*v2[2] - v1[2]*v2[1];
+        ny = v1[2]*v2[0] - v1[0]*v2[2];
+        nz = v1[0]*v2[1] - v1[1]*v2[0];
+
+        this->vertexbuffer[a*vs+3] += nx;
+        this->vertexbuffer[a*vs+4] += ny;
+        this->vertexbuffer[a*vs+5] += nz;
+
+        this->vertexbuffer[b*vs+3] += nx;
+        this->vertexbuffer[b*vs+4] += ny;
+        this->vertexbuffer[b*vs+5] += nz;
+
+        this->vertexbuffer[c*vs+3] += nx;
+        this->vertexbuffer[c*vs+4] += ny;
+        this->vertexbuffer[c*vs+5] += nz;
     }
 
-    *vertexbuffer = 0;
-    *indexbuffer = 0;
-    *vertices = 0;
-    *indices = 0;
-    *format = VF_POSITION_F3;
+    for( i=0; i<this->vertices; ++i )
+    {
+        l = this->vertexbuffer[i*vs+3] * this->vertexbuffer[i*vs+3] +
+            this->vertexbuffer[i*vs+4] * this->vertexbuffer[i*vs+4] +
+            this->vertexbuffer[i*vs+5] * this->vertexbuffer[i*vs+5];
+
+        l = 1.0f / sqrt( l );
+
+        this->vertexbuffer[i*vs+3] *= l;
+        this->vertexbuffer[i*vs+4] *= l;
+        this->vertexbuffer[i*vs+5] *= l;
+    }
+}
+
+mesh* load_3ds( const char* filename )
+{
+    float *vertex_data = NULL, *texture_data = NULL;
+    uint32_t chunk_size, chunk_start;
+    uint16_t chunk_name, count, temp;
+    unsigned int i, vs;
+    mesh* this;
+    FILE* fp;
+    char c;
+
+    if( !filename )
+        return NULL;
+
+    this = malloc( sizeof(mesh) );
+
+    if( !this )
+        return NULL;
+
+    memset( this, 0, sizeof(mesh) );
 
     if( !(fp = fopen( filename, "rb" )) )
-        return 0;
+    {
+        free( this );
+        return NULL;
+    }
 
     /* check the file's magic value */
     fread( &chunk_name, 2, 1, fp );
-
     LIL_TO_HOST_16( chunk_name );
 
     if( chunk_name != MAIN_CHUNK )
     {
+        free( this );
         fclose( fp );
-        return 0;
+        return NULL;
     }
 
     fread( &chunk_size, 4, 1, fp );
@@ -95,249 +141,112 @@ int load_3ds( const char* filename,
         case MESH_CHUNK:
             continue;
         case OBJECT_CHUNK:
-        {
-            char c;
             do { fread( &c, 1, 1, fp ); } while( c );
             continue;
-        }
         case VERTEX_LIST:
-        {
-            uint16_t num_vertices;
-
             if( vertex_data )
             {
                 fseek( fp, chunk_start + chunk_size, SEEK_SET );
                 continue;
             }
 
-            fread( &num_vertices, 2, 1, fp );
-            LIL_TO_HOST_16( num_vertices );
+            fread( &count, 2, 1, fp );
+            LIL_TO_HOST_16( count );
 
-            vertex_data = malloc( num_vertices * 3 * sizeof(float) );
-            fread( vertex_data, 3*sizeof(float), num_vertices, fp );
+            vertex_data = malloc( count * 3 * sizeof(float) );
+            fread( vertex_data, 3*sizeof(float), count, fp );
 
-            *vertices = num_vertices;
+            this->vertices = count;
             continue;
-        }
         case FACE_DESCRIPTION:
-        {
-            uint16_t num_indices;
-            uint16_t flags;
-
-            if( *indexbuffer )
+            if( this->indexbuffer )
             {
                 fseek( fp, chunk_start + chunk_size, SEEK_SET );
                 continue;
             }
 
-            fread( &num_indices, 2, 1, fp );
-            LIL_TO_HOST_16( num_indices );
+            fread( &count, 2, 1, fp );
+            LIL_TO_HOST_16( count );
 
-            *indexbuffer = malloc( num_indices * 2 * 3 );
-            *indices = num_indices * 3;
+            this->indexbuffer = malloc( count * 2 * 3 );
+            this->indices = count * 3;
 
-            for( i=0; i<num_indices; ++i )
+            for( i=0; i<count; ++i )
             {
-                fread( &((*indexbuffer)[ 3*i ]), 2, 3, fp );
-                fread( &flags, 2, 1, fp );
+                fread( &(this->indexbuffer[ 3*i ]), 2, 3, fp );
+                fread( &temp, 2, 1, fp );
 
-                LIL_TO_HOST_16( (*indexbuffer)[ 3*i     ] );
-                LIL_TO_HOST_16( (*indexbuffer)[ 3*i + 1 ] );
-                LIL_TO_HOST_16( (*indexbuffer)[ 3*i + 2 ] );
+                LIL_TO_HOST_16( this->indexbuffer[ 3*i     ] );
+                LIL_TO_HOST_16( this->indexbuffer[ 3*i + 1 ] );
+                LIL_TO_HOST_16( this->indexbuffer[ 3*i + 2 ] );
             }
             continue;
-        }
         case MAPPING_COORD_LIST:
-        {
-            uint16_t nvert;
-
             if( texture_data )
             {
                 fseek( fp, chunk_start + chunk_size, SEEK_SET );
                 continue;
             }
 
-            fread( &nvert, 2, 1, fp );
-            LIL_TO_HOST_16( nvert );
+            fread( &count, 2, 1, fp );
+            LIL_TO_HOST_16( count );
 
-            texture_data = malloc( nvert * 2 * sizeof(float) );
-            fread( texture_data, 2*sizeof(float), nvert, fp );
+            texture_data = malloc( count * 2 * sizeof(float) );
+            fread( texture_data, 2*sizeof(float), count, fp );
             continue;
-        }
         default:
             fseek( fp, chunk_start + chunk_size, SEEK_SET );
-        };
+        }
     }
 
     fclose( fp );
 
     /* final sanity check if we have everything we expect */
-    if( !vertex_data || !(*indexbuffer) )
+    if( !vertex_data || !this->indexbuffer )
     {
         free( vertex_data  );
         free( texture_data );
-        free( *indexbuffer );
-        return 0;
+        free( this->indexbuffer );
+        free( this );
+        return NULL;
     }
 
     /* determine the missing data and combine the buffers */
+    vs = texture_data ? 8 : 6;
+    this->format = (texture_data?VF_TEX0:0) | VF_POSITION_F3 | VF_NORMAL_F3;
+    this->vertexbuffer = malloc( this->vertices * sizeof(float) * vs );
+
+    for( i=0; i<this->vertices; ++i )
+    {
+        LIL_TO_HOST_32F( vertex_data[ 3*i     ] );
+        LIL_TO_HOST_32F( vertex_data[ 3*i + 1 ] );
+        LIL_TO_HOST_32F( vertex_data[ 3*i + 2 ] );
+
+        this->vertexbuffer[vs*i  ] = vertex_data[ 3*i     ];
+        this->vertexbuffer[vs*i+1] = vertex_data[ 3*i + 1 ];
+        this->vertexbuffer[vs*i+2] = vertex_data[ 3*i + 2 ];
+        this->vertexbuffer[vs*i+3] = 0.0f;
+        this->vertexbuffer[vs*i+4] = 0.0f;
+        this->vertexbuffer[vs*i+5] = 0.0f;
+    }
+
     if( texture_data )
     {
-        *format = VF_POSITION_F3 | VF_NORMAL_F3 | VF_TEX0;
-        *vertexbuffer = malloc( (*vertices) * sizeof(float) * 8 );
-
-        /* fill the final vertex buffer */
-        for( i=0; i<(*vertices); ++i )
+        for( i=0; i<this->vertices; ++i )
         {
             LIL_TO_HOST_32F( texture_data[ 2*i     ] );
             LIL_TO_HOST_32F( texture_data[ 2*i + 1 ] );
-            LIL_TO_HOST_32F( vertex_data[ 3*i     ] );
-            LIL_TO_HOST_32F( vertex_data[ 3*i + 1 ] );
-            LIL_TO_HOST_32F( vertex_data[ 3*i + 2 ] );
 
-            ((float*)*vertexbuffer)[8*i  ] = vertex_data[ 3*i     ];
-            ((float*)*vertexbuffer)[8*i+1] = vertex_data[ 3*i + 1 ];
-            ((float*)*vertexbuffer)[8*i+2] = vertex_data[ 3*i + 2 ];
-            ((float*)*vertexbuffer)[8*i+3] = 0.0f;
-            ((float*)*vertexbuffer)[8*i+4] = 0.0f;
-            ((float*)*vertexbuffer)[8*i+5] = 0.0f;
-            ((float*)*vertexbuffer)[8*i+6] = texture_data[ 2*i     ];
-            ((float*)*vertexbuffer)[8*i+7] = texture_data[ 2*i + 1 ];
-        }
-
-        /* calculate surface normals */
-        for( i=0; i<(*indices); i+=3 )
-        {
-            float v1[3], v2[3], nx, ny, nz;
-            uint16_t a, b, c;
-
-            a = (*indexbuffer)[i  ];
-            b = (*indexbuffer)[i+1];
-            c = (*indexbuffer)[i+2];
-
-            v1[0] = vertex_data[ 3*a     ] - vertex_data[ 3*b     ];
-            v1[1] = vertex_data[ 3*a + 1 ] - vertex_data[ 3*b + 1 ];
-            v1[2] = vertex_data[ 3*a + 2 ] - vertex_data[ 3*b + 2 ];
-
-            v2[0] = vertex_data[ 3*a     ] - vertex_data[ 3*c     ];
-            v2[1] = vertex_data[ 3*a + 1 ] - vertex_data[ 3*c + 1 ];
-            v2[2] = vertex_data[ 3*a + 2 ] - vertex_data[ 3*c + 2 ];
-
-            nx = v1[1]*v2[2] - v1[2]*v2[1];
-            ny = v1[2]*v2[0] - v1[0]*v2[2];
-            nz = v1[0]*v2[1] - v1[1]*v2[0];
-
-            ((float*)*vertexbuffer)[8*a+3] += nx;
-            ((float*)*vertexbuffer)[8*a+4] += ny;
-            ((float*)*vertexbuffer)[8*a+5] += nz;
-
-            ((float*)*vertexbuffer)[8*b+3] += nx;
-            ((float*)*vertexbuffer)[8*b+4] += ny;
-            ((float*)*vertexbuffer)[8*b+5] += nz;
-
-            ((float*)*vertexbuffer)[8*c+3] += nx;
-            ((float*)*vertexbuffer)[8*c+4] += ny;
-            ((float*)*vertexbuffer)[8*c+5] += nz;
-        }
-
-        /* normalize the normals */
-        for( i=0; i<(*vertices); ++i )
-        {
-            float l;
-
-            l = ((float*)*vertexbuffer)[i*8+3] *
-                ((float*)*vertexbuffer)[i*8+3] +
-                ((float*)*vertexbuffer)[i*8+4] *
-                ((float*)*vertexbuffer)[i*8+4] +
-                ((float*)*vertexbuffer)[i*8+5] *
-                ((float*)*vertexbuffer)[i*8+5];
-
-            l = 1.0f / sqrt( l );
-
-            ((float*)*vertexbuffer)[i*8+3] *= l;
-            ((float*)*vertexbuffer)[i*8+4] *= l;
-            ((float*)*vertexbuffer)[i*8+5] *= l;
+            this->vertexbuffer[8*i+6] = texture_data[ 2*i     ];
+            this->vertexbuffer[8*i+7] = texture_data[ 2*i + 1 ];
         }
     }
-    else
-    {
-        *format = VF_POSITION_F3 | VF_NORMAL_F3;
-        *vertexbuffer = malloc( (*vertices) * sizeof(float) * 6 );
 
-        /* fill the final vertex buffer */
-        for( i=0; i<(*vertices); ++i )
-        {
-            LIL_TO_HOST_32F( vertex_data[ 3*i     ] );
-            LIL_TO_HOST_32F( vertex_data[ 3*i + 1 ] );
-            LIL_TO_HOST_32F( vertex_data[ 3*i + 2 ] );
-
-            ((float*)*vertexbuffer)[i*6  ] = vertex_data[ 3*i     ];
-            ((float*)*vertexbuffer)[i*6+1] = vertex_data[ 3*i + 1 ];
-            ((float*)*vertexbuffer)[i*6+2] = vertex_data[ 3*i + 2 ];
-            ((float*)*vertexbuffer)[i*6+3] = 0.0f;
-            ((float*)*vertexbuffer)[i*6+4] = 0.0f;
-            ((float*)*vertexbuffer)[i*6+5] = 0.0f;
-        }
-
-        /* calculate surface normals */
-        for( i=0; i<(*indices); i+=3 )
-        {
-            float v1[3], v2[3], nx, ny, nz;
-            uint16_t a, b, c;
-
-            a = (*indexbuffer)[i  ];
-            b = (*indexbuffer)[i+1];
-            c = (*indexbuffer)[i+2];
-
-            v1[0] = vertex_data[ 3*a     ] - vertex_data[ 3*b     ];
-            v1[1] = vertex_data[ 3*a + 1 ] - vertex_data[ 3*b + 1 ];
-            v1[2] = vertex_data[ 3*a + 2 ] - vertex_data[ 3*b + 2 ];
-
-            v2[0] = vertex_data[ 3*a     ] - vertex_data[ 3*c     ];
-            v2[1] = vertex_data[ 3*a + 1 ] - vertex_data[ 3*c + 1 ];
-            v2[2] = vertex_data[ 3*a + 2 ] - vertex_data[ 3*c + 2 ];
-
-            nx = v1[1]*v2[2] - v1[2]*v2[1];
-            ny = v1[2]*v2[0] - v1[0]*v2[2];
-            nz = v1[0]*v2[1] - v1[1]*v2[0];
-
-            ((float*)*vertexbuffer)[a*6+3] += nx;
-            ((float*)*vertexbuffer)[a*6+4] += ny;
-            ((float*)*vertexbuffer)[a*6+5] += nz;
-
-            ((float*)*vertexbuffer)[b*6+3] += nx;
-            ((float*)*vertexbuffer)[b*6+4] += ny;
-            ((float*)*vertexbuffer)[b*6+5] += nz;
-
-            ((float*)*vertexbuffer)[c*6+3] += nx;
-            ((float*)*vertexbuffer)[c*6+4] += ny;
-            ((float*)*vertexbuffer)[c*6+5] += nz;
-        }
-
-        /* normalize the normals */
-        for( i=0; i<(*vertices); ++i )
-        {
-            float l;
-
-            l = ((float*)*vertexbuffer)[i*6+3] *
-                ((float*)*vertexbuffer)[i*6+3] +
-                ((float*)*vertexbuffer)[i*6+4] *
-                ((float*)*vertexbuffer)[i*6+4] +
-                ((float*)*vertexbuffer)[i*6+5] *
-                ((float*)*vertexbuffer)[i*6+5];
-
-            l = 1.0f / sqrt( l );
-
-            ((float*)*vertexbuffer)[i*6+3] *= l;
-            ((float*)*vertexbuffer)[i*6+4] *= l;
-            ((float*)*vertexbuffer)[i*6+5] *= l;
-        }
-    }
+    recompute_normals( this, vs );
 
     /* cleanup */
     free( vertex_data  );
     free( texture_data );
-    return 1;
+    return this;
 }
-
 

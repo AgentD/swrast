@@ -3,12 +3,18 @@
 
 
 
-int load_3ds( const char* filename,
-              void** vertexbuffer,
-              unsigned short** indexbuffer,
-              int* format,
-              unsigned int* vertices,
-              unsigned int* indices );
+typedef struct
+{
+    float* vertexbuffer;            /**< \brief Pointer to the vertex data */
+    unsigned short* indexbuffer;    /**< \brief Pointer to the index data */
+    int format;                     /**< \brief Vertex format */
+    unsigned int vertices;          /**< \brief Number of vertices */
+    unsigned int indices;           /**< \brief Number of indices */
+}
+mesh;
+
+
+mesh* load_3ds( const char* filename );
 
 
 
