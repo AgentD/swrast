@@ -12,7 +12,7 @@
   - Configurable back face culling (cull by vertex winding)
   - Vertex buffers and index buffers
   - Fixed function OpenGL(R) style transform & lighting with model view &
-    projection matrix and up to 8 indipendend light sources and 
+    projection matrix and up to 8 independend light sources
   - Gouraud shading
   - Perspective correct interpolation of vertex attributes
   - Multpile texture layers with nearest neighbour sampling
@@ -73,9 +73,6 @@
 
     framebuffer.h       -   Implementation of framebuffer objects
     framebuffer.c
-
-    compare.h           -   Implementation of comparison functions
-    compare.c
 
     window.h            -   A simple Xlib based window implementation for
     window.c                testing. Handles a window and blits a framebuffer
