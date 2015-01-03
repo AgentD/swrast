@@ -1,4 +1,4 @@
-CONFFLAGS = -D_BSD_SOURCE
+CONFFLAGS = -D_XOPEN_SOURCE=500
 OPTFLAGS = -O3 -msse2
 CFLAGS = -ansi -pedantic -Wall -Wextra $(CONFFLAGS) $(OPTFLAGS)
 

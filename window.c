@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 
 
 
@@ -116,6 +117,9 @@ int window_handle_events( window* wnd )
 
 void window_display_framebuffer( window* wnd, framebuffer* fb )
 {
+    struct timespec tim;
+    struct timespec tim2;
+
     /* copy framebuffer data */
     wnd->img->data = (char*)fb->color;
     XPutImage( wnd->dpy, wnd->wnd, wnd->gc, wnd->img,
@@ -123,6 +127,8 @@ void window_display_framebuffer( window* wnd, framebuffer* fb )
     wnd->img->data = NULL;
 
     /* wait for ~16.666 ms -> ~60 fps */
-    usleep( 16666 );
+    tim.tv_sec  = 0;
+    tim.tv_nsec = 16666666L;
+    nanosleep( &tim, &tim2 );
 }
 
