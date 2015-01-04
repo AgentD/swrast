@@ -1,3 +1,8 @@
+/**
+ * \file pixel.h
+ *
+ * \brief Contains the rasterizer stage interface
+ */
 #ifndef RASTERIZER_H
 #define RASTERIZER_H
 
@@ -11,6 +16,11 @@
 
 
 
+/**
+ * \struct vertex
+ *
+ * \brief Holds the data of a triangle vertex before rasterization
+ */
 typedef struct
 {
     float x, y, z, w;
@@ -18,8 +28,13 @@ typedef struct
     float s[MAX_TEXTURES], t[MAX_TEXTURES];
     unsigned char r, g, b, a;
 }
-vertex;
+rs_vertex;
 
+/**
+ * \struct rs_fragment
+ *
+ * \brief The data of a fragment of a triangle with interpolated vertex values
+ */
 typedef struct
 {
     float w;
@@ -27,16 +42,26 @@ typedef struct
     unsigned char r, g, b, a;
     int d;
 }
-rs_vertex;
+rs_fragment;
 
+/**
+ * \struct rs_triangle
+ *
+ * \brief Holds the data of a triangle before rasterization
+ */
 typedef struct
 {
-    vertex v0;
-    vertex v1;
-    vertex v2;
+    rs_vertex v0;   /**< \brief First vertex */
+    rs_vertex v1;   /**< \brief Second vertex */
+    rs_vertex v2;   /**< \brief Third vertex */
 }
-triangle;
+rs_triangle;
 
+/**
+ * \struct rs_state
+ *
+ * \brief Holds the state of the rasterizer
+ */
 typedef struct
 {
     /** \brief Non-zero to cull counter clockwise triangles */
@@ -45,23 +70,27 @@ typedef struct
     /** \brief Non-zero to cull clockwise triangles */
     int cull_cw;
 }
-rasterizer_state;
+rs_state;
 
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * \brief Overwrite the current rasterizer state
  *
  * \param state A pointer to a state structure
  */
-void rasterizer_set_state( const rasterizer_state* state );
+void rasterizer_set_state( const rs_state* state );
 
 /**
  * \brief Read the current rasterizer state
  *
  * \param state A pointer to a state structure to write the current state to
  */
-void rasterizer_get_state( rasterizer_state* state );
+void rasterizer_get_state( rs_state* state );
 
 /**
  * \brief Rasterize a triangle
@@ -75,9 +104,11 @@ void rasterizer_get_state( rasterizer_state* state );
  * \param t  A pointer to a triangle structure
  * \param fb A pointer to a frame buffer structure
  */
-void rasterizer_process_triangle( const triangle* t, framebuffer* fb );
+void rasterizer_process_triangle( const rs_triangle* t, framebuffer* fb );
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* RASTERIZER_H */
 

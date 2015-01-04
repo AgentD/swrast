@@ -45,13 +45,13 @@ float vbo[60] =
 int main( void )
 {
     float a = 0.0f, c, s, m[16], far, near, aspect, f, iNF;
-    rasterizer_state rs;
     unsigned char* ptr;
     unsigned int x, y;
     framebuffer* fb;
     pixel_state pp;
     mesh* teapot;
     texture* tex;
+    rs_state rs;
     tl_state tl;
     window* w;
 
@@ -99,7 +99,7 @@ int main( void )
     /* initialize T&L state */
     memset( &tl, 0, sizeof(tl_state) );
     memset( &pp, 0, sizeof(pixel_state) );
-    memset( &rs, 0, sizeof(rasterizer_state) );
+    memset( &rs, 0, sizeof(rs_state) );
 
     tl.light[0].enable = 1;
     tl.light[0].diffuse[0] = 1.0f;

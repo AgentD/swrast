@@ -1,3 +1,8 @@
+/**
+ * \file framebuffer.h
+ *
+ * \brief Contains a frame buffer object implementation
+ */
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
 
@@ -24,19 +29,30 @@
 
 
 
+/**
+ * \struct framebuffer
+ *
+ * \brief Holds the data of a frame buffer
+ */
 typedef struct
 {
-    unsigned char* color;
-    int* depth;
-    int width;
-    int height;
+    unsigned char* color;   /**< \brief Color buffer scan line data */
+    int* depth;             /**< \brief Depth buffer scan line data */
+    int width;              /**< \brief Frame buffer width in pixels */
+    int height;             /**< \brief Frame buffer height in pixels */
 }
 framebuffer;
 
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \brief Create a frame buffer object (32 bpp RGBA + 32 bit depth buffer)
+ *
+ * \memberof framebuffer
  *
  * \param width  The width of the frame buffer in pixels
  * \param height The height of the frame buffer in pixels
@@ -48,12 +64,16 @@ framebuffer* framebuffer_create( unsigned int width, unsigned int height );
 /**
  * \brief Destroy a frame buffer object and free its resources
  *
+ * \memberof framebuffer
+ *
  * \param fb A pointer to a frame buffer structure
  */
 void framebuffer_destroy( framebuffer* fb );
 
 /**
  * \brief Clear the color buffer of a frame buffer object
+ *
+ * \memberof framebuffer
  *
  * \param fb A pointer to a frame buffer structure
  * \param r  The red component of the clear color
@@ -67,12 +87,16 @@ void framebuffer_clear( framebuffer* fb, unsigned char r, unsigned char g,
 /**
  * \brief Clear the depth buffer of a frame buffer object
  *
+ * \memberof framebuffer
+ *
  * \param fb    A pointer to a frame buffer structure
  * \param value The value to write into the depth buffer
  */
 void framebuffer_clear_depth( framebuffer* fb, float value );
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FRAMEBUFFER_H */
 

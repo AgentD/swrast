@@ -123,7 +123,7 @@ void pixel_get_state( pixel_state* s )
  *  Pixep processor main draw functions                                     *
  ****************************************************************************/
 
-static void fetch_texture_colors( const rs_vertex* v, unsigned char* color )
+static void fetch_texture_colors( const rs_fragment* v, unsigned char* color )
 {
     unsigned char tex[ 4 ];
     int i;
@@ -142,7 +142,7 @@ static void fetch_texture_colors( const rs_vertex* v, unsigned char* color )
     }
 }
 
-void pixel_draw( const rs_vertex* v, unsigned char* ptr, int* dptr )
+void pixel_draw( const rs_fragment* v, unsigned char* ptr, int* dptr )
 {
     unsigned char c[4];
 

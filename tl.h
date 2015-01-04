@@ -1,3 +1,8 @@
+/**
+ * \file pixel.h
+ *
+ * \brief Contains the fixed function transform & light stage interface
+ */
 #ifndef TL_H
 #define TL_H
 
@@ -11,39 +16,58 @@
 
 
 
+/**
+ * \struct tl_light
+ *
+ * \brief The settings of a light
+ */
 typedef struct
 {
-    float ambient[ 3 ];
-    float diffuse[ 3 ];
-    float specular[ 3 ];
-    float position[ 3 ];
-    float attenuation_constant;
-    float attenuation_linear;
-    float attenuation_quadratic;
+    float ambient[ 3 ];         /**< \brief Constant ambient term */
+    float diffuse[ 3 ];         /**< \brief Diffuse color */
+    float specular[ 3 ];        /**< \brief Specular color */
+    float position[ 3 ];        /**< \brief View space light position */
+    float attenuation_constant; /**< \brief Constant attenuation factor */
+    float attenuation_linear;   /**< \brief Linear attenuation coefficient */
+    float attenuation_quadratic;/**< \brief Quadratic attenuation coeff. */
 
-    int enable;
+    int enable;                 /**< \brief Non-zero if enabled */
 }
 tl_light;
 
+/**
+ * \struct tl_material
+ *
+ * \brief The surface material parameters
+ */
 typedef struct
 {
-    float ambient[ 3 ];
-    float diffuse[ 3 ];
-    float specular[ 3 ];
-    float emission[ 3 ];
-    int shininess;
+    float ambient[ 3 ];     /**< \brief Ambient reflection color */
+    float diffuse[ 3 ];     /**< \brief Diffuse reflection color */
+    float specular[ 3 ];    /**< \brief Specular reflection color */
+    float emission[ 3 ];    /**< \brief Color of light emitted */
+    int shininess;          /**< \brief Specular exponent */
 }
 tl_material;
 
+/**
+ * \struct tl_state
+ *
+ * \brief The transform & lighting stage state
+ */
 typedef struct
 {
-    tl_light light[ MAX_LIGHTS ];
-    tl_material material;
-    int light_enable;
+    tl_light light[ MAX_LIGHTS ];  /**< \brief Data of all lights */
+    tl_material material;          /**< \brief Data of the surface material */
+    int light_enable;              /**< \brief Non-zero if lighting enabled */
 }
 tl_state;
 
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * \brief Set the currently active model view matrix
@@ -73,9 +97,11 @@ void tl_set_state( const tl_state* s );
  *
  * \param t A pointer to a triangle structure
  */
-void tl_transform_and_light_triangle( triangle* t );
+void tl_transform_and_light_triangle( rs_triangle* t );
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TL_H */
 

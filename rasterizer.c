@@ -18,33 +18,33 @@
  *  Rasterizer state control functions                                      *
  ****************************************************************************/
 
-static rasterizer_state rs_state;
+static rs_state rsstate;
 
-void rasterizer_set_state( const rasterizer_state* state )
+void rasterizer_set_state( const rs_state* state )
 {
-    rs_state = (*state);
+    rsstate = (*state);
 }
 
-void rasterizer_get_state( rasterizer_state* state )
+void rasterizer_get_state( rs_state* state )
 {
-    (*state) = rs_state;
+    (*state) = rsstate;
 }
 
 /****************************************************************************
  *  Triangle rasterisation function                                         *
  ****************************************************************************/
 
-void rasterizer_process_triangle( const triangle* t, framebuffer* fb )
+void rasterizer_process_triangle( const rs_triangle* t, framebuffer* fb )
 {
     int x, y, x0, x1, x2, y0, y1, y2, bl, br, bt, bb, i;
     int f0, f1, f2, f3, f4, f5, f6, f7, f8;
     float a, b, c, f9, f10, f11;
     unsigned char *scan, *ptr;
-    rs_vertex A, B, C, v;
+    rs_fragment A, B, C, v;
     int *dscan, *dptr;
 
     /* sanity check */
-    if( rs_state.cull_cw && rs_state.cull_ccw )
+    if( rsstate.cull_cw && rsstate.cull_ccw )
         return;
 
     if( t->v0.w<=0.0 || t->v1.w<=0.0 || t->v2.w<=0.0 )
@@ -54,7 +54,7 @@ void rasterizer_process_triangle( const triangle* t, framebuffer* fb )
     f10 = (t->v1.x - t->v0.x)*(t->v2.y - t->v0.y);
     f11 = (t->v1.y - t->v0.y)*(t->v2.x - t->v0.x);
 
-    if( ((f10<=f11)&&rs_state.cull_cw) || ((f10>=f11)&&rs_state.cull_ccw) )
+    if( ((f10<=f11) && rsstate.cull_cw) || ((f10>=f11) && rsstate.cull_ccw) )
         return;
 
     /* prepare triangle vertices */

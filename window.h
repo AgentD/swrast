@@ -1,3 +1,8 @@
+/**
+ * \file window.h
+ *
+ * \brief Contains the window object implementation for testing
+ */
 #ifndef WINDOW_H
 #define WINDOW_H
 
@@ -11,6 +16,11 @@
 
 
 
+/**
+ * \struct window
+ *
+ * \brief A simple Xlib based window for testing
+ */
 typedef struct
 {
     Atom atom_wm_delete;
@@ -23,8 +33,14 @@ window;
 
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \brief Create a simple X11 window for test drawing
+ *
+ * \memberof window
  *
  * \param width  The width of the window drawing area
  * \param height The height of the window drawing area
@@ -36,12 +52,16 @@ window* window_create( unsigned int width, unsigned int height );
 /**
  * \brief Destroy a window created with window_create and free its resources
  *
+ * \memberof window
+ *
  * \param wnd A pointer to a window structure
  */
 void window_destroy( window* wnd );
 
 /**
  * \brief Fetch and handle window system messages for a window
+ *
+ * \memberof window
  *
  * \param wnd A pointer to a window structure
  *
@@ -52,12 +72,16 @@ int window_handle_events( window* wnd );
 /**
  * \brief Copy the contents of a framebuffer object to a window
  *
+ * \memberof window
+ *
  * \param wnd A pointer to a window structure
  * \param fb  A pointer to a framebuffer structure
  */
 void window_display_framebuffer( window* wnd, framebuffer* fb );
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* WINDOW_H */
 

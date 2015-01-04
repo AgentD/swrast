@@ -1,3 +1,8 @@
+/**
+ * \file inputassembler.h
+ *
+ * \brief Contains the rasterizer input assembler stage interface
+ */
 #ifndef INPUT_ASSEMBLER_H
 #define INPUT_ASSEMBLER_H
 
@@ -7,6 +12,11 @@
 
 
 
+/**
+ * \enum VERTEX_FORMAT
+ *
+ * \brief Vertex format flags
+ */
 typedef enum
 {
     VF_POSITION_F2 = 0x0001,    /**< \brief 2 component float position */
@@ -28,6 +38,10 @@ typedef enum
 VERTEX_FORMAT;
 
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * \brief Set the vertex format for the next vertex stream
@@ -62,7 +76,9 @@ void ia_draw_triangles_indexed( framebuffer* fb, void* ptr,
                                 unsigned short* indices,
                                 unsigned int indexcount );
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INPUT_ASSEMBLER_H */
 

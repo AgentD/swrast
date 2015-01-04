@@ -122,7 +122,7 @@ void tl_set_state( const tl_state* s )
  *                      triangle processing functions                       *
  ****************************************************************************/
 
-static void light_vertex( vertex* v )
+static void light_vertex( rs_vertex* v )
 {
     float color[3] = { 0.0f, 0.0f, 0.0f };
     float L[3], V[3], H[3], d, k, a;
@@ -198,7 +198,7 @@ static void light_vertex( vertex* v )
     v->b = color[2]*v->b;
 }
 
-static void process_vertex( vertex* v )
+static void process_vertex( rs_vertex* v )
 {
     float x, y, z, w;
 
@@ -236,7 +236,7 @@ static void process_vertex( vertex* v )
     v->w = proj[3]*x + proj[7]*y + proj[11]*z + proj[15]*w;
 }
 
-void tl_transform_and_light_triangle( triangle* t )
+void tl_transform_and_light_triangle( rs_triangle* t )
 {
     process_vertex( &(t->v0) );
     process_vertex( &(t->v1) );

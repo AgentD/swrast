@@ -1,3 +1,8 @@
+/**
+ * \file pixel.h
+ *
+ * \brief Contains the pixel processing stage interface
+ */
 #ifndef PIXEL_H
 #define PIXEL_H
 
@@ -18,7 +23,11 @@
 
 
 
-
+/**
+ * \struct pixel_state
+ *
+ * \brief Encapsulates the state of the pixel processor
+ */
 typedef struct
 {
     /** \brief Depth test comparison function */
@@ -36,6 +45,10 @@ typedef struct
 pixel_state;
 
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * \brief Overwrite the current pixel processor state
@@ -58,9 +71,11 @@ void pixel_get_state( pixel_state* s );
  * \param ptr  A pointer to the destination color buffer
  * \param dptr A pointer to the destination depth buffer
  */
-void pixel_draw( const rs_vertex* v, unsigned char* ptr, int* dptr );
+void pixel_draw( const rs_fragment* v, unsigned char* ptr, int* dptr );
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* PIXEL_H */
 

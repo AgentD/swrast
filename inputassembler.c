@@ -20,7 +20,7 @@ void ia_set_vertex_format( int format )
  *                      triangle processing functions                       *
  ****************************************************************************/
 
-static unsigned char* read_vertex( vertex* v, unsigned char* ptr )
+static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr )
 {
     /* initialize vertex structure */
     v->x = 0.0;
@@ -115,7 +115,7 @@ static unsigned char* read_vertex( vertex* v, unsigned char* ptr )
 void ia_draw_triangles( framebuffer* fb, void* ptr, unsigned int vertexcount )
 {
     unsigned int i;
-    triangle t;
+    rs_triangle t;
 
     vertexcount -= vertexcount % 3;
 
@@ -137,7 +137,7 @@ void ia_draw_triangles_indexed( framebuffer* fb, void* ptr,
     unsigned int vsize = 0;
     unsigned short index;
     unsigned int i;
-    triangle t;
+    rs_triangle t;
 
     /* determine vertex size in bytes */
          if( vertex_format & VF_POSITION_F2 ) { vsize += 2*sizeof(float); }
