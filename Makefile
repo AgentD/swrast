@@ -1,25 +1,38 @@
 CONFFLAGS = -D_XOPEN_SOURCE=500
 OPTFLAGS = -O3 -msse2
-CFLAGS = -ansi -pedantic -Wall -Wextra $(CONFFLAGS) $(OPTFLAGS)
+CFLAGS = -ansi -pedantic -Wall -Wextra -Iinclude $(CONFFLAGS) $(OPTFLAGS)
 
-a.out: inputassembler.o framebuffer.o rasterizer.o texture.o window.o test.o\
-		3ds.o tl.o pixel.o
+a.out: obj/inputassembler.o obj/framebuffer.o obj/rasterizer.o obj/texture.o\
+		obj/tl.o obj/pixel.o obj/window.o obj/test.o obj/3ds.o
 	$(CC) $^ -lX11 -lm -o $@
 
-inputassembler.o: inputassembler.c inputassembler.h framebuffer.h\
-					rasterizer.h tl.h
-framebuffer.o: framebuffer.c framebuffer.h
-rasterizer.o: rasterizer.c rasterizer.h framebuffer.h texture.h pixel.h
-texture.o: texture.c texture.h framebuffer.h
-window.o: window.c window.h framebuffer.h
-pixel.o: pixel.c pixel.h rasterizer.h
-test.o: test.c window.h framebuffer.h rasterizer.h pixel.h
-3ds.o: 3ds.c 3ds.h inputassembler.h
-tl.o: tl.c tl.h rasterizer.h
+obj/%.o: src/%.c include/%.h
+	@mkdir -p obj
+	$(CC) $(CFLAGS) -c $< -o $@
 
+# rasterizer
+obj/inputassembler.o: src/inputassembler.c include/inputassembler.h\
+					include/framebuffer.h include/rasterizer.h include/tl.h
+obj/framebuffer.o: src/framebuffer.c include/framebuffer.h
+obj/rasterizer.o: src/rasterizer.c include/rasterizer.h include/framebuffer.h\
+				include/texture.h include/pixel.h
+obj/texture.o: src/texture.c include/texture.h include/framebuffer.h
+obj/pixel.o: src/pixel.c include/pixel.h include/rasterizer.h
+obj/tl.o: src/tl.c include/tl.h include/rasterizer.h
+
+# text program source
+obj/window.o: test/window.c test/window.h include/framebuffer.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+obj/test.o: test/test.c test/window.h include/framebuffer.h\
+			include/rasterizer.h include/pixel.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+obj/3ds.o: test/3ds.c test/3ds.h include/inputassembler.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
 
 .PHONY: clean
 clean:
-	$(RM) *.o a.out
+	$(RM) a.out -r obj
 

@@ -56,7 +56,7 @@ void ia_set_vertex_format( int format );
  *
  * \param fb          A pointer to a framebuffer object to rasterize to
  * \param ptr         A pointer to the input vertex stream
- * ßparam vertexcount The number of vertices to read from the input stream
+ * \param vertexcount The number of vertices to read from the input stream
  */
 void ia_draw_triangles( framebuffer* fb, void* ptr,
                         unsigned int vertexcount );

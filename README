@@ -56,31 +56,42 @@
   Source code overview
   ********************
 
-    inputassembler.h    -   Implementation of the input assembler stage
-    inputassembler.c
+    include/inputassembler.h  - Implementation of the input assembler stage
+    src/inputassembler.c
 
-    tl.h                -   Implementation of the T&L stage
-    tl.c
+    include/tl.h              - Implementation of the T&L stage
+    src/tl.c
 
-    rasterizer.h        -   Implementation of the rasterizer stage
-    rasterizer.c
+    include/rasterizer.h      - Implementation of the rasterizer stage
+    src/rasterizer.c
 
-    pixel.h             -   Implementation of pixel processing (texturing,
-    pixel.c                 depth test and blending)
+    include/pixel.h           - Implementation of pixel processing (texturing,
+    src/pixel.c                 depth test and blending)
 
-    texture.h           -   Implementation of texture objects
-    texture.c
+    include/texture.h         - Implementation of texture objects
+    src/texture.c
 
-    framebuffer.h       -   Implementation of framebuffer objects
-    framebuffer.c
+    include/framebuffer.h     - Implementation of framebuffer objects
+    src/framebuffer.c
 
-    window.h            -   A simple Xlib based window implementation for
-    window.c                testing. Handles a window and blits a framebuffer
+    test/window.h             - A simple Xlib based window implementation for
+    test/window.c               testing. Handles a window and
+                                blits a framebuffer
 
-    3ds.h               -   A quick & dirty 3ds loader for testing
-    3ds.c
+    test/3ds.h                - A quick & dirty 3ds loader for testing
+    test/3ds.c
 
-    test.c              -   A small test program
+    test/test.c               - A small test program
+
+
+  Compiling
+  *********
+
+ Simply type "make" into the commandline. The resulting "a.out" binary
+ contains a small test program that renders to an X11 window. All object
+ files are neatly packed away into a directory called "obj/".
+
+ Type "make clean" to cleanup the directory tree.
 
 
   License
