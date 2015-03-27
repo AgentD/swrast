@@ -18,7 +18,7 @@
  *  Rasterizer state control functions                                      *
  ****************************************************************************/
 
-static rs_state rsstate;
+static rs_state rsstate = { 0, 0 };
 
 void rasterizer_set_state( const rs_state* state )
 {

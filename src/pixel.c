@@ -75,7 +75,7 @@ static compare_fun get_compare_function( int comparison )
 
 typedef void (* pixel_fun )( const unsigned char* c, unsigned char* );
 
-static void pixel( const unsigned char* c, unsigned char* color )
+static void pixel_noblend( const unsigned char* c, unsigned char* color )
 {
     color[RED  ] = c[RED  ];
     color[GREEN] = c[GREEN];
@@ -97,12 +97,20 @@ static void pixel_blend( const unsigned char* c, unsigned char* color )
 }
 
 /****************************************************************************
- *  Pixep processor state control functions                                 *
+ *  Pixel processor state control functions                                 *
  ****************************************************************************/
 
-static pixel_fun draw_pixel = pixel;
-static compare_fun depth_fun;
-static pixel_state pp_state;
+static pixel_fun draw_pixel = pixel_noblend;
+static compare_fun depth_fun = compare_always;
+static pixel_state pp_state =
+{
+    COMPARE_ALWAYS,
+    0,
+    { 0 },
+    { 0 }
+};
+
+
 
 void pixel_set_state( const pixel_state* s )
 {
@@ -110,7 +118,7 @@ void pixel_set_state( const pixel_state* s )
         pp_state = *s;
 
     depth_fun = get_compare_function( pp_state.depth_test );
-    draw_pixel = pp_state.alpha_blend ? pixel_blend : pixel;
+    draw_pixel = pp_state.alpha_blend ? pixel_blend : pixel_noblend;
 }
 
 void pixel_get_state( pixel_state* s )
@@ -120,7 +128,7 @@ void pixel_get_state( pixel_state* s )
 }
 
 /****************************************************************************
- *  Pixep processor main draw functions                                     *
+ *  Pixel processor main draw functions                                     *
  ****************************************************************************/
 
 static void fetch_texture_colors( const rs_fragment* v, unsigned char* color )
