@@ -2,7 +2,7 @@
   About
   *****
 
- Tho whom it may concern: this directory contains a just-for-fun software
+ To whom it may concern: this directory contains a just-for-fun software
  rasterizer written in C89, started on a boring holiday week when I was sick.
 
  The entire source code is released into the public domain.
@@ -62,11 +62,9 @@
     include/tl.h              - Implementation of the T&L stage
     src/tl.c
 
-    include/rasterizer.h      - Implementation of the rasterizer stage
-    src/rasterizer.c
-
-    include/pixel.h           - Implementation of pixel processing (texturing,
-    src/pixel.c                 depth test and blending)
+    include/rasterizer.h      - Implementation of the rasterizer stage and
+    src/rasterizer.c            pixel merging (depth test, texturing
+                                and blending)
 
     include/texture.h         - Implementation of texture objects
     src/texture.c
