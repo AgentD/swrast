@@ -9,10 +9,20 @@
 
 
 #include "framebuffer.h"
+#include "texture.h"
 
 
 
 #define MAX_TEXTURES 1
+
+#define COMPARE_ALWAYS 0x00
+#define COMPARE_NEVER 0x01
+#define COMPARE_EQUAL 0x02
+#define COMPARE_NOT_EQUAL 0x03
+#define COMPARE_LESS 0x04
+#define COMPARE_LESS_EQUAL 0x05
+#define COMPARE_GREATER 0x06
+#define COMPARE_GREATER_EQUAL 0x07
 
 
 
@@ -72,6 +82,28 @@ typedef struct
 }
 rs_state;
 
+/**
+ * \struct pixel_state
+ *
+ * \brief Encapsulates the state of the pixel processor
+ */
+typedef struct
+{
+    /** \brief Depth test comparison function */
+    int depth_test;
+
+    /** \brief Non-zero to enable alpha blending, zero to disable */
+    int alpha_blend;
+
+    /** \brief Non-zero to enable a texture layer, zero to disable */
+    int texture_enable[MAX_TEXTURES];
+
+    /** \brief Pointer to textures for different texture layers */
+    texture* textures[MAX_TEXTURES];
+}
+pixel_state;
+
+
 
 
 #ifdef __cplusplus
@@ -91,6 +123,20 @@ void rasterizer_set_state( const rs_state* state );
  * \param state A pointer to a state structure to write the current state to
  */
 void rasterizer_get_state( rs_state* state );
+
+/**
+ * \brief Overwrite the current pixel processor state
+ *
+ * \param s A pointer to a state structure
+ */
+void pixel_set_state( const pixel_state* s );
+
+/**
+ * \brief Read the current pixel processor state
+ *
+ * \param s A pointer to a state structure to write the current state to
+ */
+void pixel_get_state( pixel_state* s );
 
 /**
  * \brief Rasterize a triangle

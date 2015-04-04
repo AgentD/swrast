@@ -3,7 +3,6 @@
 #include "rasterizer.h"
 #include "texture.h"
 #include "window.h"
-#include "pixel.h"
 #include "3ds.h"
 #include "tl.h"
 

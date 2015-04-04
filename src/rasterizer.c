@@ -1,6 +1,5 @@
 #include "rasterizer.h"
 #include "texture.h"
-#include "pixel.h"
 
 
 
@@ -19,6 +18,7 @@
  ****************************************************************************/
 
 static rs_state rsstate = { 0, 0 };
+static pixel_state pp_state = { COMPARE_ALWAYS, 0, { 0 }, { 0 } };
 
 void rasterizer_set_state( const rs_state* state )
 {
@@ -30,9 +30,79 @@ void rasterizer_get_state( rs_state* state )
     (*state) = rsstate;
 }
 
+void pixel_set_state( const pixel_state* s )
+{
+    if( s )
+        pp_state = *s;
+}
+
+void pixel_get_state( pixel_state* s )
+{
+    if( s )
+        *s = pp_state;
+}
+
 /****************************************************************************
  *  Triangle rasterisation function                                         *
  ****************************************************************************/
+
+static void pixel_draw( const rs_fragment* v, unsigned char* ptr, int* dptr )
+{
+    unsigned char tex[ 4 ];
+    unsigned char c[4];
+    int i;
+
+    /* depth test */
+    switch( pp_state.depth_test )
+    {
+    case COMPARE_ALWAYS:        break;
+    case COMPARE_NEVER:         return;
+    case COMPARE_EQUAL:         if( v->d == *dptr ) break; return;
+    case COMPARE_NOT_EQUAL:     if( v->d != *dptr ) break; return;
+    case COMPARE_LESS:          if( v->d < *dptr  ) break; return;
+    case COMPARE_LESS_EQUAL:    if( v->d <= *dptr ) break; return;
+    case COMPARE_GREATER:       if( v->d > *dptr  ) break; return;
+    case COMPARE_GREATER_EQUAL: if( v->d >= *dptr ) break; return;
+    }
+
+    /* fetch and encode fragment colors */
+    c[RED  ] = v->r;
+    c[GREEN] = v->g;
+    c[BLUE ] = v->b;
+    c[ALPHA] = v->a;
+
+    /* fetch texture colors */
+    for( i=0; i<MAX_TEXTURES; ++i )
+    {
+        if( pp_state.texture_enable[ i ] )
+        {
+            texture_sample( pp_state.textures[i], v->s[i], v->t[i], tex );
+
+            c[ RED   ] = (c[ RED   ]*tex[ RED   ]) >> 8;
+            c[ GREEN ] = (c[ GREEN ]*tex[ GREEN ]) >> 8;
+            c[ BLUE  ] = (c[ BLUE  ]*tex[ BLUE  ]) >> 8;
+            c[ ALPHA ] = (c[ ALPHA ]*tex[ ALPHA ]) >> 8;
+        }
+    }
+
+    /* blend onto framebuffer color */
+    if( pp_state.alpha_blend )
+    {
+        unsigned int a = c[ALPHA], ia = 0xFF - a;
+
+        c[RED  ] = (ptr[RED  ]*ia + c[RED  ]*a) >> 8;
+        c[GREEN] = (ptr[GREEN]*ia + c[GREEN]*a) >> 8;
+        c[BLUE ] = (ptr[BLUE ]*ia + c[BLUE ]*a) >> 8;
+        c[ALPHA] = (ptr[ALPHA]*ia + (a<<8)    ) >> 8;
+    }
+
+    /* write to framebuffer */
+    *dptr = v->d;
+    ptr[RED  ] = c[RED  ];
+    ptr[GREEN] = c[GREEN];
+    ptr[BLUE ] = c[BLUE ];
+    ptr[ALPHA] = c[ALPHA];
+}
 
 void rasterizer_process_triangle( const rs_triangle* t, framebuffer* fb )
 {
