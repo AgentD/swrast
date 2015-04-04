@@ -236,10 +236,11 @@ static void process_vertex( rs_vertex* v )
     v->w = proj[3]*x + proj[7]*y + proj[11]*z + proj[15]*w;
 }
 
-void tl_transform_and_light_triangle( rs_triangle* t )
+void tl_transform_and_light_triangle( rs_vertex* v0, rs_vertex* v1,
+                                      rs_vertex* v2 )
 {
-    process_vertex( &(t->v0) );
-    process_vertex( &(t->v1) );
-    process_vertex( &(t->v2) );
+    process_vertex( v0 );
+    process_vertex( v1 );
+    process_vertex( v2 );
 }
 

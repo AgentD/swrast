@@ -11,7 +11,14 @@
     #define MIN( a, b, c ) ((a)<(c)?((a)<(b)?(a):(b)) : ((c)<(b)?(c):(b)))
 #endif
 
-
+typedef struct
+{
+    float w;
+    float s[MAX_TEXTURES], t[MAX_TEXTURES];
+    unsigned char r, g, b, a;
+    int d;
+}
+rs_fragment;
 
 /****************************************************************************
  *  Rasterizer state control functions                                      *
@@ -104,7 +111,8 @@ static void pixel_draw( const rs_fragment* v, unsigned char* ptr, int* dptr )
     ptr[ALPHA] = c[ALPHA];
 }
 
-void rasterizer_process_triangle( const rs_triangle* t, framebuffer* fb )
+void rasterizer_process_triangle( const rs_vertex* v0, const rs_vertex* v1,
+                                  const rs_vertex* v2, framebuffer* fb )
 {
     int x, y, x0, x1, x2, y0, y1, y2, bl, br, bt, bb, i;
     int f0, f1, f2, f3, f4, f5, f6, f7, f8;
@@ -117,52 +125,52 @@ void rasterizer_process_triangle( const rs_triangle* t, framebuffer* fb )
     if( rsstate.cull_cw && rsstate.cull_ccw )
         return;
 
-    if( t->v0.w<=0.0 || t->v1.w<=0.0 || t->v2.w<=0.0 )
+    if( v0->w<=0.0 || v1->w<=0.0 || v2->w<=0.0 )
         return;
 
     /* culling */
-    f10 = (t->v1.x - t->v0.x)*(t->v2.y - t->v0.y);
-    f11 = (t->v1.y - t->v0.y)*(t->v2.x - t->v0.x);
+    f10 = (v1->x - v0->x)*(v2->y - v0->y);
+    f11 = (v1->y - v0->y)*(v2->x - v0->x);
 
     if( ((f10<=f11) && rsstate.cull_cw) || ((f10>=f11) && rsstate.cull_ccw) )
         return;
 
     /* prepare triangle vertices */
-    A.w = 1.0/t->v0.w;
-    A.d = DEPTH_MAX_HALF - (t->v0.z*DEPTH_MAX_HALF*A.w);
-    A.r = t->v0.r*A.w;
-    A.g = t->v0.g*A.w;
-    A.b = t->v0.b*A.w;
-    A.a = t->v0.a*A.w;
+    A.w = 1.0/v0->w;
+    A.d = DEPTH_MAX_HALF - (v0->z*DEPTH_MAX_HALF*A.w);
+    A.r = v0->r*A.w;
+    A.g = v0->g*A.w;
+    A.b = v0->b*A.w;
+    A.a = v0->a*A.w;
 
-    B.w = 1.0/t->v1.w;
-    B.d = DEPTH_MAX_HALF - (t->v1.z*DEPTH_MAX_HALF*B.w);
-    B.r = t->v1.r*B.w;
-    B.g = t->v1.g*B.w;
-    B.b = t->v1.b*B.w;
-    B.a = t->v1.a*B.w;
+    B.w = 1.0/v1->w;
+    B.d = DEPTH_MAX_HALF - (v1->z*DEPTH_MAX_HALF*B.w);
+    B.r = v1->r*B.w;
+    B.g = v1->g*B.w;
+    B.b = v1->b*B.w;
+    B.a = v1->a*B.w;
 
-    C.w = 1.0/t->v2.w;
-    C.d = DEPTH_MAX_HALF - (t->v2.z*DEPTH_MAX_HALF*C.w);
-    C.r = t->v2.r*C.w;
-    C.g = t->v2.g*C.w;
-    C.b = t->v2.b*C.w;
-    C.a = t->v2.a*C.w;
+    C.w = 1.0/v2->w;
+    C.d = DEPTH_MAX_HALF - (v2->z*DEPTH_MAX_HALF*C.w);
+    C.r = v2->r*C.w;
+    C.g = v2->g*C.w;
+    C.b = v2->b*C.w;
+    C.a = v2->a*C.w;
 
     for( i=0; i<MAX_TEXTURES; ++i )
     {
-        A.s[i]=t->v0.s[i]*A.w; A.t[i]=t->v0.t[i]*A.w;
-        B.s[i]=t->v1.s[i]*B.w; B.t[i]=t->v1.t[i]*B.w;
-        C.s[i]=t->v2.s[i]*C.w; C.t[i]=t->v2.t[i]*C.w;
+        A.s[i]=v0->s[i]*A.w; A.t[i]=v0->t[i]*A.w;
+        B.s[i]=v1->s[i]*B.w; B.t[i]=v1->t[i]*B.w;
+        C.s[i]=v2->s[i]*C.w; C.t[i]=v2->t[i]*C.w;
     }
 
     /* convert to raster coordinates */
-    x0 = (1.0f + t->v0.x*A.w) * 0.5f * fb->width;
-    y0 = (1.0f - t->v0.y*A.w) * 0.5f * fb->height;
-    x1 = (1.0f + t->v1.x*B.w) * 0.5f * fb->width;
-    y1 = (1.0f - t->v1.y*B.w) * 0.5f * fb->height;
-    x2 = (1.0f + t->v2.x*C.w) * 0.5f * fb->width;
-    y2 = (1.0f - t->v2.y*C.w) * 0.5f * fb->height;
+    x0 = (1.0f + v0->x*A.w) * 0.5f * fb->width;
+    y0 = (1.0f - v0->y*A.w) * 0.5f * fb->height;
+    x1 = (1.0f + v1->x*B.w) * 0.5f * fb->width;
+    y1 = (1.0f - v1->y*B.w) * 0.5f * fb->height;
+    x2 = (1.0f + v2->x*C.w) * 0.5f * fb->width;
+    y2 = (1.0f - v2->y*C.w) * 0.5f * fb->height;
 
     /* compute bounding rectangle */
     bl = MIN( x0, x1, x2 );

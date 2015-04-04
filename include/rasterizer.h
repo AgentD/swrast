@@ -41,33 +41,6 @@ typedef struct
 rs_vertex;
 
 /**
- * \struct rs_fragment
- *
- * \brief The data of a fragment of a triangle with interpolated vertex values
- */
-typedef struct
-{
-    float w;
-    float s[MAX_TEXTURES], t[MAX_TEXTURES];
-    unsigned char r, g, b, a;
-    int d;
-}
-rs_fragment;
-
-/**
- * \struct rs_triangle
- *
- * \brief Holds the data of a triangle before rasterization
- */
-typedef struct
-{
-    rs_vertex v0;   /**< \brief First vertex */
-    rs_vertex v1;   /**< \brief Second vertex */
-    rs_vertex v2;   /**< \brief Third vertex */
-}
-rs_triangle;
-
-/**
  * \struct rs_state
  *
  * \brief Holds the state of the rasterizer
@@ -147,10 +120,13 @@ void pixel_get_state( pixel_state* s );
  * before perpective division is needed for perspective correct
  * interpolation.
  *
- * \param t  A pointer to a triangle structure
+ * \param v0 The first vertex of the triangle
+ * \param v1 The second vertex of the triangle
+ * \param v2 The third vertex of the triangle
  * \param fb A pointer to a frame buffer structure
  */
-void rasterizer_process_triangle( const rs_triangle* t, framebuffer* fb );
+void rasterizer_process_triangle( const rs_vertex* v0, const rs_vertex* v1,
+                                  const rs_vertex* v2, framebuffer* fb );
 
 #ifdef __cplusplus
 }

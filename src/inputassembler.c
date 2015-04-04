@@ -114,18 +114,18 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr )
 
 void ia_draw_triangles( framebuffer* fb, void* ptr, unsigned int vertexcount )
 {
+    rs_vertex v0, v1, v2;
     unsigned int i;
-    rs_triangle t;
 
     vertexcount -= vertexcount % 3;
 
     for( i=0; i<vertexcount; i+=3 )
     {
-        ptr = read_vertex( &(t.v0), ptr );
-        ptr = read_vertex( &(t.v1), ptr );
-        ptr = read_vertex( &(t.v2), ptr );
-        tl_transform_and_light_triangle( &t );
-        rasterizer_process_triangle( &t, fb );
+        ptr = read_vertex( &v0, ptr );
+        ptr = read_vertex( &v1, ptr );
+        ptr = read_vertex( &v2, ptr );
+        tl_transform_and_light_triangle( &v0, &v1, &v2 );
+        rasterizer_process_triangle( &v0, &v1, &v2, fb );
     }
 }
 
@@ -135,9 +135,9 @@ void ia_draw_triangles_indexed( framebuffer* fb, void* ptr,
                                 unsigned int indexcount )
 {
     unsigned int vsize = 0;
+    rs_vertex v0, v1, v2;
     unsigned short index;
     unsigned int i;
-    rs_triangle t;
 
     /* determine vertex size in bytes */
          if( vertex_format & VF_POSITION_F2 ) { vsize += 2*sizeof(float); }
@@ -165,7 +165,7 @@ void ia_draw_triangles_indexed( framebuffer* fb, void* ptr,
         if( index>=vertexcount )
             continue;
         
-        read_vertex( &(t.v0), ((unsigned char*)ptr) + vsize*index );
+        read_vertex( &(v0), ((unsigned char*)ptr) + vsize*index );
 
         /* read second vertex */
         index = indices[ i+1 ];
@@ -173,7 +173,7 @@ void ia_draw_triangles_indexed( framebuffer* fb, void* ptr,
         if( index>=vertexcount )
             continue;
 
-        read_vertex( &(t.v1), ((unsigned char*)ptr) + vsize*index );
+        read_vertex( &(v1), ((unsigned char*)ptr) + vsize*index );
 
         /* read third vertex */
         index = indices[ i+2 ];
@@ -181,11 +181,11 @@ void ia_draw_triangles_indexed( framebuffer* fb, void* ptr,
         if( index>=vertexcount )
             continue;
 
-        read_vertex( &(t.v2), ((unsigned char*)ptr) + vsize*index );
+        read_vertex( &(v2), ((unsigned char*)ptr) + vsize*index );
 
         /* rasterize */
-        tl_transform_and_light_triangle( &t );
-        rasterizer_process_triangle( &t, fb );
+        tl_transform_and_light_triangle( &v0, &v1, &v2 );
+        rasterizer_process_triangle( &v0, &v1, &v2, fb );
     }
 }
 

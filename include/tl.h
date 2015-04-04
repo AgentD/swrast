@@ -95,9 +95,12 @@ void tl_set_state( const tl_state* s );
 /**
  * \brief Transform the vertices of a triangle and compute lighting values
  *
- * \param t A pointer to a triangle structure
+ * \param v0 A pointer to the first vertex of a triangle
+ * \param v1 A pointer to the second vertex of a triangle
+ * \param v2 A pointer to the third vertex of a triangle
  */
-void tl_transform_and_light_triangle( rs_triangle* t );
+void tl_transform_and_light_triangle( rs_vertex* v0, rs_vertex* v1,
+                                      rs_vertex* v2 );
 
 #ifdef __cplusplus
 }
