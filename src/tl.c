@@ -178,6 +178,7 @@ static void light_vertex( rs_vertex* v )
 
         /* diffuse component */
         d = (v->nx*L[0] + v->ny*L[1] + v->nz*L[2]) * a;
+        d = d<0.0f ? 0.0f : (d>1.0f ? 1.0f : d);
 
         color[0]+=state.light[i].diffuse[0]*state.material.diffuse[0]*d;
         color[1]+=state.light[i].diffuse[1]*state.material.diffuse[1]*d;
