@@ -1,24 +1,68 @@
 #include "rasterizer.h"
 #include "texture.h"
+#include <math.h>
 
 
-
-#ifndef MAX
-    #define MAX( a, b, c ) ((a)>(c)?((a)>(b)?(a):(b)) : ((c)>(b)?(c):(b)))
-#endif
-
-#ifndef MIN
-    #define MIN( a, b, c ) ((a)<(c)?((a)<(b)?(a):(b)) : ((c)<(b)?(c):(b)))
-#endif
 
 typedef struct
 {
-    float w;
+    float x, y, z, w;
     float s[MAX_TEXTURES], t[MAX_TEXTURES];
-    unsigned char r, g, b, a;
-    int d;
+    float color[4];
 }
 rs_fragment;
+
+typedef struct
+{
+    int left;                       /* index of left edge */
+    int right;                      /* index of right edge */
+
+    float linescale[3];             /* 1 / dy */
+
+    struct
+    {
+        float s[MAX_TEXTURES];      /* s texture coordinat / w */
+        float dSdY[MAX_TEXTURES];   /* ds/dy */
+
+        float t[MAX_TEXTURES];      /* t texture coordinat / w */
+        float dTdY[MAX_TEXTURES];   /* dt/dy */
+
+        float col[4];               /* vertex color / w */
+        float dColdY[4];            /* dColor / dy */
+
+        float x;
+        float dXdY;                 /* dx/dy */
+
+        float z;                    /* z / w */
+        float dZdY;                 /* dz/dy */
+
+        float w;                    /* 1.0 / w */
+        float dWdY;                 /* dw/dy */
+    }
+    edge[2];
+}
+edge_data;
+
+typedef struct
+{
+    float pixelscale;           /* 1.0/dx */
+
+    float s[MAX_TEXTURES];      /* s texture coordinate / w */
+    float dSdX[MAX_TEXTURES];   /* ds/dx */
+
+    float t[MAX_TEXTURES];      /* t texture coordinate / w */
+    float dTdX[MAX_TEXTURES];   /* dt/dx */
+
+    float z;                    /* z / w */
+    float dZdX;                 /* dz/dx */
+
+    float w;                    /* 1.0 / w */
+    float dWdX;                 /* dw/dx */
+
+    float col[4];               /* vertex color / w */
+    float dColdX[4];            /* dColor / dx */
+}
+scan_line;
 
 /****************************************************************************
  *  Rasterizer state control functions                                      *
@@ -50,76 +94,311 @@ void pixel_get_state( pixel_state* s )
 }
 
 /****************************************************************************
- *  Triangle rasterisation function                                         *
+ *  Triangle rasterisation                                                  *
  ****************************************************************************/
 
-static void pixel_draw( const rs_fragment* v, unsigned char* ptr, int* dptr )
+static void draw_scanline( int y, framebuffer* fb, const edge_data* s )
 {
-    unsigned char tex[ 4 ];
-    unsigned char c[4];
-    int i;
+    int x0, x1, i, j, depthtest[8];
+    float sub_pixel, w, *z_buffer;
+    unsigned char *start, *end;
+    unsigned char tex[4];
+    unsigned int c[4];
+    scan_line l;
 
-    /* depth test */
-    switch( pp_state.depth_test )
-    {
-    case COMPARE_ALWAYS:        break;
-    case COMPARE_NEVER:         return;
-    case COMPARE_EQUAL:         if( v->d == *dptr ) break; return;
-    case COMPARE_NOT_EQUAL:     if( v->d != *dptr ) break; return;
-    case COMPARE_LESS:          if( v->d < *dptr  ) break; return;
-    case COMPARE_LESS_EQUAL:    if( v->d <= *dptr ) break; return;
-    case COMPARE_GREATER:       if( v->d > *dptr  ) break; return;
-    case COMPARE_GREATER_EQUAL: if( v->d >= *dptr ) break; return;
-    }
+    /* get line start and end */
+    x0 = ceil( s->edge[s->left].x );
+    x1 = ceil( s->edge[s->right].x );
 
-    /* fetch and encode fragment colors */
-    c[RED  ] = v->r;
-    c[GREEN] = v->g;
-    c[BLUE ] = v->b;
-    c[ALPHA] = v->a;
+    if( x1<=x0 )
+        return;
 
-    /* fetch texture colors */
+    sub_pixel = (float)x0 - s->edge[s->left].x;
+
+    z_buffer = fb->depth + (y*fb->width + x0);
+    start = fb->color + (y*fb->width + x0)*4;
+    end = fb->color + (y*fb->width + x1)*4;
+
+    /* compuate start values and slopes */
+    l.pixelscale = 1.0f / (s->edge[s->right].x - s->edge[s->left].x);
+
     for( i=0; i<MAX_TEXTURES; ++i )
     {
-        if( pp_state.texture_enable[ i ] )
-        {
-            texture_sample( pp_state.textures[i], v->s[i], v->t[i], tex );
+        l.dSdX[i]=(s->edge[s->right].s[i]-s->edge[s->left].s[i])*l.pixelscale;
+        l.dTdX[i]=(s->edge[s->right].t[i]-s->edge[s->left].t[i])*l.pixelscale;
 
-            c[ RED   ] = (c[ RED   ]*tex[ RED   ]) >> 8;
-            c[ GREEN ] = (c[ GREEN ]*tex[ GREEN ]) >> 8;
-            c[ BLUE  ] = (c[ BLUE  ]*tex[ BLUE  ]) >> 8;
-            c[ ALPHA ] = (c[ ALPHA ]*tex[ ALPHA ]) >> 8;
+        l.s[i] = s->edge[s->left].s[i] + l.dSdX[i] * sub_pixel;
+        l.t[i] = s->edge[s->left].t[i] + l.dTdX[i] * sub_pixel;
+    }
+
+    l.dWdX = (s->edge[s->right].w - s->edge[s->left].w) * l.pixelscale;
+    l.dZdX = (s->edge[s->right].z - s->edge[s->left].z) * l.pixelscale;
+
+    l.z = s->edge[s->left].z + l.dZdX * sub_pixel;
+    l.w = s->edge[s->left].w + l.dWdX * sub_pixel;
+
+    for( i=0; i<4; ++i )
+    {
+        l.dColdX[i] = (s->edge[s->right].col[i] - s->edge[s->left].col[i]) *
+                      l.pixelscale;
+        l.col[i] = s->edge[s->left].col[i] + l.dColdX[i] * sub_pixel;
+    }
+
+    /* for each fragment */
+    for( ; start!=end && x0<fb->width; start+=4, ++z_buffer, ++x0 )
+    {
+        if( x0<0 )
+            goto skip_fragment;
+
+        /* depth test */
+        if( pp_state.depth_test!=COMPARE_ALWAYS )
+        {
+            depthtest[COMPARE_LESS         ] = (l.z < *z_buffer);
+            depthtest[COMPARE_GREATER      ] = (l.z > *z_buffer);
+            depthtest[COMPARE_NOT_EQUAL    ] = depthtest[COMPARE_LESS] |
+                                               depthtest[COMPARE_GREATER];
+            depthtest[COMPARE_EQUAL        ] = !depthtest[COMPARE_NOT_EQUAL];
+            depthtest[COMPARE_LESS_EQUAL   ] = depthtest[COMPARE_EQUAL] |
+                                               depthtest[COMPARE_LESS];
+            depthtest[COMPARE_GREATER_EQUAL] = depthtest[COMPARE_EQUAL] |
+                                               depthtest[COMPARE_GREATER];
+
+            if( !depthtest[pp_state.depth_test] )
+                goto skip_fragment;
+        }
+
+        w = 1.0f / l.w;
+
+        /* interpolate colors */
+        for( i=0; i<4; ++i )
+            c[i] = (unsigned char)(l.col[i] * w);
+
+        /* interpolate texture coordinates, fetch texture colors */
+        for( i=0; i<MAX_TEXTURES; ++i )
+        {
+            if( pp_state.texture_enable[ i ] )
+            {
+                texture_sample(pp_state.textures[i], l.s[i]*w, l.t[i]*w, tex);
+
+                for( j=0; j<4; ++j )
+                    c[j] = (c[j]*tex[j]) >> 8;
+            }
+        }
+
+        /* blend onto framebuffer color */
+        if( pp_state.alpha_blend )
+        {
+            unsigned int a = c[ALPHA], ia = 0xFF - a;
+
+            c[RED  ] = (start[RED  ]*ia + c[RED  ]*a) >> 8;
+            c[GREEN] = (start[GREEN]*ia + c[GREEN]*a) >> 8;
+            c[BLUE ] = (start[BLUE ]*ia + c[BLUE ]*a) >> 8;
+            c[ALPHA] = (start[ALPHA]*ia + (a<<8)    ) >> 8;
+        }
+
+        for( i=0; i<4; ++i )
+            start[i] = c[i];
+
+        *z_buffer = l.z;
+
+    skip_fragment:
+        for( i=0; i<4; ++i )
+            l.col[i] += l.dColdX[i];
+
+        for( i=0; i<MAX_TEXTURES; ++i )
+        {
+            l.s[i] += l.dSdX[i];
+            l.t[i] += l.dTdX[i];
+        }
+
+        l.w += l.dWdX;
+        l.z += l.dZdX;
+    }
+}
+
+static void advance_line( edge_data* s, float scale )
+{
+    int i, j;
+
+    for( i=0; i<2; ++i)
+    {
+        s->edge[i].x += s->edge[i].dXdY * scale;
+        s->edge[i].z += s->edge[i].dZdY * scale;
+        s->edge[i].w += s->edge[i].dWdY * scale;
+
+        for( j=0; j<4; ++j )
+            s->edge[i].col[j] += s->edge[i].dColdY[j] * scale;
+
+        for( j=0; j<MAX_TEXTURES; ++j )
+        {
+            s->edge[i].s[j] += s->edge[i].dSdY[j] * scale;
+            s->edge[i].t[j] += s->edge[i].dTdY[j] * scale;
+        }
+    }
+}
+
+static void draw_triangle( rs_fragment* A, rs_fragment* B,
+                           rs_fragment* C, framebuffer* fb )
+{
+    rs_fragment* temp_v;
+    int y, y0, y1, i;
+    float temp[4];
+    edge_data s;
+
+    /* sort on Y axis */
+    if( A->y > B->y ) { temp_v = A; A = B; B = temp_v; }
+    if( B->y > C->y ) { temp_v = B; B = C; C = temp_v; }
+    if( A->y > B->y ) { temp_v = A; A = B; B = temp_v; }
+
+    /* calculate delta y of the edges */
+    s.linescale[0] = 1.0f / (C->y - A->y);
+    s.linescale[1] = 1.0f / (B->y - A->y);
+    s.linescale[2] = 1.0f / (C->y - B->y);
+
+    if( s.linescale[0] <= 0.0f )
+        return;
+
+    /* check if the major edge is left or right */
+    temp[0] = A->x - C->x;
+    temp[1] = A->y - C->y;
+    temp[2] = B->x - A->x;
+    temp[3] = B->y - A->y;
+
+    s.left = (temp[0]*temp[3] - temp[1]*temp[2]) > 0.0f ? 0 : 1;
+    s.right = !s.left;
+
+    /* calculate slopes for major edge */
+    s.edge[0].dXdY = (C->x - A->x) * s.linescale[0];
+    s.edge[0].dWdY = (C->w - A->w) * s.linescale[0];
+    s.edge[0].dZdY = (C->z - A->z) * s.linescale[0];
+
+    for( i=0; i<MAX_TEXTURES; ++i )
+    {
+        s.edge[0].dSdY[i] = (C->s[i] - A->s[i]) * s.linescale[0];
+        s.edge[0].dTdY[i] = (C->t[i] - A->t[i]) * s.linescale[0];
+
+        s.edge[0].s[i] = A->s[i];
+        s.edge[0].t[i] = A->t[i];
+    }
+
+    s.edge[0].x = A->x;
+    s.edge[0].w = A->w;
+    s.edge[0].z = A->z;
+
+    for( i=0; i<4; ++i )
+    {
+        s.edge[0].col[i] = A->color[i];
+        s.edge[0].dColdY[i] = (C->color[i] - A->color[i]) * s.linescale[0];
+    }
+
+    /* rasterize upper sub-triangle */
+    if( s.linescale[1] > 0.0f )
+    {
+        /* calculate slopes for minor edge */
+        s.edge[1].dXdY = (B->x - A->x) * s.linescale[1];
+        s.edge[1].dWdY = (B->w - A->w) * s.linescale[1];
+        s.edge[1].dZdY = (B->z - A->z) * s.linescale[1];
+
+        s.edge[1].x = A->x;
+        s.edge[1].w = A->w;
+        s.edge[1].z = A->z;
+
+        for( i=0; i<4; ++i )
+        {
+            s.edge[1].col[i] = A->color[i];
+            s.edge[1].dColdY[i] = (B->color[i] - A->color[i]) * s.linescale[1];
+        }
+
+        for( i=0; i<MAX_TEXTURES; ++i )
+        {
+            s.edge[1].dSdY[i] = (B->s[i] - A->s[i]) * s.linescale[1];
+            s.edge[1].dTdY[i] = (B->t[i] - A->t[i]) * s.linescale[1];
+
+            s.edge[1].s[i] = A->s[i];
+            s.edge[1].t[i] = A->t[i];
+        }
+
+        /* apply top-left fill convention */
+        y0 = ceil( A->y );
+        y1 = ceil( B->y ) - 1;
+
+        advance_line( &s, (float)y0 - A->y );
+
+        /* rasterize the edge scanlines */
+        for( y=y0; y<=y1 && y<fb->height; ++y )
+        {
+            if( y>0 )
+                draw_scanline( y, fb, &s );
+            advance_line( &s, 1.0f );
         }
     }
 
-    /* blend onto framebuffer color */
-    if( pp_state.alpha_blend )
+    /* rasterize lower sub-triangle */
+    if( s.linescale[2] > 0.0f )
     {
-        unsigned int a = c[ALPHA], ia = 0xFF - a;
+        /* advance to center */
+        if( s.linescale[1] > 0.0f )
+        {
+            temp[0] = B->y - A->y;
 
-        c[RED  ] = (ptr[RED  ]*ia + c[RED  ]*a) >> 8;
-        c[GREEN] = (ptr[GREEN]*ia + c[GREEN]*a) >> 8;
-        c[BLUE ] = (ptr[BLUE ]*ia + c[BLUE ]*a) >> 8;
-        c[ALPHA] = (ptr[ALPHA]*ia + (a<<8)    ) >> 8;
+            s.edge[0].x = A->x + s.edge[0].dXdY * temp[0];
+            s.edge[0].z = A->z + s.edge[0].dZdY * temp[0];
+            s.edge[0].w = A->w + s.edge[0].dWdY * temp[0];
+
+            for( i=0; i<4; ++i)
+                s.edge[0].col[i] = A->color[i] + s.edge[0].dColdY[i]*temp[0];
+
+            for( i=0; i<MAX_TEXTURES; ++i )
+            {
+                s.edge[0].s[i] = A->s[i] + s.edge[0].dSdY[i] * temp[0];
+                s.edge[0].t[i] = A->t[i] + s.edge[0].dTdY[i] * temp[0];
+            }
+        }
+
+        /* calculate slopes for bottom edge */
+        s.edge[1].dXdY = (C->x - B->x) * s.linescale[2];
+        s.edge[1].dWdY = (C->w - B->w) * s.linescale[2];
+        s.edge[1].dZdY = (C->z - B->z) * s.linescale[2];
+
+        s.edge[1].x = B->x;
+        s.edge[1].w = B->w;
+        s.edge[1].z = B->z;
+
+        for( i=0; i<MAX_TEXTURES; ++i )
+        {
+            s.edge[1].dSdY[i] = (C->s[i] - B->s[i]) * s.linescale[2];
+            s.edge[1].dTdY[i] = (C->t[i] - B->t[i]) * s.linescale[2];
+            s.edge[1].s[i] = B->s[i];
+            s.edge[1].t[i] = B->t[i];
+        }
+
+        for( i=0; i<4; ++i )
+        {
+            s.edge[1].col[i] = B->color[i];
+            s.edge[1].dColdY[i] = (C->color[i] - B->color[i])*s.linescale[2];
+        }
+
+        /* apply top-left fill convention */
+        y0 = ceil( B->y );
+        y1 = ceil( C->y ) - 1;
+
+        advance_line( &s, (float)y0 - B->y );
+
+        /* draw scanlines */
+        for( y=y0; y<=y1 && y<fb->height; ++y )
+        {
+            if( y>0 )
+                draw_scanline( y, fb, &s );
+            advance_line( &s, 1.0f );
+        }
     }
-
-    /* write to framebuffer */
-    *dptr = v->d;
-    ptr[RED  ] = c[RED  ];
-    ptr[GREEN] = c[GREEN];
-    ptr[BLUE ] = c[BLUE ];
-    ptr[ALPHA] = c[ALPHA];
 }
 
 void rasterizer_process_triangle( const rs_vertex* v0, const rs_vertex* v1,
                                   const rs_vertex* v2, framebuffer* fb )
 {
-    int x, y, x0, x1, x2, y0, y1, y2, bl, br, bt, bb, i;
-    int f0, f1, f2, f3, f4, f5, f6, f7, f8;
-    float a, b, c, f9, f10, f11;
-    unsigned char *scan, *ptr;
-    rs_fragment A, B, C, v;
-    int *dscan, *dptr;
+    rs_fragment A, B, C;
+    int i;
 
     /* sanity check */
     if( rsstate.cull_cw && rsstate.cull_ccw )
@@ -128,115 +407,55 @@ void rasterizer_process_triangle( const rs_vertex* v0, const rs_vertex* v1,
     if( v0->w<=0.0 || v1->w<=0.0 || v2->w<=0.0 )
         return;
 
-    /* culling */
-    f10 = (v1->x - v0->x)*(v2->y - v0->y);
-    f11 = (v1->y - v0->y)*(v2->x - v0->x);
-
-    if( ((f10<=f11) && rsstate.cull_cw) || ((f10>=f11) && rsstate.cull_ccw) )
+    if( pp_state.depth_test==COMPARE_NEVER )
         return;
 
     /* prepare triangle vertices */
     A.w = 1.0/v0->w;
-    A.d = DEPTH_MAX_HALF - (v0->z*DEPTH_MAX_HALF*A.w);
-    A.r = v0->r*A.w;
-    A.g = v0->g*A.w;
-    A.b = v0->b*A.w;
-    A.a = v0->a*A.w;
-
-    B.w = 1.0/v1->w;
-    B.d = DEPTH_MAX_HALF - (v1->z*DEPTH_MAX_HALF*B.w);
-    B.r = v1->r*B.w;
-    B.g = v1->g*B.w;
-    B.b = v1->b*B.w;
-    B.a = v1->a*B.w;
-
-    C.w = 1.0/v2->w;
-    C.d = DEPTH_MAX_HALF - (v2->z*DEPTH_MAX_HALF*C.w);
-    C.r = v2->r*C.w;
-    C.g = v2->g*C.w;
-    C.b = v2->b*C.w;
-    C.a = v2->a*C.w;
+    A.x = (1.0f + v0->x*A.w) * 0.5f * (float)fb->width;
+    A.y = (1.0f - v0->y*A.w) * 0.5f * (float)fb->height;
+    A.z = (1.0f - v0->z*A.w) * 0.5f;
+    A.color[RED] = v0->r * A.w;
+    A.color[GREEN] = v0->g * A.w;
+    A.color[BLUE] = v0->b * A.w;
+    A.color[ALPHA] = v0->a * A.w;
 
     for( i=0; i<MAX_TEXTURES; ++i )
     {
-        A.s[i]=v0->s[i]*A.w; A.t[i]=v0->t[i]*A.w;
-        B.s[i]=v1->s[i]*B.w; B.t[i]=v1->t[i]*B.w;
-        C.s[i]=v2->s[i]*C.w; C.t[i]=v2->t[i]*C.w;
+        A.s[i] = v0->s[i] * A.w;
+        A.t[i] = v0->t[i] * A.w;
     }
 
-    /* convert to raster coordinates */
-    x0 = (1.0f + v0->x*A.w) * 0.5f * fb->width;
-    y0 = (1.0f - v0->y*A.w) * 0.5f * fb->height;
-    x1 = (1.0f + v1->x*B.w) * 0.5f * fb->width;
-    y1 = (1.0f - v1->y*B.w) * 0.5f * fb->height;
-    x2 = (1.0f + v2->x*C.w) * 0.5f * fb->width;
-    y2 = (1.0f - v2->y*C.w) * 0.5f * fb->height;
+    B.w = 1.0/v1->w;
+    B.x = (1.0f + v1->x*B.w) * 0.5f * (float)fb->width;
+    B.y = (1.0f - v1->y*B.w) * 0.5f * (float)fb->height;
+    B.z = (1.0f - v1->z*B.w) * 0.5f;
+    B.color[RED] = v1->r * B.w;
+    B.color[GREEN] = v1->g * B.w;
+    B.color[BLUE] = v1->b * B.w;
+    B.color[ALPHA] = v1->a * B.w;
 
-    /* compute bounding rectangle */
-    bl = MIN( x0, x1, x2 );
-    br = MAX( x0, x1, x2 );
-    bt = MIN( y0, y1, y2 );
-    bb = MAX( y0, y1, y2 );
-
-    /* clamp bounding rect to screen */
-    bl =  bl<0            ?             0  : bl;
-    br = (br>=fb->width)  ? (fb->width -1) : br;
-    bt =  bt<0            ?             0  : bt;
-    bb = (bb>=fb->height) ? (fb->height-1) : bb;
-
-    /* stop if the bounding rect is invalid or outside screen area */
-    if( bl>=br || bt>=bb || bb<0 || bt>=fb->height || br<0 || bl>=fb->width )
-        return;
-
-    /* precompute factors for baricentric interpolation */
-    f0 = x1*y2 - x2*y1; f3 = y1-y2; f6 = x2-x1;
-    f1 = x2*y0 - x0*y2; f4 = y2-y0; f7 = x0-x2;
-    f2 = x0*y1 - x1*y0; f5 = y0-y1; f8 = x1-x0;
-
-    f9  = 1.0 / (f3*x0 + f6*y0 + f0);
-    f10 = 1.0 / (f4*x1 + f7*y1 + f1);
-    f11 = 1.0 / (f5*x2 + f8*y2 + f2);
-
-    /* iterate over scanlines in the bounding rectangle */
-    scan  = fb->color + (bt*fb->width + bl) * 4;
-    dscan = fb->depth + (bt*fb->width + bl);
-
-    for( y=bt; y<=bb; ++y, scan+=fb->width*4, dscan+=fb->width )
+    for( i=0; i<MAX_TEXTURES; ++i )
     {
-        /* iterate over pixels in current scanline */
-        for( dptr=dscan, ptr=scan, x=bl; x<=br; ++x, ptr+=4, ++dptr )
-        {
-            /* determine baricentric coordinates of current pixel */
-            a = (f3*x + f6*y + f0) * f9;
-            b = (f4*x + f7*y + f1) * f10;
-            c = (f5*x + f8*y + f2) * f11;
-
-            /* skip invalid coordinates (outside of triangle) */
-            if( a<0.0f || a>1.0f || b<0.0f || b>1.0f || c<0.0f || c>1.0f )
-                continue;
-
-            /* interpolate vertex coordinates and perform clipping */
-            v.d = A.d*a + B.d*b + C.d*c;
-            v.w = 1.0 / (A.w*a + B.w*b + C.w*c);
-
-            if( v.w<=0 || v.d>DEPTH_MAX || v.d<0 )
-                continue;
-
-            /* interpolate vertex attributes */
-            v.r = (A.r*a + B.r*b + C.r*c) * v.w;
-            v.g = (A.g*a + B.g*b + C.g*c) * v.w;
-            v.b = (A.b*a + B.b*b + C.b*c) * v.w;
-            v.a = (A.a*a + B.a*b + C.a*c) * v.w;
-
-            for( i=0; i<MAX_TEXTURES; ++i )
-            {
-                v.s[i] = (A.s[i]*a + B.s[i]*b + C.s[i]*c) * v.w;
-                v.t[i] = (A.t[i]*a + B.t[i]*b + C.t[i]*c) * v.w;
-            }
-
-            /* draw pixel to framebuffer */
-            pixel_draw( &v, ptr, dptr );
-        }
+        B.s[i] = v1->s[i] * B.w;
+        B.t[i] = v1->t[i] * B.w;
     }
+
+    C.w = 1.0/v2->w;
+    C.x = (1.0f + v2->x*C.w) * 0.5f * (float)fb->width;
+    C.y = (1.0f - v2->y*C.w) * 0.5f * (float)fb->height;
+    C.z = (1.0f - v2->z*C.w) * 0.5f;
+    C.color[RED] = v2->r * C.w;
+    C.color[GREEN] = v2->g * C.w;
+    C.color[BLUE] = v2->b * C.w;
+    C.color[ALPHA] = v2->a * C.w;
+
+    for( i=0; i<MAX_TEXTURES; ++i )
+    {
+        C.s[i] = v2->s[i] * C.w;
+        C.t[i] = v2->t[i] * C.w;
+    }
+
+    draw_triangle( &A, &B, &C, fb );
 }
 

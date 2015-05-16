@@ -24,11 +24,6 @@
 
 
 
-#define DEPTH_MAX 0x00FFFFFF
-#define DEPTH_MAX_HALF 0x007FFFFF
-
-
-
 /**
  * \struct framebuffer
  *
@@ -37,7 +32,7 @@
 typedef struct
 {
     unsigned char* color;   /**< \brief Color buffer scan line data */
-    int* depth;             /**< \brief Depth buffer scan line data */
+    float* depth;           /**< \brief Depth buffer scan line data */
     int width;              /**< \brief Frame buffer width in pixels */
     int height;             /**< \brief Frame buffer height in pixels */
 }
