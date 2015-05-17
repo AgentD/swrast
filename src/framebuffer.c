@@ -4,12 +4,11 @@
 
 
 
-framebuffer* framebuffer_create( unsigned int width, unsigned int height )
+int framebuffer_init( framebuffer* fb,
+                      unsigned int width, unsigned int height )
 {
-    framebuffer* fb = malloc( sizeof(framebuffer) );
-
     if( !fb )
-        return NULL;
+        return 0;
 
     fb->width  = width;
     fb->height = height;
@@ -18,10 +17,7 @@ framebuffer* framebuffer_create( unsigned int width, unsigned int height )
     fb->color = malloc( width*height*4 );
 
     if( !fb->color )
-    {
-        free( fb );
-        return NULL;
-    }
+        return 0;
 
     /* try to allocate the depth buffer */
     fb->depth = malloc( width*height*sizeof(float) );
@@ -29,20 +25,18 @@ framebuffer* framebuffer_create( unsigned int width, unsigned int height )
     if( !fb->depth )
     {
         free( fb->color );
-        free( fb );
-        return NULL;
+        return 0;
     }
 
-    return fb;
+    return 1;
 }
 
-void framebuffer_destroy( framebuffer* fb )
+void framebuffer_cleanup( framebuffer* fb )
 {
     if( fb )
     {
         free( fb->depth );
         free( fb->color );
-        free( fb );
     }
 }
 

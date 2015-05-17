@@ -46,7 +46,6 @@ int main( void )
     float a = 0.0f, c, s, m[16], far, near, aspect, f, iNF;
     unsigned char* ptr;
     unsigned int x, y;
-    framebuffer* fb;
     pixel_state pp;
     mesh* teapot;
     texture* tex;
@@ -55,21 +54,15 @@ int main( void )
     window* w;
 
     /************* initalisation *************/
-    if( !(fb = framebuffer_create( 640, 480 )) )
+    if( !(w = window_create( 640, 480 )) )
         return -1;
-
-    if( !(w = window_create( fb->width, fb->height )) )
-    {
-        framebuffer_destroy( fb );
-        return -1;
-    }
 
     teapot = load_3ds( "teapot.3ds" );
 
     /* intialize projection matrix */
     far    = 0.5f;
     near   = 500.0f;
-    aspect = ((float)fb->width) / ((float)fb->height);
+    aspect = ((float)w->fb.width) / ((float)w->fb.height);
     f      = 1.0 / tan( 60.0f * (3.14159265359f/180.0f) * 0.5f );
 	iNF    = 1.0 / ( near - far );
 
@@ -123,8 +116,8 @@ int main( void )
     while( window_handle_events( w ) )
     {
         /* clear framebuffer */
-        framebuffer_clear( fb, 0, 0, 0, 0xFF );
-        framebuffer_clear_depth( fb, 1.0 );
+        framebuffer_clear( &w->fb, 0, 0, 0, 0xFF );
+        framebuffer_clear_depth( &w->fb, 1.0 );
 
         /* rasterize triangles */
         c = cos( a ), s = sin( a );
@@ -148,7 +141,7 @@ int main( void )
 
         tl_set_modelview_matrix( m );
         ia_set_vertex_format( VF_POSITION_F4 | VF_COLOR_F4 | VF_TEX0 );
-        ia_draw_triangles( fb, vbo, 6 );
+        ia_draw_triangles( &w->fb, vbo, 6 );
 
         /* rasterize teapot */
         m[0] =    c*0.05f; m[4] = 0.0f;  m[ 8] =    s*0.05f; m[12] =  2.0f;
@@ -169,18 +162,18 @@ int main( void )
 
         tl_set_modelview_matrix( m );
         ia_set_vertex_format( teapot->format );
-        ia_draw_triangles( fb, vbo, 6 );
+        ia_draw_triangles( &w->fb, vbo, 6 );
 
-        ia_draw_triangles_indexed( fb, teapot->vertexbuffer, teapot->vertices,
-                                       teapot->indexbuffer, teapot->indices );
+        ia_draw_triangles_indexed( &w->fb,
+                                   teapot->vertexbuffer, teapot->vertices,
+                                   teapot->indexbuffer, teapot->indices );
 
         /* copy to window */
-        window_display_framebuffer( w, fb );
+        window_display_framebuffer( w );
     }
 
     /************* cleanup *************/
     texture_destroy( tex );
-    framebuffer_destroy( fb );
     window_destroy( w );
     free( teapot->vertexbuffer );
     free( teapot->indexbuffer );

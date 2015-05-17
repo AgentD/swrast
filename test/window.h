@@ -24,6 +24,7 @@
 typedef struct
 {
     Atom atom_wm_delete;
+    framebuffer fb;
     Display* dpy;
     XImage* img;
     Window wnd;
@@ -70,14 +71,13 @@ void window_destroy( window* wnd );
 int window_handle_events( window* wnd );
 
 /**
- * \brief Copy the contents of a framebuffer object to a window
+ * \brief Copy the contents of a windows framebuffer to the window
  *
  * \memberof window
  *
  * \param wnd A pointer to a window structure
- * \param fb  A pointer to a framebuffer structure
  */
-void window_display_framebuffer( window* wnd, framebuffer* fb );
+void window_display_framebuffer( window* wnd );
 
 #ifdef __cplusplus
 }

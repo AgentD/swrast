@@ -45,16 +45,19 @@ extern "C" {
 #endif
 
 /**
- * \brief Create a frame buffer object (32 bpp RGBA + 32 bit depth buffer)
+ * \brief Initialize an uninitialized frame buffer object
+ *        (32 bpp RGBA + 32 bit depth buffer)
  *
  * \memberof framebuffer
  *
+ * \param fb     A pointer to an uninitialized frame buffer object
  * \param width  The width of the frame buffer in pixels
  * \param height The height of the frame buffer in pixels
  *
- * \return A pointer to a framebuffer structure on success, NULL on failure
+ * \return Non-zero on success, zero on failure
  */
-framebuffer* framebuffer_create( unsigned int width, unsigned int height );
+int framebuffer_init( framebuffer* fb,
+                      unsigned int width, unsigned int height );
 
 /**
  * \brief Destroy a frame buffer object and free its resources
@@ -63,7 +66,7 @@ framebuffer* framebuffer_create( unsigned int width, unsigned int height );
  *
  * \param fb A pointer to a frame buffer structure
  */
-void framebuffer_destroy( framebuffer* fb );
+void framebuffer_cleanup( framebuffer* fb );
 
 /**
  * \brief Clear the color buffer of a frame buffer object

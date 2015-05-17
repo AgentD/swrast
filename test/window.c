@@ -1,5 +1,6 @@
 #include "window.h"
 
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
@@ -16,27 +17,25 @@ window* window_create( unsigned int width, unsigned int height )
     if( !wnd )
         return NULL;
 
+    /********** create framebuffer **********/
+    if( !framebuffer_init( &wnd->fb, width, height ) )
+        goto fail;
+
     /********** open X11 display connection **********/
     wnd->dpy = XOpenDisplay( 0 );
 
     if( !wnd->dpy )
-    {
-        free( wnd );
-        return NULL;
-    }
+        goto fail_fb;
 
     /********** create a window **********/
     wnd->wnd = XCreateSimpleWindow( wnd->dpy, DefaultRootWindow( wnd->dpy ),
                                     0, 0, width, height, 0, 0, 0 );
 
     if( !wnd->wnd )
-    {
-        XCloseDisplay( wnd->dpy );
-        free( wnd );
-        return NULL;
-    }
+        goto fail_dpy;
 
     /********** make the window non resizeable **********/
+    memset( &hints, 0, sizeof(hints) );
     hints.flags = PSize | PMinSize | PMaxSize;
     hints.min_width = hints.max_width = hints.base_width = width;
     hints.min_height = hints.max_height = hints.base_height = height;
@@ -58,27 +57,22 @@ window* window_create( unsigned int width, unsigned int height )
     wnd->gc = XCreateGC( wnd->dpy, wnd->wnd, 0, NULL );
 
     if( !wnd->gc )
-    {
-        XDestroyWindow( wnd->dpy, wnd->wnd );
-        XCloseDisplay( wnd->dpy );
-        free( wnd );
-        return NULL;
-    }
+        goto fail_wnd;
 
     /********** create XImage structure **********/
     wnd->img = XCreateImage( wnd->dpy, NULL, 24, ZPixmap, 0, 0,
 			                 width, height, 32, 0 );
 
     if( !wnd->img )
-    {
-        XFreeGC( wnd->dpy, wnd->gc );
-        XDestroyWindow( wnd->dpy, wnd->wnd );
-        XCloseDisplay( wnd->dpy );
-        free( wnd );
-        return NULL;
-    }
+        goto fail_gc;
 
     return wnd;
+fail_gc:  XFreeGC( wnd->dpy, wnd->gc );
+fail_wnd: XDestroyWindow( wnd->dpy, wnd->wnd );
+fail_dpy: XCloseDisplay( wnd->dpy );
+fail_fb:  framebuffer_cleanup( &wnd->fb );
+fail:     free( wnd );
+    return NULL;
 }
 
 void window_destroy( window* wnd )
@@ -89,6 +83,7 @@ void window_destroy( window* wnd )
         XFreeGC( wnd->dpy, wnd->gc );
         XDestroyWindow( wnd->dpy, wnd->wnd );
         XCloseDisplay( wnd->dpy );
+        framebuffer_cleanup( &wnd->fb );
         free( wnd );
     }
 }
@@ -115,15 +110,15 @@ int window_handle_events( window* wnd )
     return 1;
 }
 
-void window_display_framebuffer( window* wnd, framebuffer* fb )
+void window_display_framebuffer( window* wnd )
 {
     struct timespec tim;
     struct timespec tim2;
 
     /* copy framebuffer data */
-    wnd->img->data = (char*)fb->color;
+    wnd->img->data = (char*)wnd->fb.color;
     XPutImage( wnd->dpy, wnd->wnd, wnd->gc, wnd->img,
-               0, 0, 0, 0, fb->width, fb->height );
+               0, 0, 0, 0, wnd->fb.width, wnd->fb.height );
     wnd->img->data = NULL;
 
     /* wait for ~16.666 ms -> ~60 fps */
