@@ -4,6 +4,10 @@
 
 
 
+#define CULL_EPSILON (0.05f)
+
+
+
 typedef struct
 {
     float x, y, z, w;
@@ -398,6 +402,7 @@ void rasterizer_process_triangle( const rs_vertex* v0, const rs_vertex* v1,
                                   const rs_vertex* v2, framebuffer* fb )
 {
     rs_fragment A, B, C;
+    float f;
     int i;
 
     /* sanity check */
@@ -410,48 +415,55 @@ void rasterizer_process_triangle( const rs_vertex* v0, const rs_vertex* v1,
     if( pp_state.depth_test==COMPARE_NEVER )
         return;
 
-    /* prepare triangle vertices */
+    /* prepare vertex positions */
     A.w = 1.0/v0->w;
     A.x = (1.0f + v0->x*A.w) * 0.5f * (float)fb->width;
     A.y = (1.0f - v0->y*A.w) * 0.5f * (float)fb->height;
     A.z = (1.0f - v0->z*A.w) * 0.5f;
-    A.color[RED] = v0->r * A.w;
-    A.color[GREEN] = v0->g * A.w;
-    A.color[BLUE] = v0->b * A.w;
-    A.color[ALPHA] = v0->a * A.w;
-
-    for( i=0; i<MAX_TEXTURES; ++i )
-    {
-        A.s[i] = v0->s[i] * A.w;
-        A.t[i] = v0->t[i] * A.w;
-    }
 
     B.w = 1.0/v1->w;
     B.x = (1.0f + v1->x*B.w) * 0.5f * (float)fb->width;
     B.y = (1.0f - v1->y*B.w) * 0.5f * (float)fb->height;
     B.z = (1.0f - v1->z*B.w) * 0.5f;
-    B.color[RED] = v1->r * B.w;
-    B.color[GREEN] = v1->g * B.w;
-    B.color[BLUE] = v1->b * B.w;
-    B.color[ALPHA] = v1->a * B.w;
-
-    for( i=0; i<MAX_TEXTURES; ++i )
-    {
-        B.s[i] = v1->s[i] * B.w;
-        B.t[i] = v1->t[i] * B.w;
-    }
 
     C.w = 1.0/v2->w;
     C.x = (1.0f + v2->x*C.w) * 0.5f * (float)fb->width;
     C.y = (1.0f - v2->y*C.w) * 0.5f * (float)fb->height;
     C.z = (1.0f - v2->z*C.w) * 0.5f;
+
+    /* culling */
+    f = (v2->x - v0->x) * (v2->y - v1->y) - (v2->y - v0->y) * (v2->x - v1->x);
+
+    if( rsstate.cull_cw && f<-CULL_EPSILON )
+        return;
+    if( rsstate.cull_ccw && f>CULL_EPSILON )
+        return;
+
+    /* prepare vertex colors */
+    A.color[RED] = v0->r * A.w;
+    A.color[GREEN] = v0->g * A.w;
+    A.color[BLUE] = v0->b * A.w;
+    A.color[ALPHA] = v0->a * A.w;
+
+    B.color[RED] = v1->r * B.w;
+    B.color[GREEN] = v1->g * B.w;
+    B.color[BLUE] = v1->b * B.w;
+    B.color[ALPHA] = v1->a * B.w;
+
     C.color[RED] = v2->r * C.w;
     C.color[GREEN] = v2->g * C.w;
     C.color[BLUE] = v2->b * C.w;
     C.color[ALPHA] = v2->a * C.w;
 
+    /* prepare texture coordinates */
     for( i=0; i<MAX_TEXTURES; ++i )
     {
+        A.s[i] = v0->s[i] * A.w;
+        A.t[i] = v0->t[i] * A.w;
+
+        B.s[i] = v1->s[i] * B.w;
+        B.t[i] = v1->t[i] * B.w;
+
         C.s[i] = v2->s[i] * C.w;
         C.t[i] = v2->t[i] * C.w;
     }
