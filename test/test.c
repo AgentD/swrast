@@ -2,6 +2,7 @@
 #include "framebuffer.h"
 #include "rasterizer.h"
 #include "texture.h"
+#include "context.h"
 #include "window.h"
 #include "3ds.h"
 #include "tl.h"
@@ -46,11 +47,9 @@ int main( void )
     float a = 0.0f, c, s, m[16], far, near, aspect, f, iNF;
     unsigned char* ptr;
     unsigned int x, y;
-    pixel_state pp;
     mesh* teapot;
     texture* tex;
-    rs_state rs;
-    tl_state tl;
+    context ctx;
     window* w;
 
     /************* initalisation *************/
@@ -58,6 +57,8 @@ int main( void )
         return -1;
 
     teapot = load_3ds( "teapot.3ds" );
+
+    context_init( &ctx );
 
     /* intialize projection matrix */
     far    = 0.5f;
@@ -71,7 +72,7 @@ int main( void )
     m[2]=0.0f;     m[6]=0.0f; m[10]= (far+near)*iNF; m[14]=2.0f*far*near*iNF;
     m[3]=0.0f;     m[7]=0.0f; m[11]=-1.0f;           m[15]=0.0f;
 
-    tl_set_projection_matrix( m );
+    tl_set_projection_matrix( &ctx, m );
 
     /* create and initialize texture */
     tex = texture_create( 64, 64 );
@@ -89,28 +90,30 @@ int main( void )
     }
 
     /* initialize T&L state */
-    memset( &tl, 0, sizeof(tl_state) );
-    memset( &pp, 0, sizeof(pixel_state) );
-    memset( &rs, 0, sizeof(rs_state) );
+    ctx.light[0].enable = 1;
+    ctx.light[0].diffuse[0] = 1.0f;
+    ctx.light[0].diffuse[1] = 1.0f;
+    ctx.light[0].diffuse[2] = 1.0f;
+    ctx.light[0].specular[0] = 1.0f;
+    ctx.light[0].specular[1] = 1.0f;
+    ctx.light[0].specular[2] = 1.0f;
+    ctx.light[0].attenuation_constant = 1.0f;
 
-    tl.light[0].enable = 1;
-    tl.light[0].diffuse[0] = 1.0f;
-    tl.light[0].diffuse[1] = 1.0f;
-    tl.light[0].diffuse[2] = 1.0f;
-    tl.light[0].specular[0] = 1.0f;
-    tl.light[0].specular[1] = 1.0f;
-    tl.light[0].specular[2] = 1.0f;
-    tl.light[0].attenuation_constant = 1.0f;
+    ctx.material.diffuse[0] = 0.5f;
+    ctx.material.diffuse[1] = 0.5f;
+    ctx.material.diffuse[2] = 0.5f;
+    ctx.material.specular[0] = 0.5f;
+    ctx.material.specular[1] = 0.5f;
+    ctx.material.specular[2] = 0.5f;
+    ctx.material.ambient[0] = 0.0f;
+    ctx.material.ambient[1] = 0.0f;
+    ctx.material.ambient[2] = 0.0f;
+    ctx.material.emission[0] = 0.0f;
+    ctx.material.emission[1] = 0.0f;
+    ctx.material.emission[2] = 0.0f;
+    ctx.material.shininess = 127;
 
-    tl.light[0].enable = 1;
-
-    tl.material.diffuse[0] = 0.5f;
-    tl.material.diffuse[1] = 0.5f;
-    tl.material.diffuse[2] = 0.5f;
-    tl.material.specular[0] = 0.5f;
-    tl.material.specular[1] = 0.5f;
-    tl.material.specular[2] = 0.5f;
-    tl.material.shininess = 127;
+    ctx.target = &w->fb;
 
     /************* drawing loop *************/
     while( window_handle_events( w ) )
@@ -128,20 +131,18 @@ int main( void )
         m[2] =   -s; m[6] = 0.0f; m[10] =    c; m[14] =-10.0f;
         m[3] = 0.0f; m[7] = 0.0f; m[11] = 0.0f; m[15] =  1.0f;
 
-        pp.alpha_blend       = 1;
-        pp.depth_test        = COMPARE_LESS_EQUAL;
-        pp.texture_enable[0] = 1;
-        pp.textures[0]       = tex;
-        rs.cull_cw           = 0;
-        rs.cull_ccw          = 0;
-        rasterizer_set_state( &rs );
-        pixel_set_state( &pp );
-        tl.light_enable = 0;
-        tl_set_state( &tl );
+        ctx.alpha_blend       = 1;
+        ctx.depth_test        = COMPARE_LESS_EQUAL;
+        ctx.texture_enable[0] = 1;
+        ctx.textures[0]       = tex;
+        ctx.cull_cw           = 0;
+        ctx.cull_ccw          = 0;
+        ctx.light_enable      = 0;
+        ctx.vertex_format     = VF_POSITION_F4 | VF_COLOR_F4 | VF_TEX0;
+        ctx.vertexbuffer      = vbo;
 
-        tl_set_modelview_matrix( m );
-        ia_set_vertex_format( VF_POSITION_F4 | VF_COLOR_F4 | VF_TEX0 );
-        ia_draw_triangles( &w->fb, vbo, 6 );
+        tl_set_modelview_matrix( &ctx, m );
+        ia_draw_triangles( &ctx, 6 );
 
         /* rasterize teapot */
         m[0] =    c*0.05f; m[4] = 0.0f;  m[ 8] =    s*0.05f; m[12] =  2.0f;
@@ -149,24 +150,19 @@ int main( void )
         m[2] =   -s*0.05f; m[6] = 0.0f;  m[10] =    c*0.05f; m[14] = -5.0f;
         m[3] = 0.0f;       m[7] = 0.0f;  m[11] = 0.0f;       m[15] =  1.0f;
 
-        pp.alpha_blend       = 0;
-        pp.depth_test        = COMPARE_LESS_EQUAL;
-        pp.texture_enable[0] = 0;
-        pp.textures[0]       = 0;
-        rs.cull_cw           = 1;
-        rs.cull_ccw          = 0;
-        rasterizer_set_state( &rs );
-        pixel_set_state( &pp );
-        tl.light_enable = 1;
-        tl_set_state( &tl );
+        ctx.alpha_blend       = 0;
+        ctx.depth_test        = COMPARE_LESS_EQUAL;
+        ctx.texture_enable[0] = 0;
+        ctx.textures[0]       = 0;
+        ctx.cull_cw           = 1;
+        ctx.cull_ccw          = 0;
+        ctx.light_enable      = 1;
+        ctx.vertex_format     = teapot->format;
+        ctx.vertexbuffer      = teapot->vertexbuffer;
+        ctx.indexbuffer       = teapot->indexbuffer;
 
-        tl_set_modelview_matrix( m );
-        ia_set_vertex_format( teapot->format );
-        ia_draw_triangles( &w->fb, vbo, 6 );
-
-        ia_draw_triangles_indexed( &w->fb,
-                                   teapot->vertexbuffer, teapot->vertices,
-                                   teapot->indexbuffer, teapot->indices );
+        tl_set_modelview_matrix( &ctx, m );
+        ia_draw_triangles_indexed( &ctx, teapot->vertices, teapot->indices );
 
         /* copy to window */
         window_display_framebuffer( w );

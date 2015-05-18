@@ -8,18 +8,21 @@
 
 
 
+#include "predef.h"
+
+
+
 /**
  * \struct texture
  *
  * \brief Holds the data of a texture
  */
-typedef struct
+struct texture
 {
     unsigned int width;     /**< \brief The width of a texture in texels */
     unsigned int height;    /**< \brief The height of  a texture in texels */
     unsigned char* data;    /**< \brief The scan lines of a texture */
-}
-texture;
+};
 
 
 

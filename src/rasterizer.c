@@ -1,4 +1,6 @@
+#include "framebuffer.h"
 #include "rasterizer.h"
+#include "context.h"
 #include "texture.h"
 #include <math.h>
 
@@ -68,40 +70,9 @@ typedef struct
 }
 scan_line;
 
-/****************************************************************************
- *  Rasterizer state control functions                                      *
- ****************************************************************************/
 
-static rs_state rsstate = { 0, 0 };
-static pixel_state pp_state = { COMPARE_ALWAYS, 0, { 0 }, { 0 } };
 
-void rasterizer_set_state( const rs_state* state )
-{
-    rsstate = (*state);
-}
-
-void rasterizer_get_state( rs_state* state )
-{
-    (*state) = rsstate;
-}
-
-void pixel_set_state( const pixel_state* s )
-{
-    if( s )
-        pp_state = *s;
-}
-
-void pixel_get_state( pixel_state* s )
-{
-    if( s )
-        *s = pp_state;
-}
-
-/****************************************************************************
- *  Triangle rasterisation                                                  *
- ****************************************************************************/
-
-static void draw_scanline( int y, framebuffer* fb, const edge_data* s )
+static void draw_scanline( int y, context* ctx, const edge_data* s )
 {
     int x0, x1, i, j, depthtest[8];
     float sub_pixel, w, *z_buffer;
@@ -119,9 +90,9 @@ static void draw_scanline( int y, framebuffer* fb, const edge_data* s )
 
     sub_pixel = (float)x0 - s->edge[s->left].x;
 
-    z_buffer = fb->depth + (y*fb->width + x0);
-    start = fb->color + (y*fb->width + x0)*4;
-    end = fb->color + (y*fb->width + x1)*4;
+    z_buffer = ctx->target->depth + (y*ctx->target->width + x0);
+    start = ctx->target->color + (y*ctx->target->width + x0)*4;
+    end = ctx->target->color + (y*ctx->target->width + x1)*4;
 
     /* compuate start values and slopes */
     l.pixelscale = 1.0f / (s->edge[s->right].x - s->edge[s->left].x);
@@ -149,13 +120,13 @@ static void draw_scanline( int y, framebuffer* fb, const edge_data* s )
     }
 
     /* for each fragment */
-    for( ; start!=end && x0<fb->width; start+=4, ++z_buffer, ++x0 )
+    for( ; start!=end && x0<ctx->target->width; start+=4, ++z_buffer, ++x0 )
     {
         if( x0<0 )
             goto skip_fragment;
 
         /* depth test */
-        if( pp_state.depth_test!=COMPARE_ALWAYS )
+        if( ctx->depth_test!=COMPARE_ALWAYS )
         {
             depthtest[COMPARE_LESS         ] = (l.z < *z_buffer);
             depthtest[COMPARE_GREATER      ] = (l.z > *z_buffer);
@@ -167,7 +138,7 @@ static void draw_scanline( int y, framebuffer* fb, const edge_data* s )
             depthtest[COMPARE_GREATER_EQUAL] = depthtest[COMPARE_EQUAL] |
                                                depthtest[COMPARE_GREATER];
 
-            if( !depthtest[pp_state.depth_test] )
+            if( !depthtest[ctx->depth_test] )
                 goto skip_fragment;
         }
 
@@ -180,9 +151,9 @@ static void draw_scanline( int y, framebuffer* fb, const edge_data* s )
         /* interpolate texture coordinates, fetch texture colors */
         for( i=0; i<MAX_TEXTURES; ++i )
         {
-            if( pp_state.texture_enable[ i ] )
+            if( ctx->texture_enable[ i ] )
             {
-                texture_sample(pp_state.textures[i], l.s[i]*w, l.t[i]*w, tex);
+                texture_sample( ctx->textures[i], l.s[i]*w, l.t[i]*w, tex );
 
                 for( j=0; j<4; ++j )
                     c[j] = (c[j]*tex[j]) >> 8;
@@ -190,7 +161,7 @@ static void draw_scanline( int y, framebuffer* fb, const edge_data* s )
         }
 
         /* blend onto framebuffer color */
-        if( pp_state.alpha_blend )
+        if( ctx->alpha_blend )
         {
             unsigned int a = c[ALPHA], ia = 0xFF - a;
 
@@ -242,7 +213,7 @@ static void advance_line( edge_data* s, float scale )
 }
 
 static void draw_triangle( rs_fragment* A, rs_fragment* B,
-                           rs_fragment* C, framebuffer* fb )
+                           rs_fragment* C, context* ctx )
 {
     rs_fragment* temp_v;
     int y, y0, y1, i;
@@ -329,10 +300,10 @@ static void draw_triangle( rs_fragment* A, rs_fragment* B,
         advance_line( &s, (float)y0 - A->y );
 
         /* rasterize the edge scanlines */
-        for( y=y0; y<=y1 && y<fb->height; ++y )
+        for( y=y0; y<=y1 && y<ctx->target->height; ++y )
         {
             if( y>0 )
-                draw_scanline( y, fb, &s );
+                draw_scanline( y, ctx, &s );
             advance_line( &s, 1.0f );
         }
     }
@@ -389,54 +360,54 @@ static void draw_triangle( rs_fragment* A, rs_fragment* B,
         advance_line( &s, (float)y0 - B->y );
 
         /* draw scanlines */
-        for( y=y0; y<=y1 && y<fb->height; ++y )
+        for( y=y0; y<=y1 && y<ctx->target->height; ++y )
         {
             if( y>0 )
-                draw_scanline( y, fb, &s );
+                draw_scanline( y, ctx, &s );
             advance_line( &s, 1.0f );
         }
     }
 }
 
-void rasterizer_process_triangle( const rs_vertex* v0, const rs_vertex* v1,
-                                  const rs_vertex* v2, framebuffer* fb )
+void rasterizer_process_triangle( context* ctx, const rs_vertex* v0,
+                                  const rs_vertex* v1, const rs_vertex* v2 )
 {
     rs_fragment A, B, C;
     float f;
     int i;
 
     /* sanity check */
-    if( rsstate.cull_cw && rsstate.cull_ccw )
+    if( ctx->cull_cw && ctx->cull_ccw )
         return;
 
     if( v0->w<=0.0 || v1->w<=0.0 || v2->w<=0.0 )
         return;
 
-    if( pp_state.depth_test==COMPARE_NEVER )
+    if( ctx->depth_test==COMPARE_NEVER )
         return;
 
     /* prepare vertex positions */
     A.w = 1.0/v0->w;
-    A.x = (1.0f + v0->x*A.w) * 0.5f * (float)fb->width;
-    A.y = (1.0f - v0->y*A.w) * 0.5f * (float)fb->height;
+    A.x = (1.0f + v0->x*A.w) * 0.5f * (float)ctx->target->width;
+    A.y = (1.0f - v0->y*A.w) * 0.5f * (float)ctx->target->height;
     A.z = (1.0f - v0->z*A.w) * 0.5f;
 
     B.w = 1.0/v1->w;
-    B.x = (1.0f + v1->x*B.w) * 0.5f * (float)fb->width;
-    B.y = (1.0f - v1->y*B.w) * 0.5f * (float)fb->height;
+    B.x = (1.0f + v1->x*B.w) * 0.5f * (float)ctx->target->width;
+    B.y = (1.0f - v1->y*B.w) * 0.5f * (float)ctx->target->height;
     B.z = (1.0f - v1->z*B.w) * 0.5f;
 
     C.w = 1.0/v2->w;
-    C.x = (1.0f + v2->x*C.w) * 0.5f * (float)fb->width;
-    C.y = (1.0f - v2->y*C.w) * 0.5f * (float)fb->height;
+    C.x = (1.0f + v2->x*C.w) * 0.5f * (float)ctx->target->width;
+    C.y = (1.0f - v2->y*C.w) * 0.5f * (float)ctx->target->height;
     C.z = (1.0f - v2->z*C.w) * 0.5f;
 
     /* culling */
     f = (v2->x - v0->x) * (v2->y - v1->y) - (v2->y - v0->y) * (v2->x - v1->x);
 
-    if( rsstate.cull_cw && f<-CULL_EPSILON )
+    if( ctx->cull_cw && f<-CULL_EPSILON )
         return;
-    if( rsstate.cull_ccw && f>CULL_EPSILON )
+    if( ctx->cull_ccw && f>CULL_EPSILON )
         return;
 
     /* prepare vertex colors */
@@ -468,6 +439,6 @@ void rasterizer_process_triangle( const rs_vertex* v0, const rs_vertex* v1,
         C.t[i] = v2->t[i] * C.w;
     }
 
-    draw_triangle( &A, &B, &C, fb );
+    draw_triangle( &A, &B, &C, ctx );
 }
 

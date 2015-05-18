@@ -8,6 +8,10 @@
 
 
 
+#include "predef.h"
+
+
+
 #define FB_BGRA
 
 #ifdef FB_BGRA
@@ -29,14 +33,13 @@
  *
  * \brief Holds the data of a frame buffer
  */
-typedef struct
+struct framebuffer
 {
     unsigned char* color;   /**< \brief Color buffer scan line data */
     float* depth;           /**< \brief Depth buffer scan line data */
     int width;              /**< \brief Frame buffer width in pixels */
     int height;             /**< \brief Frame buffer height in pixels */
-}
-framebuffer;
+};
 
 
 

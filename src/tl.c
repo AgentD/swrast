@@ -1,21 +1,19 @@
 #include "tl.h"
+#include "context.h"
+#include "rasterizer.h"
 
 #include <float.h>
 #include <math.h>
 
 
 
-static float mv[ 16 ];      /* model view matrix */
-static float normal[ 16 ];  /* normal matrix */
-static float proj[ 16 ];    /* projection matrix */
-
-static tl_state state;
-
-
-
-static void recompute_normal_matrix( void )
+static void recompute_normal_matrix( context* ctx )
 {
+    float *mv, *normal;
     float det, m[16];
+
+    mv = ctx->modelview;
+    normal = ctx->normalmatrix;
 
     /* m = inverse( mv ) */
     m[0] = mv[5]*mv[10]*mv[15]-mv[ 5]*mv[11]*mv[14]-mv[ 9]*mv[6]*mv[15]+
@@ -91,38 +89,29 @@ static void recompute_normal_matrix( void )
     normal[3]=m[12]; normal[7]=m[13]; normal[11]=m[14]; normal[15]=m[15];
 }
 
-/****************************************************************************
- *                         state handling functions                         *
- ****************************************************************************/
-
-void tl_set_modelview_matrix( float* f )
+void tl_set_modelview_matrix( context* ctx, float* f )
 {
     int i;
 
     for( i=0; i<16; ++i )
-        mv[ i ] = f[ i ];
+        ctx->modelview[ i ] = f[ i ];
 
-    recompute_normal_matrix( );
+    recompute_normal_matrix( ctx );
 }
 
-void tl_set_projection_matrix( float* f )
+void tl_set_projection_matrix( context* ctx, float* f )
 {
     int i;
 
     for( i=0; i<16; ++i )
-        proj[ i ] = f[ i ];
-}
-
-void tl_set_state( const tl_state* s )
-{
-    state = *s;
+        ctx->projection[ i ] = f[ i ];
 }
 
 /****************************************************************************
  *                      triangle processing functions                       *
  ****************************************************************************/
 
-static void light_vertex( rs_vertex* v )
+static void light_vertex( context* ctx, rs_vertex* v )
 {
     float color[3] = { 0.0f, 0.0f, 0.0f };
     float L[3], V[3], H[3], d, k, a;
@@ -130,13 +119,13 @@ static void light_vertex( rs_vertex* v )
 
     for( i=0; i<MAX_LIGHTS; ++i )
     {
-        if( !state.light[ i ].enable )
+        if( !ctx->light[ i ].enable )
             continue;
 
         /* compute light vector and distance */
-        L[0] = state.light[i].position[0] - v->x;
-        L[1] = state.light[i].position[1] - v->y;
-        L[2] = state.light[i].position[2] - v->z;
+        L[0] = ctx->light[i].position[0] - v->x;
+        L[1] = ctx->light[i].position[1] - v->y;
+        L[2] = ctx->light[i].position[2] - v->z;
         d = sqrt( L[0]*L[0] + L[1]*L[1] + L[2]*L[2] );
         k = 1.0f / d;
         L[0] *= k;
@@ -162,36 +151,36 @@ static void light_vertex( rs_vertex* v )
         H[2] *= k;
 
         /* attenuation factor */
-        a = 1.0f / (state.light[i].attenuation_constant +
-                    state.light[i].attenuation_linear * d + 
-                    state.light[i].attenuation_quadratic * d * d);
+        a = 1.0f / (ctx->light[i].attenuation_constant +
+                    ctx->light[i].attenuation_linear * d + 
+                    ctx->light[i].attenuation_quadratic * d * d);
 
         /* emissive component */
-        color[0] += state.material.emission[0];
-        color[1] += state.material.emission[1];
-        color[2] += state.material.emission[2];
+        color[0] += ctx->material.emission[0];
+        color[1] += ctx->material.emission[1];
+        color[2] += ctx->material.emission[2];
 
         /* ambient component */
-        color[0] += state.light[i].ambient[0]*state.material.ambient[0];
-        color[1] += state.light[i].ambient[1]*state.material.ambient[1];
-        color[2] += state.light[i].ambient[2]*state.material.ambient[2];
+        color[0] += ctx->light[i].ambient[0]*ctx->material.ambient[0];
+        color[1] += ctx->light[i].ambient[1]*ctx->material.ambient[1];
+        color[2] += ctx->light[i].ambient[2]*ctx->material.ambient[2];
 
         /* diffuse component */
         d = (v->nx*L[0] + v->ny*L[1] + v->nz*L[2]) * a;
         d = d<0.0f ? 0.0f : (d>1.0f ? 1.0f : d);
 
-        color[0]+=state.light[i].diffuse[0]*state.material.diffuse[0]*d;
-        color[1]+=state.light[i].diffuse[1]*state.material.diffuse[1]*d;
-        color[2]+=state.light[i].diffuse[2]*state.material.diffuse[2]*d;
+        color[0]+=ctx->light[i].diffuse[0]*ctx->material.diffuse[0]*d;
+        color[1]+=ctx->light[i].diffuse[1]*ctx->material.diffuse[1]*d;
+        color[2]+=ctx->light[i].diffuse[2]*ctx->material.diffuse[2]*d;
 
         /* specular component */
         d = v->nx*H[0] + v->ny*H[1] + v->nz*H[2];
         d = d<0.0f ? 0.0f : (d>1.0f ? 1.0f : d);
-        d = pow( d, state.material.shininess );
+        d = pow( d, ctx->material.shininess );
 
-        color[0] += state.light[i].specular[0]*state.material.specular[0]*d;
-        color[1] += state.light[i].specular[1]*state.material.specular[1]*d;
-        color[2] += state.light[i].specular[2]*state.material.specular[2]*d;
+        color[0] += ctx->light[i].specular[0]*ctx->material.specular[0]*d;
+        color[1] += ctx->light[i].specular[1]*ctx->material.specular[1]*d;
+        color[2] += ctx->light[i].specular[2]*ctx->material.specular[2]*d;
     }
 
     v->r = color[0]*v->r;
@@ -199,9 +188,10 @@ static void light_vertex( rs_vertex* v )
     v->b = color[2]*v->b;
 }
 
-static void process_vertex( rs_vertex* v )
+static void process_vertex( context* ctx, rs_vertex* v )
 {
-    float x, y, z, w;
+    float *normal = ctx->normalmatrix, *mv = ctx->modelview;
+    float *proj = ctx->projection, x, y, z, w;
 
     /* transform normal to viewspace */
     x = normal[0]*v->nx + normal[4]*v->ny + normal[ 8]*v->nz;
@@ -227,8 +217,8 @@ static void process_vertex( rs_vertex* v )
     v->w = w;
 
     /* compute vertex lighting */
-    if( state.light_enable )
-        light_vertex( v );
+    if( ctx->light_enable )
+        light_vertex( ctx, v );
 
     /* project position */
     v->x = proj[0]*x + proj[4]*y + proj[ 8]*z + proj[12]*w;
@@ -237,11 +227,11 @@ static void process_vertex( rs_vertex* v )
     v->w = proj[3]*x + proj[7]*y + proj[11]*z + proj[15]*w;
 }
 
-void tl_transform_and_light_triangle( rs_vertex* v0, rs_vertex* v1,
-                                      rs_vertex* v2 )
+void tl_transform_and_light_triangle( context* ctx, rs_vertex* v0,
+                                      rs_vertex* v1, rs_vertex* v2 )
 {
-    process_vertex( v0 );
-    process_vertex( v1 );
-    process_vertex( v2 );
+    process_vertex( ctx, v0 );
+    process_vertex( ctx, v1 );
+    process_vertex( ctx, v2 );
 }
 

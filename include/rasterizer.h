@@ -8,108 +8,29 @@
 
 
 
-#include "framebuffer.h"
-#include "texture.h"
-
-
-
-#define MAX_TEXTURES 1
-
-#define COMPARE_ALWAYS 0x00
-#define COMPARE_NEVER 0x01
-#define COMPARE_EQUAL 0x02
-#define COMPARE_NOT_EQUAL 0x03
-#define COMPARE_LESS 0x04
-#define COMPARE_LESS_EQUAL 0x05
-#define COMPARE_GREATER 0x06
-#define COMPARE_GREATER_EQUAL 0x07
+#include "predef.h"
+#include "config.h"
 
 
 
 /**
- * \struct vertex
+ * \struct rs_vertex
  *
  * \brief Holds the data of a triangle vertex before rasterization
  */
-typedef struct
+struct rs_vertex
 {
     float x, y, z, w;
     float nx, ny, nz;
     float s[MAX_TEXTURES], t[MAX_TEXTURES];
     unsigned char r, g, b, a;
-}
-rs_vertex;
-
-/**
- * \struct rs_state
- *
- * \brief Holds the state of the rasterizer
- */
-typedef struct
-{
-    /** \brief Non-zero to cull counter clockwise triangles */
-    int cull_ccw;
-
-    /** \brief Non-zero to cull clockwise triangles */
-    int cull_cw;
-}
-rs_state;
-
-/**
- * \struct pixel_state
- *
- * \brief Encapsulates the state of the pixel processor
- */
-typedef struct
-{
-    /** \brief Depth test comparison function */
-    int depth_test;
-
-    /** \brief Non-zero to enable alpha blending, zero to disable */
-    int alpha_blend;
-
-    /** \brief Non-zero to enable a texture layer, zero to disable */
-    int texture_enable[MAX_TEXTURES];
-
-    /** \brief Pointer to textures for different texture layers */
-    texture* textures[MAX_TEXTURES];
-}
-pixel_state;
-
+};
 
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * \brief Overwrite the current rasterizer state
- *
- * \param state A pointer to a state structure
- */
-void rasterizer_set_state( const rs_state* state );
-
-/**
- * \brief Read the current rasterizer state
- *
- * \param state A pointer to a state structure to write the current state to
- */
-void rasterizer_get_state( rs_state* state );
-
-/**
- * \brief Overwrite the current pixel processor state
- *
- * \param s A pointer to a state structure
- */
-void pixel_set_state( const pixel_state* s );
-
-/**
- * \brief Read the current pixel processor state
- *
- * \param s A pointer to a state structure to write the current state to
- */
-void pixel_get_state( pixel_state* s );
 
 /**
  * \brief Rasterize a triangle
@@ -120,13 +41,14 @@ void pixel_get_state( pixel_state* s );
  * before perpective division is needed for perspective correct
  * interpolation.
  *
- * \param v0 The first vertex of the triangle
- * \param v1 The second vertex of the triangle
- * \param v2 The third vertex of the triangle
- * \param fb A pointer to a frame buffer structure
+ * \param ctx A pointer to a context object
+ * \param v0  The first vertex of the triangle
+ * \param v1  The second vertex of the triangle
+ * \param v2  The third vertex of the triangle
  */
-void rasterizer_process_triangle( const rs_vertex* v0, const rs_vertex* v1,
-                                  const rs_vertex* v2, framebuffer* fb );
+void rasterizer_process_triangle( context* ctx,
+                                  const rs_vertex* v0, const rs_vertex* v1,
+                                  const rs_vertex* v2 );
 
 #ifdef __cplusplus
 }

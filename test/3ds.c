@@ -1,4 +1,5 @@
 #include "inputassembler.h"
+#include "context.h"
 #include "3ds.h"
 
 #include <math.h>
