@@ -128,7 +128,37 @@ struct context
 extern "C" {
 #endif
 
+/**
+ * \brief Initialize a context object
+ *
+ * \memberof context
+ *
+ * \param ctx A pointer to a context
+ */
 void context_init( context* ctx );
+
+/**
+ * \brief Set the currently active model view matrix and update the
+ *        normal matrix
+ *
+ * \memberof context
+ *
+ * \param ctx A pointer to a context
+ * \param f   A pointer to an array of 16 float values, representing a 4x4
+ *            matrix, stored in column-major order
+ */
+void context_set_modelview_matrix( context* ctx, float* f );
+
+/**
+ * \brief Set the currently active projection matrix
+ *
+ * \memberof context
+ *
+ * \param ctx A pointer to a context
+ * \param f   A pointer to an array of 16 float values, representing a 4x4
+ *            matrix, stored in column-major order
+ */
+void context_set_projection_matrix( context* ctx, float* f );
 
 #ifdef __cplusplus
 }

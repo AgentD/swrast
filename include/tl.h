@@ -17,24 +17,6 @@ extern "C" {
 #endif
 
 /**
- * \brief Set the currently active model view matrix
- *
- * \param ctx A pointer to a context
- * \param f   A pointer to an array of 16 float values, representing a 4x4
- *            matrix, stored in column-major order
- */
-void tl_set_modelview_matrix( context* ctx, float* f );
-
-/**
- * \brief Set the currently active projection matrix
- *
- * \param ctx A pointer to a context
- * \param f   A pointer to an array of 16 float values, representing a 4x4
- *            matrix, stored in column-major order
- */
-void tl_set_projection_matrix( context* ctx, float* f );
-
-/**
  * \brief Transform the vertices of a triangle and compute lighting values
  *
  * \param ctx A pointer to a context

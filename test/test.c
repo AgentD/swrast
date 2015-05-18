@@ -72,7 +72,7 @@ int main( void )
     m[2]=0.0f;     m[6]=0.0f; m[10]= (far+near)*iNF; m[14]=2.0f*far*near*iNF;
     m[3]=0.0f;     m[7]=0.0f; m[11]=-1.0f;           m[15]=0.0f;
 
-    tl_set_projection_matrix( &ctx, m );
+    context_set_projection_matrix( &ctx, m );
 
     /* create and initialize texture */
     tex = texture_create( 64, 64 );
@@ -141,7 +141,7 @@ int main( void )
         ctx.vertex_format     = VF_POSITION_F4 | VF_COLOR_F4 | VF_TEX0;
         ctx.vertexbuffer      = vbo;
 
-        tl_set_modelview_matrix( &ctx, m );
+        context_set_modelview_matrix( &ctx, m );
         ia_draw_triangles( &ctx, 6 );
 
         /* rasterize teapot */
@@ -161,7 +161,7 @@ int main( void )
         ctx.vertexbuffer      = teapot->vertexbuffer;
         ctx.indexbuffer       = teapot->indexbuffer;
 
-        tl_set_modelview_matrix( &ctx, m );
+        context_set_modelview_matrix( &ctx, m );
         ia_draw_triangles_indexed( &ctx, teapot->vertices, teapot->indices );
 
         /* copy to window */
