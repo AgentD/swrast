@@ -8,7 +8,7 @@
  The entire source code is released into the public domain.
 
  The rasterizer currently supports the following features:
-  - Triangle rasterization
+  - Subpixel correct triangle rasterization
   - Configurable back face culling (cull by vertex winding)
   - Vertex buffers and index buffers
   - Fixed function OpenGL(R) style transform & lighting with model view &
@@ -25,17 +25,17 @@
   ******************
 
      _________________
-    | Input Assembler |     Vertices are decoded from buffer and
-    |_________________|     assembled into a triangle structure.
+    | Input Assembler |     Vertices are decoded from vertex and index
+    |_________________|     buffers.
            _| |_
      ______\___/______
-    |Transform & Light|     Triangles are transformed with modelview and
+    |Transform & Light|     Vertices are transformed with modelview and
     |_________________|     projection matrix. Lighting values for each
            _| |_            vertex are computed in viewspace.
      ______\___/______
-    |  Rasterization  |     Pixels are generated from triangles in screen
-    |_________________|     space after perspective divide. Vertex attributes
-           _| |_            are interpolated over the triangle area.
+    |  Rasterization  |     Pixels are generated from tripples of vertices.
+    |_________________|     Vertex attributes are interpolated over the
+           _| |_            triangle area.
      ______\___/______
     |    Depth test   |     The interolated depth value is compared to the
     |_________________|     depth buffer value. Pixels are dropped if the
@@ -55,6 +55,14 @@
 
   Source code overview
   ********************
+
+    include/config.h          - Preprocessor defined limits of the
+                                rasterization pipeline
+
+    include/predef.h          - Forward declarations of structures
+
+    include/context.h         - Context structure. Encapsulates all global
+    src/context.c               state of the pipeline.
 
     include/inputassembler.h  - Implementation of the input assembler stage
     src/inputassembler.c
