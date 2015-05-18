@@ -83,7 +83,7 @@ static void light_vertex( context* ctx, rs_vertex* v )
     v->b = color[2]*v->b;
 }
 
-static void process_vertex( context* ctx, rs_vertex* v )
+void tl_transform_and_light_vertex( context* ctx, rs_vertex* v )
 {
     float *normal = ctx->normalmatrix, *mv = ctx->modelview;
     float *proj = ctx->projection, x, y, z, w;
@@ -120,13 +120,5 @@ static void process_vertex( context* ctx, rs_vertex* v )
     v->y = proj[1]*x + proj[5]*y + proj[ 9]*z + proj[13]*w;
     v->z = proj[2]*x + proj[6]*y + proj[10]*z + proj[14]*w;
     v->w = proj[3]*x + proj[7]*y + proj[11]*z + proj[15]*w;
-}
-
-void tl_transform_and_light_triangle( context* ctx, rs_vertex* v0,
-                                      rs_vertex* v1, rs_vertex* v2 )
-{
-    process_vertex( ctx, v0 );
-    process_vertex( ctx, v1 );
-    process_vertex( ctx, v2 );
 }
 

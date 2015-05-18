@@ -108,7 +108,9 @@ void ia_draw_triangles( context* ctx, unsigned int vertexcount )
         ptr = read_vertex( &v0, ptr, ctx->vertex_format );
         ptr = read_vertex( &v1, ptr, ctx->vertex_format );
         ptr = read_vertex( &v2, ptr, ctx->vertex_format );
-        tl_transform_and_light_triangle( ctx, &v0, &v1, &v2 );
+        tl_transform_and_light_vertex( ctx, &v0 );
+        tl_transform_and_light_vertex( ctx, &v1 );
+        tl_transform_and_light_vertex( ctx, &v2 );
         rasterizer_process_triangle( ctx, &v0, &v1, &v2 );
     }
 }
@@ -168,7 +170,9 @@ void ia_draw_triangles_indexed( context* ctx, unsigned int vertexcount,
                      ctx->vertex_format );
 
         /* rasterize */
-        tl_transform_and_light_triangle( ctx, &v0, &v1, &v2 );
+        tl_transform_and_light_vertex( ctx, &v0 );
+        tl_transform_and_light_vertex( ctx, &v1 );
+        tl_transform_and_light_vertex( ctx, &v2 );
         rasterizer_process_triangle( ctx, &v0, &v1, &v2 );
     }
 }
