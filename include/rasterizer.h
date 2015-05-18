@@ -35,11 +35,12 @@ extern "C" {
 /**
  * \brief Rasterize a triangle
  *
- * This function rasterizes to a frame buffer after applying all
- * transformations to the triangle but BEFORE perspective division.
- * The function does perspective divsion internally. The w coordinate
- * before perpective division is needed for perspective correct
- * interpolation.
+ * This function rasterizes to a frame buffer. No transformations are applied
+ * to the triangle. Perspective division is performed by the function and
+ * the w coordinate is used for perspective correct interpolation of vertex
+ * attributes. Shading, depth test, texturing and blending are performed by
+ * the function, depending on the context state. The function draws to the
+ * currenlty bound target frame buffer of the context.
  *
  * \param ctx A pointer to a context object
  * \param v0  The first vertex of the triangle
