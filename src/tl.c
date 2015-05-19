@@ -83,7 +83,8 @@ static void light_vertex( context* ctx, rs_vertex* v )
     v->b = color[2]*v->b;
 }
 
-void tl_transform_and_light_vertex( context* ctx, rs_vertex* v )
+void tl_transform_and_light_vertex( context* ctx, rs_vertex* v,
+                                    int light_off_override )
 {
     float *normal = ctx->normalmatrix, *mv = ctx->modelview;
     float *proj = ctx->projection, x, y, z, w;
@@ -112,7 +113,7 @@ void tl_transform_and_light_vertex( context* ctx, rs_vertex* v )
     v->w = w;
 
     /* compute vertex lighting */
-    if( ctx->light_enable )
+    if( ctx->light_enable && !light_off_override )
         light_vertex( ctx, v );
 
     /* project position */

@@ -187,18 +187,22 @@ int main( void )
 
         /* draw scene into multiple view ports */
         context_set_viewport( &ctx, 0, 0, w->fb.width/2, w->fb.height/2 );
+        ctx.shade_model = SHADE_GOURAUD;
         draw_scene( );
 
         context_set_viewport( &ctx, w->fb.width/2, 0,
                                     w->fb.width/2, w->fb.height/2 );
+        ctx.shade_model = SHADE_FLAT;
         draw_scene( );
 
         context_set_viewport( &ctx, 0, w->fb.height/2,
                                     w->fb.width/2, w->fb.height/2 );
+        ctx.shade_model = SHADE_GOURAUD;
         draw_scene( );
 
         context_set_viewport( &ctx, w->fb.width/2, w->fb.height/2,
                                     w->fb.width/2, w->fb.height/2 );
+        ctx.shade_model = SHADE_FLAT;
         draw_scene( );
 
         a += 0.02f;

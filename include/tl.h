@@ -25,10 +25,13 @@ extern "C" {
  * configured light sources. In the last step, the vertex position is
  * transformed using the projection matrix of the context.
  *
- * \param ctx A pointer to a context
- * \param v   A pointer to a vertex
+ * \param ctx                A pointer to a context
+ * \param v                  A pointer to a vertex
+ * \param light_off_override If non-zero lighting is not computed even if
+ *                           the context has lighting enabled
  */
-void tl_transform_and_light_vertex( context* ctx, rs_vertex* v );
+void tl_transform_and_light_vertex( context* ctx, rs_vertex* v,
+                                    int light_off_override );
 
 #ifdef __cplusplus
 }

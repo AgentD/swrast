@@ -27,6 +27,18 @@ typedef enum
 COMPARE_FUNCTION;
 
 /**
+ * \enum SHADING_MODEL
+ *
+ * \brief Shade model enumerator
+ */
+typedef enum
+{
+    SHADE_FLAT = 0,
+    SHADE_GOURAUD = 1
+}
+SHADE_MODEL;
+
+/**
  * \enum VERTEX_FORMAT
  *
  * \brief Vertex format flags
@@ -118,6 +130,9 @@ struct context
     /** \brief Non-zero to cull clockwise triangles */
     int cull_cw;
 
+    /** \brief Non-zero if counter clockwise is front */
+    int front_is_ccw;
+
     /** \brief Depth test comparison function */
     COMPARE_FUNCTION depth_test;
 
@@ -147,6 +162,12 @@ struct context
 
     /** \brief Index buffer for input assembler */
     unsigned short* indexbuffer;
+
+    /** \brief Shade model to use for lighting values */
+    SHADE_MODEL shade_model;
+
+    /** \brief Vertex used for flat shading */
+    int provoking_vertex;
 
     /** \brief Frame buffer that the rasterizer draws to */
     framebuffer* target;

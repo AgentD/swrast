@@ -13,7 +13,7 @@
   - Vertex buffers and index buffers
   - Fixed function OpenGL(R) style transform & lighting with model view &
     projection matrix and up to 8 independend light sources
-  - Gouraud shading
+  - Flat and Gouraud shading (configurable)
   - Perspective correct interpolation of vertex attributes
   - Multpile texture layers with nearest neighbour sampling
   - Depth buffering (OpenGL(R) style comparison function)
