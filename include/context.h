@@ -33,7 +33,16 @@ COMPARE_FUNCTION;
  */
 typedef enum
 {
+    /**
+     * \brief Calculate lighting for one vertex and use values for
+     *        entire triangle
+     */
     SHADE_FLAT = 0,
+
+    /**
+     * \brief Calculate lighting for every vertex and interpolate inside
+     *        the triangle
+     */
     SHADE_GOURAUD = 1
 }
 SHADE_MODEL;

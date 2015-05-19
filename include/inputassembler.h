@@ -17,8 +17,8 @@ extern "C" {
 #endif
 
 /**
- * \brief Draw a stream of triangles using the currently set vertex format
- *        and transformation matrices
+ * \brief Read vertices from the currently set buffer and send them down the
+ *        rendering pipeline
  *
  * \param ctx         A pointer to a context object
  * \param vertexcount The number of vertices to read from the input stream
@@ -26,12 +26,11 @@ extern "C" {
 void ia_draw_triangles( context* ctx, unsigned int vertexcount );
 
 /**
- * \brief Draw an indexed stream of triangles using the currently set vertex
- *        format and transformation matrices
+ * \brief Read vertices from the currently vertex & index buffers and send
+ *        them down the rendering pipeline
  *
  * \param ctx         A pointer to a context object to
  * \param vertexcount The number of vertices available (for bounds checking)
- * \param indices     A pointer to the input index buffer
  * \param indexcount  The number of indices to read from the index buffer
  */
 void ia_draw_triangles_indexed( context* ctx, unsigned int vertexcount,
