@@ -98,81 +98,6 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
     return ptr;
 }
 
-static void draw_triangle( context* ctx, rs_vertex* v0,
-                           rs_vertex* v1, rs_vertex* v2 )
-{
-    rs_vertex provoking;
-    float u[4], v[4], s;
-
-    if( ctx->shade_model==SHADE_GOURAUD )
-    {
-        tl_transform_and_light_vertex( ctx, v0, 0 );
-        tl_transform_and_light_vertex( ctx, v1, 0 );
-        tl_transform_and_light_vertex( ctx, v2, 0 );
-    }
-    else if( ctx->shade_model==SHADE_FLAT )
-    {
-        /* get position of provoking vertex */
-        switch( ctx->provoking_vertex )
-        {
-        case 0: provoking.x=v0->x; provoking.y=v0->y;
-                provoking.z=v0->z; provoking.w=v0->w;
-                break;
-        case 1: provoking.x=v1->x; provoking.y=v1->y;
-                provoking.z=v1->z; provoking.w=v1->w;
-                break;
-        case 2: provoking.x=v2->x; provoking.y=v2->y;
-                provoking.z=v2->z; provoking.w=v2->w;
-                break;
-        }
-
-        /* compute normal for triangle */
-        u[0] = v1->x - v0->x; u[1] = v1->y - v0->y; u[2] = v1->z - v0->z;
-        v[0] = v2->x - v0->x; v[1] = v2->y - v0->y; v[2] = v2->z - v0->z;
-
-        provoking.nx = u[1]*v[2] - u[2]*v[1];
-        provoking.ny = u[2]*v[0] - u[0]*v[2];
-        provoking.nz = u[0]*v[1] - u[1]*v[0];
-        s = provoking.nx*provoking.nx + provoking.ny*provoking.ny +
-            provoking.nz*provoking.nz;
-
-        if( !ctx->front_is_ccw )
-            s *= -1.0f;
-
-        s = 1.0f / sqrt( s );
-        provoking.nx *= s;
-        provoking.ny *= s;
-        provoking.nz *= s;
-
-        /* compute lighting for provoking vertex */
-        provoking.r=0xFF;provoking.g=0xFF;provoking.b=0xFF;provoking.a=0xFF;
-        tl_transform_and_light_vertex( ctx, &provoking, 0 );
-
-        /* transform vertices */
-        tl_transform_and_light_vertex( ctx, v0, 1 );
-        tl_transform_and_light_vertex( ctx, v1, 1 );
-        tl_transform_and_light_vertex( ctx, v2, 1 );
-
-        /* apply lighting */
-        v0->r = (v0->r*provoking.r)>>8;
-        v0->g = (v0->g*provoking.g)>>8;
-        v0->b = (v0->b*provoking.b)>>8;
-        v0->a = (v0->a*provoking.a)>>8;
-
-        v1->r = (v1->r*provoking.r)>>8;
-        v1->g = (v1->g*provoking.g)>>8;
-        v1->b = (v1->b*provoking.b)>>8;
-        v1->a = (v1->a*provoking.a)>>8;
-
-        v2->r = (v2->r*provoking.r)>>8;
-        v2->g = (v2->g*provoking.g)>>8;
-        v2->b = (v2->b*provoking.b)>>8;
-        v2->a = (v2->a*provoking.a)>>8;
-    }
-
-    rasterizer_process_triangle( ctx, v0, v1, v2 );
-}
-
 void ia_draw_triangles( context* ctx, unsigned int vertexcount )
 {
     void* ptr = ctx->vertexbuffer;
@@ -184,7 +109,8 @@ void ia_draw_triangles( context* ctx, unsigned int vertexcount )
         ptr = read_vertex( &v0, ptr, ctx->vertex_format );
         ptr = read_vertex( &v1, ptr, ctx->vertex_format );
         ptr = read_vertex( &v2, ptr, ctx->vertex_format );
-        draw_triangle( ctx, &v0, &v1, &v2 );
+        tl_transform_and_light( ctx, &v0, &v1, &v2 );
+        rasterizer_process_triangle( ctx, &v0, &v1, &v2 );
     }
 }
 
@@ -243,7 +169,8 @@ void ia_draw_triangles_indexed( context* ctx, unsigned int vertexcount,
                      ctx->vertex_format );
 
         /* rasterize */
-        draw_triangle( ctx, &v0, &v1, &v2 );
+        tl_transform_and_light( ctx, &v0, &v1, &v2 );
+        rasterizer_process_triangle( ctx, &v0, &v1, &v2 );
     }
 }
 
