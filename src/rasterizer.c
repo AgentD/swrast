@@ -120,9 +120,9 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
     }
 
     /* for each fragment */
-    for( ; start!=end && x0<ctx->target->width; start+=4, ++z_buffer, ++x0 )
+    for( ; start!=end && x0<=ctx->draw_area.maxx; start+=4, ++z_buffer, ++x0 )
     {
-        if( x0<0 )
+        if( x0<=ctx->draw_area.minx )
             goto skip_fragment;
 
         /* depth test */
@@ -300,9 +300,9 @@ static void draw_triangle( rs_fragment* A, rs_fragment* B,
         advance_line( &s, (float)y0 - A->y );
 
         /* rasterize the edge scanlines */
-        for( y=y0; y<=y1 && y<ctx->target->height; ++y )
+        for( y=y0; y<=y1 && y<=ctx->draw_area.maxy; ++y )
         {
-            if( y>0 )
+            if( y>=ctx->draw_area.miny )
                 draw_scanline( y, ctx, &s );
             advance_line( &s, 1.0f );
         }
@@ -360,9 +360,9 @@ static void draw_triangle( rs_fragment* A, rs_fragment* B,
         advance_line( &s, (float)y0 - B->y );
 
         /* draw scanlines */
-        for( y=y0; y<=y1 && y<ctx->target->height; ++y )
+        for( y=y0; y<=y1 && y<=ctx->draw_area.maxy; ++y )
         {
-            if( y>0 )
+            if( y>=ctx->draw_area.miny )
                 draw_scanline( y, ctx, &s );
             advance_line( &s, 1.0f );
         }
@@ -386,34 +386,54 @@ void rasterizer_process_triangle( context* ctx, const rs_vertex* v0,
     if( ctx->depth_test==COMPARE_NEVER )
         return;
 
-    /* prepare vertex positions */
-    A.w = 1.0/v0->w;
-    A.x = (1.0f + v0->x*A.w) * 0.5f * (float)ctx->target->width;
-    A.y = (1.0f - v0->y*A.w) * 0.5f * (float)ctx->target->height;
-    A.z = (1.0f - v0->z*A.w) * 0.5f;
-
-    B.w = 1.0/v1->w;
-    B.x = (1.0f + v1->x*B.w) * 0.5f * (float)ctx->target->width;
-    B.y = (1.0f - v1->y*B.w) * 0.5f * (float)ctx->target->height;
-    B.z = (1.0f - v1->z*B.w) * 0.5f;
-
-    C.w = 1.0/v2->w;
-    C.x = (1.0f + v2->x*C.w) * 0.5f * (float)ctx->target->width;
-    C.y = (1.0f - v2->y*C.w) * 0.5f * (float)ctx->target->height;
-    C.z = (1.0f - v2->z*C.w) * 0.5f;
-
-    /* simple clipping */
-    if( A.y<0.0f && B.y<0.0f && C.y<0.0f )
-        return;
-    if( A.x<0.0f && B.x<0.0f && C.x<0.0f )
-        return;
-    if( A.y>(float)ctx->target->height && B.y>(float)ctx->target->height &&
-        C.y>(float)ctx->target->height )
+    if( ctx->draw_area.minx>=ctx->draw_area.maxx ||
+        ctx->draw_area.miny>=ctx->draw_area.maxy )
     {
         return;
     }
-    if( A.x>(float)ctx->target->width && B.x>(float)ctx->target->width &&
-        C.x>(float)ctx->target->width )
+
+    /* prepare vertex positions */
+    A.w = 1.0/v0->w;
+    A.x = (1.0f + v0->x*A.w) * 0.5f * (float)ctx->viewport.width;
+    A.y = (1.0f - v0->y*A.w) * 0.5f * (float)ctx->viewport.height;
+    A.z = (1.0f - v0->z*A.w) * 0.5f;
+
+    B.w = 1.0/v1->w;
+    B.x = (1.0f + v1->x*B.w) * 0.5f * (float)ctx->viewport.width;
+    B.y = (1.0f - v1->y*B.w) * 0.5f * (float)ctx->viewport.height;
+    B.z = (1.0f - v1->z*B.w) * 0.5f;
+
+    C.w = 1.0/v2->w;
+    C.x = (1.0f + v2->x*C.w) * 0.5f * (float)ctx->viewport.width;
+    C.y = (1.0f - v2->y*C.w) * 0.5f * (float)ctx->viewport.height;
+    C.z = (1.0f - v2->z*C.w) * 0.5f;
+
+    A.x += ctx->viewport.x;
+    B.x += ctx->viewport.x;
+    C.x += ctx->viewport.x;
+
+    A.y += ctx->viewport.y;
+    B.y += ctx->viewport.y;
+    C.y += ctx->viewport.y;
+
+    /* clipping */
+    if( (int)A.y>ctx->draw_area.maxy && (int)B.y>ctx->draw_area.maxy &&
+        (int)C.y>ctx->draw_area.maxy )
+    {
+        return;
+    }
+    if( (int)A.x>ctx->draw_area.maxx && (int)B.x>ctx->draw_area.maxx &&
+        (int)C.x>ctx->draw_area.maxx )
+    {
+        return;
+    }
+    if( (int)A.y<ctx->draw_area.miny && (int)B.y<ctx->draw_area.miny &&
+        (int)C.y<ctx->draw_area.miny )
+    {
+        return;
+    }
+    if( (int)A.x<ctx->draw_area.minx && (int)B.x<ctx->draw_area.minx &&
+        (int)C.x<ctx->draw_area.minx )
     {
         return;
     }

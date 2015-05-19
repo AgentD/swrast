@@ -1,3 +1,4 @@
+#include "framebuffer.h"
 #include "context.h"
 #include <stddef.h>
 #include <float.h>
@@ -136,6 +137,10 @@ void context_init( context* ctx )
     ctx->projection[10] = ctx->modelview[10] = ctx->normalmatrix[10] = 1.0f;
     ctx->projection[15] = ctx->modelview[15] = ctx->normalmatrix[15] = 1.0f;
 
+    ctx->viewport.x = 0;
+    ctx->viewport.y = 0;
+    ctx->viewport.width = 0;
+    ctx->viewport.height = 0;
     ctx->vertex_format = 0;
     ctx->vertexbuffer = NULL;
     ctx->indexbuffer = NULL;
@@ -158,5 +163,33 @@ void context_set_projection_matrix( context* ctx, float* f )
 
     for( i=0; i<16; ++i )
         ctx->projection[ i ] = f[ i ];
+}
+
+void context_set_viewport( context* ctx, int x, int y,
+                           unsigned int width, unsigned int height )
+{
+    ctx->viewport.x = x;
+    ctx->viewport.y = y;
+    ctx->viewport.width = width;
+    ctx->viewport.height = height;
+
+    ctx->draw_area.minx = x<0 ? 0 : x;
+    ctx->draw_area.miny = y<0 ? 0 : y;
+    ctx->draw_area.maxx = x + width - 1;
+    ctx->draw_area.maxy = y + height - 1;
+
+    if( ctx->draw_area.maxx < 0 )
+        ctx->draw_area.maxx = 0;
+    if( ctx->draw_area.maxy < 0 )
+        ctx->draw_area.maxy = 0;
+
+    if( ctx->draw_area.maxx >= (int)ctx->target->width )
+        ctx->draw_area.maxx = ctx->target->width - 1;
+    if( ctx->draw_area.maxy >= (int)ctx->target->height )
+        ctx->draw_area.maxy = ctx->target->height - 1;
+    if( ctx->draw_area.minx >= (int)ctx->target->width )
+        ctx->draw_area.minx = ctx->target->width - 1;
+    if( ctx->draw_area.miny >= (int)ctx->target->height )
+        ctx->draw_area.miny = ctx->target->height - 1;
 }
 

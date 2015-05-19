@@ -80,6 +80,36 @@ struct context
     }
     material;
 
+    /**
+     * \brief Identifies the actual drawing area on the framebuffer
+     *
+     * The normalized device coordinates after transformation are mapped to
+     * lie within the viewport area.
+     *
+     * \note Do NOT set this directly, use context_set_viewport.
+     */
+    struct
+    {
+        int x;                  /**< \brief Distance from left */
+        int y;                  /**< \brief Distance from top */
+        unsigned int width;     /**< \brief Horizontal extents */
+        unsigned int height;    /**< \breif Vertical extents */
+    }
+    viewport;
+
+    /**
+     * \brief The actual drawing area, computed from the viewport
+     *        by context_set_viewport
+     */
+    struct
+    {
+        int minx;
+        int miny;
+        int maxx;
+        int maxy;
+    }
+    draw_area;
+
     int light_enable;           /**< \brief Non-zero if lighting enabled */
 
     /** \brief Non-zero to cull counter clockwise triangles */
@@ -159,6 +189,22 @@ void context_set_modelview_matrix( context* ctx, float* f );
  *            matrix, stored in column-major order
  */
 void context_set_projection_matrix( context* ctx, float* f );
+
+/**
+ * \brief Configure viewport mapping
+ *
+ * \memberof context
+ *
+ * \note When this function is called, a vaild framebuffer MUST be bound
+ *
+ * \param ctx    A pointer to a context
+ * \param x      The distance from the left of the framebuffer
+ * \param y      The distance from the top of the framebuffer
+ * \param width  The horizontal extents of the viewport
+ * \param height The vertical extents of the viewport
+ */
+void context_set_viewport( context* ctx, int x, int y,
+                           unsigned int width, unsigned int height );
 
 #ifdef __cplusplus
 }

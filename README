@@ -19,6 +19,7 @@
   - Depth buffering (OpenGL(R) style comparison function)
   - Alpha blending
   - Multiple framebuffer objects (can be used for e.g. render to texture)
+  - viewport mapping
 
 
   Rendering Pipeline
