@@ -402,6 +402,22 @@ void rasterizer_process_triangle( context* ctx, const rs_vertex* v0,
     C.y = (1.0f - v2->y*C.w) * 0.5f * (float)ctx->target->height;
     C.z = (1.0f - v2->z*C.w) * 0.5f;
 
+    /* simple clipping */
+    if( A.y<0.0f && B.y<0.0f && C.y<0.0f )
+        return;
+    if( A.x<0.0f && B.x<0.0f && C.x<0.0f )
+        return;
+    if( A.y>(float)ctx->target->height && B.y>(float)ctx->target->height &&
+        C.y>(float)ctx->target->height )
+    {
+        return;
+    }
+    if( A.x>(float)ctx->target->width && B.x>(float)ctx->target->width &&
+        C.x>(float)ctx->target->width )
+    {
+        return;
+    }
+
     /* culling */
     f = (v2->x - v0->x) * (v2->y - v1->y) - (v2->y - v0->y) * (v2->x - v1->x);
 
