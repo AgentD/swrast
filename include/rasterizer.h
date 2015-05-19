@@ -23,7 +23,7 @@ struct rs_vertex
     float x, y, z, w;
     float nx, ny, nz;
     float s[MAX_TEXTURES], t[MAX_TEXTURES];
-    unsigned char r, g, b, a;
+    float r, g, b, a;
 };
 
 

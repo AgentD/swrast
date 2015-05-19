@@ -62,7 +62,7 @@ void texture_destroy( texture* t );
  * \param out A pointer to write the resulting color value to. The color is
  *            returned in the color ordering used by the framebuffer.
  */
-void texture_sample( texture* t, float x, float y, unsigned char* out );
+void texture_sample( texture* t, float x, float y, float* out );
 
 #ifdef __cplusplus
 }

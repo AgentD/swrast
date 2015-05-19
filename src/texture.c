@@ -31,7 +31,7 @@ void texture_destroy( texture* t )
     }
 }
 
-void texture_sample( texture* t, float x, float y, unsigned char* out )
+void texture_sample( texture* t, float x, float y, float* out )
 {
     unsigned char* ptr;
     unsigned int X, Y;
@@ -49,10 +49,10 @@ void texture_sample( texture* t, float x, float y, unsigned char* out )
 
         ptr = t->data + (Y*t->width + X)*4;
 
-        out[RED  ] = ptr[ RED   ];
-        out[GREEN] = ptr[ GREEN ];
-        out[BLUE ] = ptr[ BLUE  ];
-        out[ALPHA] = ptr[ ALPHA ];
+        out[RED  ] = (float)ptr[ RED   ] / 255.0f;
+        out[GREEN] = (float)ptr[ GREEN ] / 255.0f;
+        out[BLUE ] = (float)ptr[ BLUE  ] / 255.0f;
+        out[ALPHA] = (float)ptr[ ALPHA ] / 255.0f;
     }
 }
 

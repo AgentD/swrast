@@ -74,11 +74,9 @@ scan_line;
 
 static void draw_scanline( int y, context* ctx, const edge_data* s )
 {
+    float sub_pixel, w, *z_buffer, tex[4], c[4];
     int x0, x1, i, j, depthtest[8];
-    float sub_pixel, w, *z_buffer;
     unsigned char *start, *end;
-    unsigned char tex[4];
-    unsigned int c[4];
     scan_line l;
 
     /* get line start and end */
@@ -146,7 +144,7 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
 
         /* interpolate colors */
         for( i=0; i<4; ++i )
-            c[i] = (unsigned char)(l.col[i] * w);
+            c[i] = l.col[i] * w;
 
         /* interpolate texture coordinates, fetch texture colors */
         for( i=0; i<MAX_TEXTURES; ++i )
@@ -156,23 +154,28 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
                 texture_sample( ctx->textures[i], l.s[i]*w, l.t[i]*w, tex );
 
                 for( j=0; j<4; ++j )
-                    c[j] = (c[j]*tex[j]) >> 8;
+                    c[j] *= tex[j];
             }
         }
 
         /* blend onto framebuffer color */
         if( ctx->alpha_blend )
         {
-            unsigned int a = c[ALPHA], ia = 0xFF - a;
+            float a = c[ALPHA], ia = 1.0f - a;
 
-            c[RED  ] = (start[RED  ]*ia + c[RED  ]*a) >> 8;
-            c[GREEN] = (start[GREEN]*ia + c[GREEN]*a) >> 8;
-            c[BLUE ] = (start[BLUE ]*ia + c[BLUE ]*a) >> 8;
-            c[ALPHA] = (start[ALPHA]*ia + (a<<8)    ) >> 8;
+            c[RED  ] = start[RED  ]*ia + c[RED  ]*a*255.0f;
+            c[GREEN] = start[GREEN]*ia + c[GREEN]*a*255.0f;
+            c[BLUE ] = start[BLUE ]*ia + c[BLUE ]*a*255.0f;
+            c[ALPHA] = start[ALPHA]*ia +          a*255.0f;
+
+            for( i=0; i<4; ++i )
+                start[i] = (unsigned char)c[i];
         }
-
-        for( i=0; i<4; ++i )
-            start[i] = c[i];
+        else
+        {
+            for( i=0; i<4; ++i )
+                start[i] = (unsigned char)(c[i]*255.0f);
+        }
 
         *z_buffer = l.z;
 

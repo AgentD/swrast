@@ -13,10 +13,10 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
     v->y = 0.0;
     v->z = 0.0;
     v->w = 1.0;
-    v->r = 0xFF;
-    v->g = 0xFF;
-    v->b = 0xFF;
-    v->a = 0xFF;
+    v->r = 1.0f;
+    v->g = 1.0f;
+    v->b = 1.0f;
+    v->a = 1.0f;
     v->nx = 0.0;
     v->ny = 0.0;
     v->nz = 0.0;
@@ -58,32 +58,32 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
     /* decode color */
     if( vertex_format & VF_COLOR_F3 )
     {
-        v->r = ((float*)ptr)[0] * 255.0f;
-        v->g = ((float*)ptr)[1] * 255.0f;
-        v->b = ((float*)ptr)[2] * 255.0f;
+        v->r = ((float*)ptr)[0];
+        v->g = ((float*)ptr)[1];
+        v->b = ((float*)ptr)[2];
         ptr += 3*sizeof(float);
     }
     else if( vertex_format & VF_COLOR_F4 )
     {
-        v->r = ((float*)ptr)[0] * 255.0f;
-        v->g = ((float*)ptr)[1] * 255.0f;
-        v->b = ((float*)ptr)[2] * 255.0f;
-        v->a = ((float*)ptr)[3] * 255.0f;
+        v->r = ((float*)ptr)[0];
+        v->g = ((float*)ptr)[1];
+        v->b = ((float*)ptr)[2];
+        v->a = ((float*)ptr)[3];
         ptr += 4*sizeof(float);
     }
     else if( vertex_format & VF_COLOR_UB3 )
     {
-        v->r = ptr[0];
-        v->g = ptr[1];
-        v->b = ptr[2];
+        v->r = ((float)ptr[0]) / 255.0f;
+        v->g = ((float)ptr[1]) / 255.0f;
+        v->b = ((float)ptr[2]) / 255.0f;
         ptr += 3;
     }
     else if( vertex_format & VF_COLOR_UB4 )
     {
-        v->r = ptr[0];
-        v->g = ptr[1];
-        v->b = ptr[2];
-        v->a = ptr[3];
+        v->r = ((float)ptr[0]) / 255.0f;
+        v->g = ((float)ptr[1]) / 255.0f;
+        v->b = ((float)ptr[2]) / 255.0f;
+        v->a = ((float)ptr[3]) / 255.0f;
         ptr += 4;
     }
 

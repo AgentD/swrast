@@ -78,9 +78,9 @@ void tl_light_vertex( context* ctx, rs_vertex* v )
         color[2] += ctx->light[i].specular[2]*ctx->material.specular[2]*d;
     }
 
-    v->r = color[0]*v->r;
-    v->g = color[1]*v->g;
-    v->b = color[2]*v->b;
+    v->r *= color[0];
+    v->g *= color[1];
+    v->b *= color[2];
 }
 
 void tl_transform_vertex( context* ctx, rs_vertex* v )
@@ -177,24 +177,24 @@ void tl_transform_and_light( context* ctx, rs_vertex* v0, rs_vertex* v1,
             }
 
             /* compute lighting for provoking vertex */
-            p.r = p.g = p.b = p.a = 0xFF;
+            p.r = p.g = p.b = p.a = 1.0f;
             tl_light_vertex( ctx, &p );
 
             /* apply lighting */
-            v0->r = (v0->r*p.r)>>8;
-            v0->g = (v0->g*p.g)>>8;
-            v0->b = (v0->b*p.b)>>8;
-            v0->a = (v0->a*p.a)>>8;
+            v0->r *= p.r;
+            v0->g *= p.g;
+            v0->b *= p.b;
+            v0->a *= p.a;
 
-            v1->r = (v1->r*p.r)>>8;
-            v1->g = (v1->g*p.g)>>8;
-            v1->b = (v1->b*p.b)>>8;
-            v1->a = (v1->a*p.a)>>8;
+            v1->r *= p.r;
+            v1->g *= p.g;
+            v1->b *= p.b;
+            v1->a *= p.a;
 
-            v2->r = (v2->r*p.r)>>8;
-            v2->g = (v2->g*p.g)>>8;
-            v2->b = (v2->b*p.b)>>8;
-            v2->a = (v2->a*p.a)>>8;
+            v2->r *= p.r;
+            v2->g *= p.g;
+            v2->b *= p.b;
+            v2->a *= p.a;
         }
     }
 
