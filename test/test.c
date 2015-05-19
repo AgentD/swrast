@@ -101,7 +101,7 @@ int main( void )
     window* w;
 
     /************* initalisation *************/
-    if( !(w = window_create( 640, 480 )) )
+    if( !(w = window_create( 1024, 768 )) )
         return -1;
 
     teapot = load_3ds( "teapot.3ds" );
