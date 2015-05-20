@@ -2,9 +2,16 @@ CONFFLAGS = -D_XOPEN_SOURCE=500
 OPTFLAGS = -O3 -msse2
 CFLAGS = -ansi -pedantic -Wall -Wextra -Iinclude $(CONFFLAGS) $(OPTFLAGS)
 
-a.out: obj/inputassembler.o obj/framebuffer.o obj/rasterizer.o obj/texture.o\
-		obj/tl.o obj/window.o obj/test.o obj/3ds.o obj/context.o
+.PHONY: all
+all: a.out libraster.a
+
+a.out: obj/window.o obj/test.o obj/3ds.o libraster.a
 	$(CC) $^ -lX11 -lm -o $@
+
+libraster.a: obj/inputassembler.o obj/framebuffer.o obj/rasterizer.o \
+		obj/texture.o obj/tl.o obj/context.o
+	$(AR) rcs $@ $^
+	ranlib $@
 
 obj/%.o: src/%.c include/%.h
 	@mkdir -p obj
@@ -26,17 +33,20 @@ obj/tl.o: src/tl.c include/tl.h include/rasterizer.h include/predef.h\
 # text program source
 obj/window.o: test/window.c test/window.h include/framebuffer.h\
 				include/predef.h
+	@mkdir -p obj
 	$(CC) $(CFLAGS) -c $< -o $@
 
 obj/test.o: test/test.c test/window.h include/framebuffer.h\
 			include/rasterizer.h include/predef.h include/context.h
+	@mkdir -p obj
 	$(CC) $(CFLAGS) -c $< -o $@
 
 obj/3ds.o: test/3ds.c test/3ds.h include/inputassembler.h
+	@mkdir -p obj
 	$(CC) $(CFLAGS) -c $< -o $@
 
 
 .PHONY: clean
 clean:
-	$(RM) a.out -r obj
+	$(RM) a.out libraster.a -r obj
 
