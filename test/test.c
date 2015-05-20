@@ -59,13 +59,10 @@ static void draw_scene( void )
     m[2] = -s;   m[6] = 0.0f; m[10] =    c; m[14] = -10.0f;
     m[3] = 0.0f; m[7] = 0.0f; m[11] = 0.0f; m[15] =   1.0f;
 
-    ctx.alpha_blend       = 1;
-    ctx.depth_test        = COMPARE_LESS_EQUAL;
+    ctx.flags            |= BLEND_ENABLE;
+    ctx.flags            &= ~(CULL_FRONT|CULL_BACK|LIGHT_ENABLE);
     ctx.texture_enable[0] = 1;
     ctx.textures[0]       = tex;
-    ctx.cull_cw           = 0;
-    ctx.cull_ccw          = 0;
-    ctx.light_enable      = 0;
     ctx.vertex_format     = VF_POSITION_F4 | VF_COLOR_F4 | VF_TEX0;
     ctx.vertexbuffer      = vbo;
 
@@ -78,13 +75,10 @@ static void draw_scene( void )
     m[2] =   -s*0.05f; m[6] = 0.0f;  m[10] =    c*0.05f; m[14] = -5.0f;
     m[3] = 0.0f;       m[7] = 0.0f;  m[11] = 0.0f;       m[15] =  1.0f;
 
-    ctx.alpha_blend       = 0;
-    ctx.depth_test        = COMPARE_LESS_EQUAL;
+    ctx.flags            &= ~BLEND_ENABLE;
+    ctx.flags            |= CULL_BACK|LIGHT_ENABLE;
     ctx.texture_enable[0] = 0;
     ctx.textures[0]       = 0;
-    ctx.cull_cw           = 1;
-    ctx.cull_ccw          = 0;
-    ctx.light_enable      = 1;
     ctx.vertex_format     = teapot->format;
     ctx.vertexbuffer      = teapot->vertexbuffer;
     ctx.indexbuffer       = teapot->indexbuffer;
@@ -138,6 +132,9 @@ int main( void )
     }
 
     /* initialize T&L state */
+    ctx.depth_test = COMPARE_LESS_EQUAL;
+    ctx.flags |= DEPTH_TEST|FRONT_CCW;
+
     ctx.light[0].enable = 1;
     ctx.light[0].diffuse[0] = 1.0f;
     ctx.light[0].diffuse[1] = 1.0f;

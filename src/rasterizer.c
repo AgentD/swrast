@@ -148,8 +148,10 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
     for( ; start!=end && x0<=ctx->draw_area.maxx; start+=4, ++z_buffer, ++x0 )
     {
         /* depth test */
-        if( ctx->depth_test!=COMPARE_ALWAYS )
+        if( ctx->flags & DEPTH_TEST )
         {
+            depthtest[COMPARE_ALWAYS       ] = 1;
+            depthtest[COMPARE_NEVER        ] = 0;
             depthtest[COMPARE_LESS         ] = (l.v.z < *z_buffer);
             depthtest[COMPARE_GREATER      ] = (l.v.z > *z_buffer);
             depthtest[COMPARE_NOT_EQUAL    ] = depthtest[COMPARE_LESS] |
@@ -163,7 +165,7 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
             if( !depthtest[ctx->depth_test] )
                 goto skip_fragment;
         }
-        if( ctx->depth_clip &&
+        if( (ctx->flags & DEPTH_CLIP) &&
             (l.v.z > ctx->depth_far || l.v.z < ctx->depth_near) )
         {
             goto skip_fragment;
@@ -190,7 +192,7 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
         }
 
         /* blend onto framebuffer color */
-        if( ctx->alpha_blend )
+        if( ctx->flags & BLEND_ENABLE )
         {
             float a = c[ALPHA], ia = 1.0f - a;
 
@@ -198,18 +200,18 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
             c[GREEN] = start[GREEN]*ia + c[GREEN]*a*255.0f;
             c[BLUE ] = start[BLUE ]*ia + c[BLUE ]*a*255.0f;
             c[ALPHA] = start[ALPHA]*ia +          a*255.0f;
-
-            for( i=0; i<4; ++i )
-                start[i] = (unsigned char)c[i];
         }
         else
         {
             for( i=0; i<4; ++i )
-                start[i] = (unsigned char)(c[i]*255.0f);
+                c[i] *= 255.0f;
         }
 
-        if( ctx->depth_write )
-            *z_buffer = l.v.z;
+        if( ctx->flags & WRITE_RED   ) start[RED  ] = (unsigned char)c[RED  ];
+        if( ctx->flags & WRITE_GREEN ) start[GREEN] = (unsigned char)c[GREEN];
+        if( ctx->flags & WRITE_BLUE  ) start[BLUE ] = (unsigned char)c[BLUE ];
+        if( ctx->flags & WRITE_ALPHA ) start[ALPHA] = (unsigned char)c[ALPHA];
+        if( ctx->flags & DEPTH_WRITE ) z_buffer[0]  = l.v.z;
     skip_fragment:
         scaled_vertex_add( &l.v, &l.v, &l.dvdx, 1.0f );
     }
@@ -313,11 +315,14 @@ static void draw_triangle( rs_vertex* A, rs_vertex* B,
 void rasterizer_process_triangle( context* ctx, const rs_vertex* v0,
                                   const rs_vertex* v1, const rs_vertex* v2 )
 {
+    int ccw, cullccw, cullcw;
     rs_vertex A, B, C;
-    float f;
 
     /* sanity check */
-    if( (ctx->cull_cw && ctx->cull_ccw) || ctx->depth_test==COMPARE_NEVER )
+    if( (ctx->flags & CULL_FRONT) && (ctx->flags & CULL_BACK) )
+        return;
+
+    if( (ctx->flags & DEPTH_TEST) && ctx->depth_test==COMPARE_NEVER )
         return;
 
     if( v0->w<=0.0 || v1->w<=0.0 || v2->w<=0.0 )
@@ -357,9 +362,15 @@ void rasterizer_process_triangle( context* ctx, const rs_vertex* v0,
     }
 
     /* culling */
-    f = (C.x - A.x) * (C.y - B.y) - (C.y - A.y) * (C.x - B.x);
+    ccw = ((C.x - A.x) * (C.y - B.y) - (C.y - A.y) * (C.x - B.x)) < 0.0f;
 
-    if( (ctx->cull_cw && f>0.0f) || (ctx->cull_ccw && f<0.0f) )
+    cullccw = (ctx->flags & (FRONT_CCW|CULL_FRONT)) == (FRONT_CCW|CULL_FRONT);
+    cullccw = cullccw || ((ctx->flags & (FRONT_CCW|CULL_BACK)) == CULL_BACK);
+
+    cullcw = (ctx->flags & (FRONT_CCW|CULL_BACK)) == (FRONT_CCW|CULL_BACK);
+    cullcw = cullcw || ((ctx->flags & (FRONT_CCW|CULL_FRONT)) == CULL_FRONT);
+
+    if( (ccw && cullccw) || (!ccw && cullcw) )
         return;
 
     draw_triangle( &A, &B, &C, ctx );

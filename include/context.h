@@ -72,8 +72,35 @@ typedef enum
 }
 VERTEX_FORMAT;
 
+/**
+ * \enum CONTEXT_FLAGS
+ *
+ * \brief State flags for the rendering context
+ */
+typedef enum
+{
+    DEPTH_CLIP   = 0x0001,  /**< \brief Clip out-of-bounds depth values */
+    DEPTH_WRITE  = 0x0002,  /**< \brief Enable write to depth buffer */
+    DEPTH_TEST   = 0x0004,  /**< \brief Enable depth test */
+    WRITE_RED    = 0x0008,  /**< \brief Enable write to red color channel */
+    WRITE_GREEN  = 0x0010,  /**< \brief Enable write to green color channel */
+    WRITE_BLUE   = 0x0020,  /**< \brief Enable write to blue color channel */
+    WRITE_ALPHA  = 0x0040,  /**< \brief Enable write to alpha color channel */
+    FRONT_CCW    = 0x0080,  /**< \brief Counter-clock-wise is front facing */
+    CULL_FRONT   = 0x0100,  /**< \brief Cull front facing triangles */
+    CULL_BACK    = 0x0200,  /**< \brief Cull back facing triangles */
+    LIGHT_ENABLE = 0x0400,  /**< \brief Enable lighting calculations */
+    BLEND_ENABLE = 0x0800   /**< \brief Enable color blending */
+}
+CONTEXT_FLAGS;
 
 
+
+/**
+ * \struct context
+ *
+ * \brief A context encapsulates all global state of the rendering pipeline
+ */
 struct context
 {
     /** \brief The settings of a light */
@@ -131,22 +158,10 @@ struct context
     }
     draw_area;
 
-    int light_enable;           /**< \brief Non-zero if lighting enabled */
-
-    /** \brief Non-zero to cull counter clockwise triangles */
-    int cull_ccw;
-
-    /** \brief Non-zero to cull clockwise triangles */
-    int cull_cw;
-
-    /** \brief Non-zero if counter clockwise is front */
-    int front_is_ccw;
+    int flags;      /**< \brief A set of CONTEXT_FLAGS */
 
     /** \brief Depth test comparison function */
     COMPARE_FUNCTION depth_test;
-
-    /** \brief Non-zero to enable alpha blending, zero to disable */
-    int alpha_blend;
 
     /** \brief Non-zero to enable a texture layer, zero to disable */
     int texture_enable[MAX_TEXTURES];
@@ -183,12 +198,6 @@ struct context
 
     /** \brief Depth value that maximum distance is mapped to */
     float depth_far;
-
-    /** \brief Non-zero to enable write to depth buffer, zero to disable */
-    int depth_write;
-
-    /** \brief Non-zero to discard pixels with out-of-bounds depth values */
-    int depth_clip;
 
     /** \brief Frame buffer that the rasterizer draws to */
     framebuffer* target;

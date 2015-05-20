@@ -117,12 +117,6 @@ void context_init( context* ctx )
 
     ctx->material.shininess = 0;
 
-    ctx->light_enable = 0;
-    ctx->cull_ccw = 0;
-    ctx->cull_cw = 0;
-    ctx->depth_test = COMPARE_ALWAYS;
-    ctx->alpha_blend = 0;
-
     for( i=0; i<MAX_TEXTURES; ++i )
     {
         ctx->texture_enable[i] = 0;
@@ -140,12 +134,10 @@ void context_init( context* ctx )
     ctx->shade_model = SHADE_GOURAUD;
     ctx->provoking_vertex = 0;
 
+    ctx->depth_test = COMPARE_ALWAYS;
     ctx->depth_near = 0.0f;
     ctx->depth_far = 1.0f;
-    ctx->depth_write = 1;
-    ctx->depth_clip = 1;
 
-    ctx->front_is_ccw = 1;
     ctx->viewport.x = 0;
     ctx->viewport.y = 0;
     ctx->viewport.width = 0;
@@ -154,6 +146,10 @@ void context_init( context* ctx )
     ctx->vertexbuffer = NULL;
     ctx->indexbuffer = NULL;
     ctx->target = NULL;
+
+    ctx->flags = DEPTH_CLIP|DEPTH_WRITE|
+                 WRITE_RED|WRITE_GREEN|WRITE_BLUE|WRITE_ALPHA|
+                 FRONT_CCW;
 }
 
 void context_set_modelview_matrix( context* ctx, float* f )

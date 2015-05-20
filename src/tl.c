@@ -132,7 +132,7 @@ void tl_transform_and_light( context* ctx, rs_vertex* v0, rs_vertex* v1,
     tl_transform_vertex( ctx, v1 );
     tl_transform_vertex( ctx, v2 );
 
-    if( ctx->light_enable )
+    if( ctx->flags & LIGHT_ENABLE )
     {
         if( ctx->shade_model==SHADE_FLAT ||
             !(ctx->vertex_format & VF_NORMAL_F3) )
@@ -146,7 +146,7 @@ void tl_transform_and_light( context* ctx, rs_vertex* v0, rs_vertex* v1,
             p.nz = u[0]*v[1] - u[1]*v[0];
             s = p.nx*p.nx + p.ny*p.ny + p.nz*p.nz;
 
-            if( !ctx->front_is_ccw )
+            if( !(ctx->flags & FRONT_CCW) )
                 s = -s;
 
             s = s<0.0f ? 0.0f : (1.0f/sqrt( s ));
