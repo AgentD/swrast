@@ -77,13 +77,16 @@ static void scaled_vertex_add( rs_vertex* v, const rs_vertex* A,
 
 static void vertex_prepare(rs_vertex* out, const rs_vertex* in, context* ctx)
 {
+    float d;
     int i;
 
     /* perspective divide and viewport mapping */
     out->w = 1.0/in->w;
     out->x = (1.0f + in->x*out->w) * 0.5f * (float)ctx->viewport.width;
     out->y = (1.0f - in->y*out->w) * 0.5f * (float)ctx->viewport.height;
-    out->z = (1.0f - in->z*out->w) * 0.5f;
+
+    d = (1.0f - in->z*out->w) * 0.5f;
+    out->z = d*ctx->depth_far + (1.0f - d)*ctx->depth_near;
 
     out->x += ctx->viewport.x;
     out->y += ctx->viewport.y;
@@ -160,6 +163,11 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
             if( !depthtest[ctx->depth_test] )
                 goto skip_fragment;
         }
+        if( ctx->depth_clip &&
+            (l.v.z > ctx->depth_far || l.v.z < ctx->depth_near) )
+        {
+            goto skip_fragment;
+        }
 
         w = 1.0f / l.v.w;
 
@@ -200,7 +208,8 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
                 start[i] = (unsigned char)(c[i]*255.0f);
         }
 
-        *z_buffer = l.v.z;
+        if( ctx->depth_write )
+            *z_buffer = l.v.z;
     skip_fragment:
         scaled_vertex_add( &l.v, &l.v, &l.dvdx, 1.0f );
     }

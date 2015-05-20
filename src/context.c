@@ -140,6 +140,11 @@ void context_init( context* ctx )
     ctx->shade_model = SHADE_GOURAUD;
     ctx->provoking_vertex = 0;
 
+    ctx->depth_near = 0.0f;
+    ctx->depth_far = 1.0f;
+    ctx->depth_write = 1;
+    ctx->depth_clip = 1;
+
     ctx->front_is_ccw = 1;
     ctx->viewport.x = 0;
     ctx->viewport.y = 0;

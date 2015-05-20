@@ -178,6 +178,18 @@ struct context
     /** \brief Vertex used for flat shading */
     int provoking_vertex;
 
+    /** \brief Depth value that minimum distance is mapped to */
+    float depth_near;
+
+    /** \brief Depth value that maximum distance is mapped to */
+    float depth_far;
+
+    /** \brief Non-zero to enable write to depth buffer, zero to disable */
+    int depth_write;
+
+    /** \brief Non-zero to discard pixels with out-of-bounds depth values */
+    int depth_clip;
+
     /** \brief Frame buffer that the rasterizer draws to */
     framebuffer* target;
 };
