@@ -20,6 +20,8 @@
   - Alpha blending
   - Multiple framebuffer objects (can be used for e.g. render to texture)
   - viewport mapping
+  - OpenGL(R) style depth masking/mapping/clipping
+  - Writ to color channels can be flagged individually
 
 
   Rendering Pipeline
