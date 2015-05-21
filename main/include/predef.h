@@ -1,3 +1,8 @@
+/**
+ * \file predef.h
+ *
+ * \brief Forward declerations of structures
+ */
 #ifndef PREDEF_H
 #define PREDEF_H
 

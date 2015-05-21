@@ -1,5 +1,5 @@
-#include "framebuffer.h"
 #include "texture.h"
+#include "config.h"
 
 #include <stdlib.h>
 

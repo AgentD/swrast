@@ -21,15 +21,15 @@ obj/%.o: src/%.c include/%.h
 obj/context.o: src/context.c include/context.h include/predef.h\
 				include/config.h
 obj/inputassembler.o: src/inputassembler.c include/inputassembler.h\
-					include/framebuffer.h include/rasterizer.h include/tl.h\
-					include/predef.h include/context.h include/config.h
+					include/rasterizer.h include/tl.h include/predef.h\
+					include/context.h include/config.h
 obj/framebuffer.o: src/framebuffer.c include/framebuffer.h include/predef.h\
 					include/config.h
 obj/rasterizer.o: src/rasterizer.c include/rasterizer.h include/framebuffer.h\
 				include/texture.h include/predef.h include/context.h\
 				include/config.h
-obj/texture.o: src/texture.c include/texture.h include/framebuffer.h\
-				include/predef.h include/config.h
+obj/texture.o: src/texture.c include/texture.h include/predef.h\
+				include/config.h
 obj/tl.o: src/tl.c include/tl.h include/rasterizer.h include/predef.h\
 				include/context.h include/config.h
 

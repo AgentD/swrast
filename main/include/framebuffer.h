@@ -9,22 +9,7 @@
 
 
 #include "predef.h"
-
-
-
-#define FB_BGRA
-
-#ifdef FB_BGRA
-    #define RED 2
-    #define GREEN 1
-    #define BLUE 0
-    #define ALPHA 3
-#else
-    #define RED 0
-    #define GREEN 1
-    #define BLUE 2
-    #define ALPHA 3
-#endif
+#include "config.h"
 
 
 

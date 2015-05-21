@@ -1,3 +1,8 @@
+/**
+ * \file context.h
+ *
+ * \brief Contains the rendering context implementation
+ */
 #ifndef CONTEXT_H
 #define CONTEXT_H
 

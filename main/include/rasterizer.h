@@ -1,5 +1,5 @@
 /**
- * \file pixel.h
+ * \file rasterizer.h
  *
  * \brief Contains the rasterizer stage interface
  */

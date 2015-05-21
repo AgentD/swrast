@@ -1,5 +1,5 @@
 /**
- * \file pixel.h
+ * \file texture.h
  *
  * \brief Contains the texture object implementation
  */
