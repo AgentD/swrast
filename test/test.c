@@ -98,7 +98,7 @@ int main( void )
     if( !(w = window_create( 1024, 768 )) )
         return -1;
 
-    teapot = load_3ds( "../teapot.3ds" );
+    teapot = load_3ds( "teapot.3ds" );
 
     context_init( &ctx );
 
