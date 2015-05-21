@@ -59,6 +59,9 @@
   Source code overview
   ********************
 
+ The directory "main" contains the main rasterizer library, currently
+ consisting of the following files:
+
     include/config.h          - Preprocessor defined limits of the
                                 rasterization pipeline
 
@@ -83,22 +86,26 @@
     include/framebuffer.h     - Implementation of framebuffer objects
     src/framebuffer.c
 
-    test/window.h             - A simple Xlib based window implementation for
-    test/window.c               testing. Handles a window and
+
+ The directory "test" contains testing and demo programs, currently consisting
+ of the following files:
+
+    window.h                  - A simple Xlib based window implementation for
+    window.c                    testing. Handles a window and
                                 blits a framebuffer
 
-    test/3ds.h                - A quick & dirty 3ds loader for testing
-    test/3ds.c
+    3ds.h                     - A quick & dirty 3ds loader for testing
+    3ds.c
 
-    test/test.c               - A small test program
+    test.c                    - A small test program
 
 
   Compiling
   *********
 
- Simply type "make" into the commandline. The resulting "a.out" binary
- contains a small test program that renders to an X11 window. All object
- files are neatly packed away into a directory called "obj/".
+ Simply type "make" into the commandline on the top level directory. The
+ rasterizer is compiled into a library in the directory "main" and the sample
+ programs are compiled to binaries in the "test" directory.
 
  Type "make clean" to cleanup the directory tree.
 
