@@ -3,13 +3,16 @@ OPTFLAGS = -O3 -msse2
 CFLAGS = -ansi -pedantic -Wall -Wextra -I../main/include $(CONFFLAGS) $(OPTFLAGS)
 
 .PHONY: all
-all: a.out
+all: a.out subpixel
 
 .PHONY: clean
 clean:
-	$(RM) a.out *.o
+	$(RM) a.out subpixel *.o
 
 a.out: window.o test.o 3ds.o ../main/libraster.a
+	$(CC) $^ -lX11 -lm -o $@
+
+subpixel: subpixel.o window.o ../main/libraster.a
 	$(CC) $^ -lX11 -lm -o $@
 
 ../main/libraster.a:
@@ -22,4 +25,6 @@ test.o: test.c window.h window.h 3ds.h ../main/include/inputassembler.h \
 		../main/include/texture.h ../main/include/context.h \
 		../main/include/tl.h
 3ds.o: 3ds.c 3ds.h ../main/include/inputassembler.h ../main/include/context.h
+subpixel.o: subpixel.c window.h ../main/include/context.h \
+		../main/include/framebuffer.h ../main/include/inputassembler.h
 
