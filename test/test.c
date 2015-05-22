@@ -13,35 +13,6 @@
 
 
 
-float vbo[60] =
-{
-    /* colorfull opaque triangle */
-    -2.0f, -2.0f,  0.0f,  1.0f,
-     1.0f,  0.0f,  0.0f,  1.0f,
-     0.0f,  1.0f,
-
-     2.0f, -2.0f,  0.0f,  1.0f,
-     0.0f,  1.0f,  0.0f,  1.0f,
-     1.0f,  1.0f,
-
-     0.0f,  2.0f,  0.0f,  1.0f,
-     0.0f,  0.0f,  1.0f,  1.0f,
-     0.5f,  0.0f,
-
-    /* yellow transparent triangle */
-     0.0f, -2.0f, -2.0f,  1.0f,
-     1.0f,  1.0f,  0.0f,  0.5f,
-     0.0f,  0.0f,
-
-     0.0f, -2.0f,  2.0f,  1.0f,
-     1.0f,  1.0f,  0.0f,  0.5f,
-     0.0f,  0.0f,
-
-     0.0f,  2.0f,  0.0f,  1.0f,
-     1.0f,  1.0f,  0.0f,  0.5f,
-     0.0f,  0.0f
-};
-
 static context ctx;
 static float a = 0.0f;
 static texture* tex;
@@ -59,15 +30,40 @@ static void draw_scene( void )
     m[2] = -s;   m[6] = 0.0f; m[10] =    c; m[14] = -10.0f;
     m[3] = 0.0f; m[7] = 0.0f; m[11] = 0.0f; m[15] =   1.0f;
 
-    ctx.flags            |= BLEND_ENABLE;
-    ctx.flags            &= ~(CULL_FRONT|CULL_BACK|LIGHT_ENABLE);
+    ctx.flags &= ~(CULL_FRONT|CULL_BACK|LIGHT_ENABLE);
+    ctx.vertex_format = 0;
+    ctx.vertexbuffer = NULL;
     ctx.texture_enable[0] = 1;
-    ctx.textures[0]       = tex;
-    ctx.vertex_format     = VF_POSITION_F4 | VF_COLOR_F4 | VF_TEX0;
-    ctx.vertexbuffer      = vbo;
-
+    ctx.textures[0] = tex;
     context_set_modelview_matrix( &ctx, m );
-    ia_draw_triangles( &ctx, 6 );
+
+    ia_begin( &ctx );
+
+    ia_color( &ctx, 1.0f, 0.0f, 0.0f, 1.0f );
+    ia_texcoord( &ctx, 0, 0.0f, 1.0f );
+    ia_vertex( &ctx, -2.0f, -2.0f, 0.0f, 1.0f );
+
+    ia_color( &ctx, 0.0f, 1.0f, 0.0f, 1.0f );
+    ia_texcoord( &ctx, 0, 1.0f, 1.0f );
+    ia_vertex( &ctx, 2.0f, -2.0f, 0.0f, 1.0f );
+
+    ia_color( &ctx, 0.0f, 0.0f, 1.0f, 1.0f );
+    ia_texcoord( &ctx, 0, 0.5f, 0.0f );
+    ia_vertex( &ctx, 0.0f, 2.0f, 0.0f, 1.0f );
+
+    ia_end( &ctx );
+
+    /* yellow transparent triangle */
+    ctx.texture_enable[0] = 0;
+    ctx.textures[0] = NULL;
+    ctx.flags |= BLEND_ENABLE;
+
+    ia_begin( &ctx );
+    ia_color( &ctx, 1.0f, 1.0f, 0.0f, 0.5f );
+    ia_vertex( &ctx, 0.0f, -2.0f, -2.0f, 1.0f );
+    ia_vertex( &ctx, 0.0f, -2.0f, 2.0f, 1.0f );
+    ia_vertex( &ctx, 0.0f, 2.0f, 0.0f, 1.0f );
+    ia_end( &ctx );
 
     /* rasterize teapot */
     m[0] =    c*0.05f; m[4] = 0.0f;  m[ 8] =    s*0.05f; m[12] =  2.0f;
@@ -77,8 +73,6 @@ static void draw_scene( void )
 
     ctx.flags            &= ~BLEND_ENABLE;
     ctx.flags            |= CULL_BACK|LIGHT_ENABLE;
-    ctx.texture_enable[0] = 0;
-    ctx.textures[0]       = 0;
     ctx.vertex_format     = teapot->format;
     ctx.vertexbuffer      = teapot->vertexbuffer;
     ctx.indexbuffer       = teapot->indexbuffer;

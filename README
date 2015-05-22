@@ -22,6 +22,7 @@
   - viewport mapping
   - OpenGL(R) style depth masking/mapping/clipping
   - Writ to color channels can be flagged individually
+  - Immediate mode rendering
 
 
   Rendering Pipeline

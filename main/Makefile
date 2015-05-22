@@ -19,7 +19,7 @@ obj/%.o: src/%.c include/%.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 obj/context.o: src/context.c include/context.h include/predef.h\
-				include/config.h
+				include/config.h include/rasterizer.h
 obj/inputassembler.o: src/inputassembler.c include/inputassembler.h\
 					include/rasterizer.h include/tl.h include/predef.h\
 					include/context.h include/config.h

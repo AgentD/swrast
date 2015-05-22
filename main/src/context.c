@@ -91,6 +91,8 @@ void context_init( context* ctx )
 {
     int i, j;
 
+    ctx->immediate.current = 0;
+
     for( i=0; i<MAX_LIGHTS; ++i )
     {
         for( j=0; j<4; ++j )

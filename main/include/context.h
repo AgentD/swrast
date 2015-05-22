@@ -10,6 +10,7 @@
 
 #include "predef.h"
 #include "config.h"
+#include "rasterizer.h"
 
 
 
@@ -108,6 +109,19 @@ CONTEXT_FLAGS;
  */
 struct context
 {
+    /** \brief Immediate mode rendering state */
+    struct
+    {
+        rs_vertex vertex[3];
+        float s[ MAX_TEXTURES ];
+        float t[ MAX_TEXTURES ];
+        float normal[4];
+        float color[4];
+        int current;
+        int active;
+    }
+    immediate;
+
     /** \brief The settings of a light */
     struct
     {

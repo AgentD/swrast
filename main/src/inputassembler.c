@@ -1,6 +1,7 @@
 #include "inputassembler.h"
 #include "rasterizer.h"
 #include "context.h"
+#include "config.h"
 #include "tl.h"
 #include <math.h>
 
@@ -104,6 +105,9 @@ void ia_draw_triangles( context* ctx, unsigned int vertexcount )
     rs_vertex v0, v1, v2;
     unsigned int i;
 
+    if( ctx->immediate.active )
+        return;
+
     for( i=0; i<vertexcount; i+=3 )
     {
         ptr = read_vertex( &v0, ptr, ctx->vertex_format );
@@ -121,6 +125,9 @@ void ia_draw_triangles_indexed( context* ctx, unsigned int vertexcount,
     rs_vertex v0, v1, v2;
     unsigned short index;
     unsigned int i;
+
+    if( ctx->immediate.active )
+        return;
 
     /* determine vertex size in bytes */
          if(ctx->vertex_format & VF_POSITION_F2) { vsize += 2*sizeof(float); }
@@ -171,6 +178,99 @@ void ia_draw_triangles_indexed( context* ctx, unsigned int vertexcount,
         /* rasterize */
         tl_transform_and_light( ctx, &v0, &v1, &v2 );
         rasterizer_process_triangle( ctx, &v0, &v1, &v2 );
+    }
+}
+
+void ia_begin( context* ctx )
+{
+    if( !ctx->immediate.active )
+    {
+        ctx->vertex_format = 0;
+        ctx->immediate.current = 0;
+        ctx->immediate.active = 1;
+    }
+}
+
+void ia_vertex( context* ctx, float x, float y, float z, float w )
+{
+    int i, j;
+
+    if( ctx->immediate.active )
+    {
+        i = ctx->immediate.current++;
+
+        ctx->immediate.vertex[ i ].x = x;
+        ctx->immediate.vertex[ i ].y = y;
+        ctx->immediate.vertex[ i ].z = z;
+        ctx->immediate.vertex[ i ].w = w;
+        ctx->immediate.vertex[ i ].nx = ctx->immediate.normal[0];
+        ctx->immediate.vertex[ i ].ny = ctx->immediate.normal[1];
+        ctx->immediate.vertex[ i ].nz = ctx->immediate.normal[2];
+        ctx->immediate.vertex[ i ].r = ctx->immediate.color[0];
+        ctx->immediate.vertex[ i ].g = ctx->immediate.color[1];
+        ctx->immediate.vertex[ i ].b = ctx->immediate.color[2];
+        ctx->immediate.vertex[ i ].a = ctx->immediate.color[3];
+
+        for( j=0; j<MAX_TEXTURES; ++j )
+        {
+            ctx->immediate.vertex[ i ].s[ j ] = ctx->immediate.s[ j ];
+            ctx->immediate.vertex[ i ].t[ j ] = ctx->immediate.t[ j ];
+        }
+
+        ctx->vertex_format |= VF_POSITION_F4;
+
+        if( ctx->immediate.current == 3 )
+        {
+            tl_transform_and_light( ctx, ctx->immediate.vertex,
+                                         ctx->immediate.vertex+1,
+                                         ctx->immediate.vertex+2 );
+            rasterizer_process_triangle( ctx, ctx->immediate.vertex,
+                                              ctx->immediate.vertex+1,
+                                              ctx->immediate.vertex+2 );
+            ctx->immediate.current = 0;
+        }
+    }
+}
+
+void ia_color( context* ctx, float r, float g, float b, float a )
+{
+    if( ctx->immediate.active )
+    {
+        ctx->immediate.color[0] = r;
+        ctx->immediate.color[1] = g;
+        ctx->immediate.color[2] = b;
+        ctx->immediate.color[3] = a;
+        ctx->vertex_format |= VF_COLOR_F4;
+    }
+}
+
+void ia_normal( context* ctx, float x, float y, float z )
+{
+    if( ctx->immediate.active )
+    {
+        ctx->immediate.normal[0] = x;
+        ctx->immediate.normal[1] = y;
+        ctx->immediate.normal[2] = z;
+        ctx->vertex_format |= VF_NORMAL_F3;
+    }
+}
+
+void ia_texcoord( context* ctx, int layer, float s, float t )
+{
+    if( ctx->immediate.active )
+    {
+        ctx->immediate.s[layer] = s;
+        ctx->immediate.t[layer] = t;
+    }
+}
+
+void ia_end( context* ctx )
+{
+    if( ctx->immediate.active )
+    {
+        ctx->vertex_format = 0;
+        ctx->immediate.current = 0;
+        ctx->immediate.active = 0;
     }
 }
 
