@@ -33,52 +33,33 @@ scan_line;
 
 
 
-static void scaled_vertex_diff( rs_vertex* v, const rs_vertex* A,
+static void scaled_vertex_diff( rs_vertex* V, const rs_vertex* A,
                                 const rs_vertex* B, float scale )
 {
-    int i;
+    const float *a = (float*)A, *b = (float*)B;
+    float* v = (float*)V;
+    unsigned int i;
 
-    v->x = (A->x - B->x) * scale;
-    v->w = (A->w - B->w) * scale;
-    v->z = (A->z - B->z) * scale;
-
-    v->r = (A->r - B->r) * scale;
-    v->g = (A->g - B->g) * scale;
-    v->b = (A->b - B->b) * scale;
-    v->a = (A->a - B->a) * scale;
-
-    for( i=0; i<MAX_TEXTURES; ++i )
-    {
-        v->s[i] = (A->s[i] - B->s[i]) * scale;
-        v->t[i] = (A->t[i] - B->t[i]) * scale;
-    }
+    for( i=0; i<sizeof(rs_vertex)/sizeof(float); ++i )
+        *(v++) = (*(a++) - *(b++)) * scale;
 }
 
-static void scaled_vertex_add( rs_vertex* v, const rs_vertex* A,
+static void scaled_vertex_add( rs_vertex* V, const rs_vertex* A,
                                const rs_vertex* B, float scale )
 {
-    int i;
+    const float *a = (float*)A, *b = (float*)B;
+    float* v = (float*)V;
+    unsigned int i;
 
-    v->x = A->x + B->x * scale;
-    v->z = A->z + B->z * scale;
-    v->w = A->w + B->w * scale;
-
-    v->r = A->r + B->r * scale;
-    v->g = A->g + B->g * scale;
-    v->b = A->b + B->b * scale;
-    v->a = A->a + B->a * scale;
-
-    for( i=0; i<MAX_TEXTURES; ++i )
-    {
-        v->s[i] = A->s[i] + B->s[i] * scale;
-        v->t[i] = A->t[i] + B->t[i] * scale;
-    }
+    for( i=0; i<sizeof(rs_vertex)/sizeof(float); ++i )
+        *(v++) = *(a++) + *(b++) * scale;
 }
 
 static void vertex_prepare(rs_vertex* out, const rs_vertex* in, context* ctx)
 {
-    float d;
-    int i;
+    const float* I = ((const float*)in) + 4;
+    float d, *O = ((float*)out) + 4;
+    unsigned int i;
 
     /* perspective divide and viewport mapping */
     out->w = 1.0/in->w;
@@ -92,16 +73,8 @@ static void vertex_prepare(rs_vertex* out, const rs_vertex* in, context* ctx)
     out->y += ctx->viewport.y;
 
     /* perspective divide of attributes */
-    out->r = in->r * out->w;
-    out->g = in->g * out->w;
-    out->b = in->b * out->w;
-    out->a = in->a * out->w;
-
-    for( i=0; i<MAX_TEXTURES; ++i )
-    {
-        out->s[i] = in->s[i] * out->w;
-        out->t[i] = in->t[i] * out->w;
-    }
+    for( i=4; i<sizeof(rs_vertex)/sizeof(float); ++i )
+        *(O++) = *(I++) * out->w;
 }
 
 /****************************************************************************/
