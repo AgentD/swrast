@@ -18,13 +18,13 @@ void tl_light_vertex( context* ctx, rs_vertex* v )
             continue;
 
         /* compute light vector and distance */
-        vec4_diff( &L, &ctx->light[i].position, &v->pos );
+        vec4_diff( &L, &ctx->light[i].position, v->attribs+ATTRIB_POS );
         L.w = 0.0f;
         d = sqrt( vec4_dot( &L, &L ) );
         vec4_scale( &L, d>0.0f ? 1.0f/d : 0.0f );
 
         /* compute view vector */
-        vec4_get_inverted( &V, &v->pos );
+        vec4_get_inverted( &V, v->attribs+ATTRIB_POS );
         V.w = 0.0f;
         vec4_normalize( &V );
 
@@ -41,14 +41,14 @@ void tl_light_vertex( context* ctx, rs_vertex* v )
         vec4_product( &ca, &ctx->light[i].ambient, &ctx->material.ambient );
 
         /* diffuse component */
-        d = vec4_dot( &v->normal, &L );
+        d = vec4_dot( v->attribs+ATTRIB_NORMAL, &L );
         d = d<0.0f ? 0.0f : (d>1.0f ? 1.0f : d);
 
         vec4_product( &cd, &ctx->light[i].diffuse, &ctx->material.diffuse );
         vec4_scale( &cd, d * a );
 
         /* specular component */
-        d = vec4_dot( &v->normal, &H );
+        d = vec4_dot( v->attribs+ATTRIB_NORMAL, &H );
         d = d<0.0f ? 0.0f : (d>1.0f ? 1.0f : d);
         d = pow( d, ctx->material.shininess );
 
@@ -61,23 +61,36 @@ void tl_light_vertex( context* ctx, rs_vertex* v )
         vec4_add( &color, &cs );
     }
 
-    vec4_mul( &v->color, &color );
+    color.w = 1.0f;
+
+    if( v->used & ATTRIB_FLAG_COLOR )
+    {
+        vec4_mul( v->attribs + ATTRIB_COLOR, &color );
+    }
+    else
+    {
+        v->used |= ATTRIB_FLAG_COLOR;
+        v->attribs[ ATTRIB_COLOR ] = color;
+    }
 }
 
 void tl_transform_vertex( context* ctx, rs_vertex* v )
 {
     /* transform normal to viewspace */
-    vec4_transform( &v->normal, ctx->normalmatrix, &v->normal );
-    v->normal.w = 0.0f;
-    vec4_normalize( &v->normal );
+    vec4_transform( v->attribs+ATTRIB_NORMAL, ctx->normalmatrix,
+                    v->attribs+ATTRIB_NORMAL );
+    v->attribs[ATTRIB_NORMAL].w = 0.0f;
+    vec4_normalize( v->attribs+ATTRIB_NORMAL );
 
     /* transform position to viewspace */
-    vec4_transform( &v->pos, ctx->modelview, &v->pos );
+    vec4_transform( v->attribs+ATTRIB_POS, ctx->modelview,
+                    v->attribs+ATTRIB_POS );
 }
 
 void tl_project_vertex( context* ctx, rs_vertex* v )
 {
-    vec4_transform( &v->pos, ctx->projection, &v->pos );
+    vec4_transform( v->attribs+ATTRIB_POS, ctx->projection,
+                    v->attribs+ATTRIB_POS );
 }
 
 void tl_transform_and_light( context* ctx, rs_vertex* v0, rs_vertex* v1,
@@ -97,22 +110,22 @@ void tl_transform_and_light( context* ctx, rs_vertex* v0, rs_vertex* v1,
             !(ctx->vertex_format & VF_NORMAL_F3) )
         {
             /* compute normal for entire triangle */
-            vec4_diff( &u, &v1->pos, &v0->pos );
-            vec4_diff( &v, &v2->pos, &v0->pos );
+            vec4_diff( &u, v1->attribs+ATTRIB_POS, v0->attribs+ATTRIB_POS );
+            vec4_diff( &v, v2->attribs+ATTRIB_POS, v0->attribs+ATTRIB_POS );
 
-            vec4_cross( &p.normal, &u, &v, 0.0f );
-            s = vec4_dot( &p.normal, &p.normal );
+            vec4_cross( p.attribs+ATTRIB_NORMAL, &u, &v, 0.0f );
+            s = vec4_dot( p.attribs+ATTRIB_NORMAL, p.attribs+ATTRIB_NORMAL );
 
             if( !(ctx->flags & FRONT_CCW) )
                 s = -s;
 
             s = s<0.0f ? 0.0f : (1.0f/sqrt( s ));
-            vec4_scale( &p.normal, s );
+            vec4_scale( p.attribs+ATTRIB_NORMAL, s );
 
             /* set normal for every vertex */
-            v0->normal = p.normal;
-            v1->normal = p.normal;
-            v2->normal = p.normal;
+            v0->attribs[ATTRIB_NORMAL] = p.attribs[ATTRIB_NORMAL];
+            v1->attribs[ATTRIB_NORMAL] = p.attribs[ATTRIB_NORMAL];
+            v2->attribs[ATTRIB_NORMAL] = p.attribs[ATTRIB_NORMAL];
         }
 
         if( ctx->shade_model==SHADE_GOURAUD )
@@ -126,19 +139,34 @@ void tl_transform_and_light( context* ctx, rs_vertex* v0, rs_vertex* v1,
             /* get position of provoking vertex */
             switch( ctx->provoking_vertex )
             {
-            case 0: p.pos = v0->pos; break;
-            case 1: p.pos = v1->pos; break;
-            case 2: p.pos = v2->pos; break;
+            case 0:
+                p.attribs[ATTRIB_POS] = v0->attribs[ATTRIB_POS];
+                p.attribs[ATTRIB_COLOR] = v0->attribs[ATTRIB_COLOR];
+                p.used = v0->used;
+                break;
+            case 1:
+                p.attribs[ATTRIB_POS] = v1->attribs[ATTRIB_POS];
+                p.attribs[ATTRIB_COLOR] = v1->attribs[ATTRIB_COLOR];
+                p.used = v1->used;
+                break;
+            case 2:
+                p.attribs[ATTRIB_POS] = v2->attribs[ATTRIB_POS];
+                p.attribs[ATTRIB_COLOR] = v2->attribs[ATTRIB_COLOR];
+                p.used = v2->used;
+                break;
             }
 
             /* compute lighting for provoking vertex */
-            vec4_set( &p.color, 1.0f, 1.0f, 1.0f, 1.0f );
             tl_light_vertex( ctx, &p );
 
             /* apply lighting */
-            vec4_mul( &v0->color, &p.color );
-            vec4_mul( &v1->color, &p.color );
-            vec4_mul( &v2->color, &p.color );
+            v0->attribs[ATTRIB_COLOR] = p.attribs[ATTRIB_COLOR];
+            v1->attribs[ATTRIB_COLOR] = p.attribs[ATTRIB_COLOR];
+            v2->attribs[ATTRIB_COLOR] = p.attribs[ATTRIB_COLOR];
+
+            v0->used |= ATTRIB_FLAG_COLOR;
+            v1->used |= ATTRIB_FLAG_COLOR;
+            v2->used |= ATTRIB_FLAG_COLOR;
         }
     }
 

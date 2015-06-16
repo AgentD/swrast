@@ -114,9 +114,7 @@ struct context
     struct
     {
         rs_vertex vertex[3];
-        vec4 texcoord[ MAX_TEXTURES ];
-        vec4 normal;
-        vec4 color;
+        rs_vertex next;
         int current;
         int active;
     }

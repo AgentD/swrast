@@ -14,6 +14,30 @@
 
 
 
+typedef enum
+{
+    ATTRIB_POS = 0,
+    ATTRIB_COLOR = 1,
+    ATTRIB_NORMAL = 2,
+    ATTRIB_TEX0 = 3,
+    ATTRIB_TEX1 = 4,
+
+    ATTRIB_COUNT = 5
+}
+ATTRIB_SLOT;
+
+typedef enum
+{
+    ATTRIB_FLAG_POS = 0x01,
+    ATTRIB_FLAG_COLOR = 0x02,
+    ATTRIB_FLAG_NORMAL = 0x04,
+    ATTRIB_FLAG_TEX0 = 0x08,
+    ATTRIB_FLAG_TEX1 = 0x10
+}
+ATTRIB_FLAGS;
+
+
+
 /**
  * \struct rs_vertex
  *
@@ -21,10 +45,8 @@
  */
 struct rs_vertex
 {
-    vec4 pos;
-    vec4 normal;
-    vec4 texcoord[MAX_TEXTURES];
-    vec4 color;
+    vec4 attribs[ATTRIB_COUNT];
+    int used;
 };
 
 

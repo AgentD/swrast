@@ -10,69 +10,83 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
                                    int vertex_format )
 {
     /* initialize vertex structure */
-    vec4_set( &v->pos, 0.0f, 0.0f, 0.0f, 1.0f );
-    vec4_set( &v->color, 1.0f, 1.0f, 1.0f, 1.0f );
-    vec4_set( &v->normal, 0.0f, 0.0f, 0.0f, 0.0f );
-    vec4_set( &v->texcoord[0], 0.0f, 0.0f, 0.0f, 0.0f );
+    vec4_set( v->attribs + ATTRIB_POS,    0.0f, 0.0f, 0.0f, 1.0f );
+    vec4_set( v->attribs + ATTRIB_COLOR,  1.0f, 1.0f, 1.0f, 1.0f );
+    vec4_set( v->attribs + ATTRIB_NORMAL, 0.0f, 0.0f, 0.0f, 0.0f );
+    vec4_set( v->attribs + ATTRIB_TEX0,   0.0f, 0.0f, 0.0f, 0.0f );
+    vec4_set( v->attribs + ATTRIB_TEX1,   0.0f, 0.0f, 0.0f, 0.0f );
+    v->used = 0;
 
     /* decode position */
+    if( vertex_format & (VF_POSITION_F2|VF_POSITION_F3|VF_POSITION_F4) )
+        v->used |= ATTRIB_FLAG_POS;
+
     if( vertex_format & VF_POSITION_F2 )
     {
-        vec4_set( &v->pos, ((float*)ptr)[0], ((float*)ptr)[1], 0.0f, 1.0f );
+        vec4_set( v->attribs + ATTRIB_POS,
+                  ((float*)ptr)[0], ((float*)ptr)[1], 0.0f, 1.0f );
         ptr += 2*sizeof(float);
     }
     else if( vertex_format & VF_POSITION_F3 )
     {
-        vec4_set( &v->pos, ((float*)ptr)[0], ((float*)ptr)[1],
-                           ((float*)ptr)[2], 1.0f );
+        vec4_set( v->attribs + ATTRIB_POS,
+                  ((float*)ptr)[0], ((float*)ptr)[1], ((float*)ptr)[2], 1.0f );
         ptr += 3*sizeof(float);
     }
     else if( vertex_format & VF_POSITION_F4 )
     {
-        vec4_set( &v->pos, ((float*)ptr)[0], ((float*)ptr)[1],
-                           ((float*)ptr)[2], ((float*)ptr)[3] );
+        vec4_set( v->attribs + ATTRIB_POS, ((float*)ptr)[0], ((float*)ptr)[1],
+                  ((float*)ptr)[2], ((float*)ptr)[3] );
         ptr += 4*sizeof(float);
     }
 
     /* decode surface normal */
     if( vertex_format & VF_NORMAL_F3 )
     {
-        vec4_set( &v->normal, ((float*)ptr)[0], ((float*)ptr)[1],
-                              ((float*)ptr)[2], 0.0f );
+        v->used |= ATTRIB_FLAG_NORMAL;
+        vec4_set( v->attribs + ATTRIB_NORMAL,
+                  ((float*)ptr)[0],((float*)ptr)[1],((float*)ptr)[2],0.0f );
         ptr += 3*sizeof(float);
     }
 
     /* decode color */
+    if( vertex_format & (VF_COLOR_F3|VF_COLOR_F4|VF_COLOR_UB3|VF_COLOR_UB4) )
+        v->used |= ATTRIB_FLAG_COLOR;
+
     if( vertex_format & VF_COLOR_F3 )
     {
-        vec4_set( &v->color, ((float*)ptr)[0], ((float*)ptr)[1],
-                             ((float*)ptr)[2], 1.0f );
+        vec4_set( v->attribs + ATTRIB_COLOR,
+                  ((float*)ptr)[0],((float*)ptr)[1],((float*)ptr)[2],1.0f );
         ptr += 3*sizeof(float);
     }
     else if( vertex_format & VF_COLOR_F4 )
     {
-        vec4_set( &v->color, ((float*)ptr)[0], ((float*)ptr)[1],
-                             ((float*)ptr)[2], ((float*)ptr)[3] );
+        vec4_set( v->attribs + ATTRIB_COLOR,
+                  ((float*)ptr)[0], ((float*)ptr)[1],
+                  ((float*)ptr)[2], ((float*)ptr)[3] );
         ptr += 4*sizeof(float);
     }
     else if( vertex_format & VF_COLOR_UB3 )
     {
-        vec4_set( &v->color, ((float)ptr[0])/255.0f, ((float)ptr[1])/255.0f,
-                             ((float)ptr[2])/255.0f, 1.0f );
+        vec4_set( v->attribs + ATTRIB_COLOR,
+                  ((float)ptr[0])/255.0f, ((float)ptr[1])/255.0f,
+                  ((float)ptr[2])/255.0f, 1.0f );
         ptr += 3;
     }
     else if( vertex_format & VF_COLOR_UB4 )
     {
-        vec4_set( &v->color, ((float)ptr[0])/255.0f, ((float)ptr[1])/255.0f,
-                             ((float)ptr[2])/255.0f, ((float)ptr[3])/255.0f );
+        vec4_set( v->attribs + ATTRIB_COLOR,
+                  ((float)ptr[0])/255.0f, ((float)ptr[1])/255.0f,
+                  ((float)ptr[2])/255.0f, ((float)ptr[3])/255.0f );
         ptr += 4;
     }
 
     /* decode texture coordinates */
     if( vertex_format & VF_TEX0 )
     {
-        vec4_set( &v->texcoord[0], ((float*)ptr)[0], ((float*)ptr)[1],
-                                   0.0f, 0.0f );
+        v->used |= ATTRIB_FLAG_TEX0;
+        vec4_set( v->attribs + ATTRIB_TEX0,
+                  ((float*)ptr)[0], ((float*)ptr)[1], 0.0f, 0.0f );
         ptr += 2*sizeof(float);
     }
 
@@ -165,7 +179,7 @@ void ia_begin( context* ctx )
 {
     if( !ctx->immediate.active )
     {
-        ctx->vertex_format = 0;
+        ctx->immediate.next.used = 0;
         ctx->immediate.current = 0;
         ctx->immediate.active = 1;
     }
@@ -173,20 +187,12 @@ void ia_begin( context* ctx )
 
 void ia_vertex( context* ctx, float x, float y, float z, float w )
 {
-    int i, j;
-
     if( ctx->immediate.active )
     {
-        i = ctx->immediate.current++;
+        vec4_set( ctx->immediate.next.attribs+ATTRIB_POS, x, y, z, w );
+        ctx->immediate.next.used |= ATTRIB_FLAG_POS;
 
-        vec4_set( &ctx->immediate.vertex[i].pos, x, y, z, w );
-        ctx->immediate.vertex[i].normal = ctx->immediate.normal;
-        ctx->immediate.vertex[i].color = ctx->immediate.color;
-
-        for( j=0; j<MAX_TEXTURES; ++j )
-            ctx->immediate.vertex[i].texcoord[j] = ctx->immediate.texcoord[j];
-
-        ctx->vertex_format |= VF_POSITION_F4;
+        ctx->immediate.vertex[ctx->immediate.current++] = ctx->immediate.next;
 
         if( ctx->immediate.current == 3 )
         {
@@ -205,8 +211,8 @@ void ia_color( context* ctx, float r, float g, float b, float a )
 {
     if( ctx->immediate.active )
     {
-        vec4_set( &ctx->immediate.color, r, g, b, a );
-        ctx->vertex_format |= VF_COLOR_F4;
+        vec4_set( ctx->immediate.next.attribs+ATTRIB_COLOR, r, g, b, a );
+        ctx->immediate.next.used |= ATTRIB_FLAG_COLOR;
     }
 }
 
@@ -214,22 +220,26 @@ void ia_normal( context* ctx, float x, float y, float z )
 {
     if( ctx->immediate.active )
     {
-        vec4_set( &ctx->immediate.normal, x, y, z, 0.0f );
-        ctx->vertex_format |= VF_NORMAL_F3;
+        vec4_set( ctx->immediate.next.attribs+ATTRIB_NORMAL, x, y, z, 0.0f );
+        ctx->immediate.next.used |= ATTRIB_FLAG_NORMAL;
     }
 }
 
 void ia_texcoord( context* ctx, int layer, float s, float t )
 {
     if( ctx->immediate.active )
-        vec4_set( &ctx->immediate.texcoord[layer], s, t, 0.0f, 0.0f );
+    {
+        vec4_set( ctx->immediate.next.attribs+ATTRIB_TEX0+layer,
+                  s, t, 0.0f, 1.0f );
+        ctx->immediate.next.used |= (ATTRIB_FLAG_TEX0 << layer);
+    }
 }
 
 void ia_end( context* ctx )
 {
     if( ctx->immediate.active )
     {
-        ctx->vertex_format = 0;
+        ctx->immediate.next.used = 0;
         ctx->immediate.current = 0;
         ctx->immediate.active = 0;
     }
