@@ -89,18 +89,24 @@ static void recompute_normal_matrix( context* ctx )
 
 void context_init( context* ctx )
 {
-    int i, j;
+    int i;
 
     ctx->immediate.current = 0;
 
     for( i=0; i<MAX_LIGHTS; ++i )
     {
-        for( j=0; j<4; ++j )
+        vec4_set( &ctx->light[i].position, 0.0f, 0.0f, 0.0f, 1.0f );
+        vec4_set( &ctx->light[i].ambient, 0.0f, 0.0f, 0.0f, 1.0f );
+
+        if( i==0 )
         {
-            ctx->light[i].ambient[j]  = j==3 ? 1.0f : 0.0f;
-            ctx->light[i].diffuse[j]  = i==0 ? 1.0f : 0.0f;
-            ctx->light[i].specular[j] = i==0 ? 1.0f : 0.0f;
-            ctx->light[i].position[j] = j==3 ? 1.0f : 0.0f;
+            vec4_set( &ctx->light[i].diffuse, 1.0f, 1.0f, 1.0f, 1.0f );
+            vec4_set( &ctx->light[i].specular, 1.0f, 1.0f, 1.0f, 1.0f );
+        }
+        else
+        {
+            vec4_set( &ctx->light[i].diffuse, 0.0f, 0.0f, 0.0f, 1.0f );
+            vec4_set( &ctx->light[i].specular, 0.0f, 0.0f, 0.0f, 1.0f );
         }
 
         ctx->light[i].attenuation_constant = 0.0f;
@@ -109,13 +115,10 @@ void context_init( context* ctx )
         ctx->light[i].enable = 0;
     }
 
-    for( i=0; i<4; ++i )
-    {
-        ctx->material.ambient[i] = 1.0f;
-        ctx->material.diffuse[i] = 1.0f;
-        ctx->material.specular[i] = 1.0f;
-        ctx->material.emission[i] = i==3 ? 1.0f : 0.0f;
-    }
+    vec4_set( &ctx->material.ambient, 1.0f, 1.0f, 1.0f, 1.0f );
+    vec4_set( &ctx->material.diffuse, 1.0f, 1.0f, 1.0f, 1.0f );
+    vec4_set( &ctx->material.specular, 1.0f, 1.0f, 1.0f, 1.0f );
+    vec4_set( &ctx->material.emission, 0.0f, 0.0f, 0.0f, 1.0f );
 
     ctx->material.shininess = 0;
 

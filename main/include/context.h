@@ -11,6 +11,7 @@
 #include "predef.h"
 #include "config.h"
 #include "rasterizer.h"
+#include "vector.h"
 
 
 
@@ -113,10 +114,9 @@ struct context
     struct
     {
         rs_vertex vertex[3];
-        float s[ MAX_TEXTURES ];
-        float t[ MAX_TEXTURES ];
-        float normal[4];
-        float color[4];
+        vec4 texcoord[ MAX_TEXTURES ];
+        vec4 normal;
+        vec4 color;
         int current;
         int active;
     }
@@ -125,10 +125,10 @@ struct context
     /** \brief The settings of a light */
     struct
     {
-        float ambient[ 4 ];         /**< \brief Constant ambient term */
-        float diffuse[ 4 ];         /**< \brief Diffuse color */
-        float specular[ 4 ];        /**< \brief Specular color */
-        float position[ 4 ];        /**< \brief View space light position */
+        vec4 ambient;               /**< \brief Constant ambient term */
+        vec4 diffuse;               /**< \brief Diffuse color */
+        vec4 specular;              /**< \brief Specular color */
+        vec4 position;              /**< \brief View space light position */
         float attenuation_constant; /**< \brief Constant attenuation factor */
         float attenuation_linear;   /**< \brief Linear attenuation coeff. */
         float attenuation_quadratic;/**< \brief Quadratic attenuation coeff.*/
@@ -139,11 +139,11 @@ struct context
     /** \brief The surface material parameters for lighting calculations */
     struct
     {
-        float ambient[ 4 ];     /**< \brief Ambient reflection color */
-        float diffuse[ 4 ];     /**< \brief Diffuse reflection color */
-        float specular[ 4 ];    /**< \brief Specular reflection color */
-        float emission[ 4 ];    /**< \brief Color of light emitted */
-        int shininess;          /**< \brief Specular exponent */
+        vec4 ambient;         /**< \brief Ambient reflection color */
+        vec4 diffuse;         /**< \brief Diffuse reflection color */
+        vec4 specular;        /**< \brief Specular reflection color */
+        vec4 emission;        /**< \brief Color of light emitted */
+        int shininess;        /**< \brief Specular exponent */
     }
     material;
 

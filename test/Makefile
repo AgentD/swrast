@@ -1,6 +1,7 @@
 CONFFLAGS = -D_XOPEN_SOURCE=500
 OPTFLAGS = -O3 -msse2
-CFLAGS = -ansi -pedantic -Wall -Wextra -I../main/include $(CONFFLAGS) $(OPTFLAGS)
+CFLAGS = -ansi -pedantic -Wall -Wextra -I../main/include $(CONFFLAGS)\
+		$(OPTFLAGS) -Wno-unused-function
 
 .PHONY: all
 all: a.out subpixel
@@ -23,8 +24,8 @@ window.o: window.c window.h ../main/include/framebuffer.h
 test.o: test.c window.h window.h 3ds.h ../main/include/inputassembler.h \
 		../main/include/framebuffer.h ../main/include/rasterizer.h \
 		../main/include/texture.h ../main/include/context.h \
-		../main/include/tl.h
+		../main/include/tl.h ../main/include/vector.h
 3ds.o: 3ds.c 3ds.h ../main/include/inputassembler.h ../main/include/context.h
 subpixel.o: subpixel.c window.h ../main/include/context.h \
-		../main/include/framebuffer.h ../main/include/inputassembler.h
-
+		../main/include/framebuffer.h \
+		../main/include/inputassembler.h ../main/include/vector.h

@@ -1,6 +1,7 @@
 CONFFLAGS = -D_XOPEN_SOURCE=500
 OPTFLAGS = -O3 -msse2
-CFLAGS = -ansi -pedantic -Wall -Wextra -Iinclude $(CONFFLAGS) $(OPTFLAGS)
+CFLAGS = -ansi -pedantic -Wall -Wextra -Iinclude $(CONFFLAGS) $(OPTFLAGS)\
+		-Wno-unused-function
 
 .PHONY: all
 all: libraster.a
@@ -19,17 +20,17 @@ obj/%.o: src/%.c include/%.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 obj/context.o: src/context.c include/context.h include/predef.h\
-				include/config.h include/rasterizer.h
+				include/config.h include/rasterizer.h include/vector.h
 obj/inputassembler.o: src/inputassembler.c include/inputassembler.h\
 					include/rasterizer.h include/tl.h include/predef.h\
-					include/context.h include/config.h
+					include/context.h include/config.h include/vector.h
 obj/framebuffer.o: src/framebuffer.c include/framebuffer.h include/predef.h\
 					include/config.h
 obj/rasterizer.o: src/rasterizer.c include/rasterizer.h include/framebuffer.h\
 				include/texture.h include/predef.h include/context.h\
-				include/config.h
+				include/config.h include/vector.h
 obj/texture.o: src/texture.c include/texture.h include/predef.h\
-				include/config.h
+				include/config.h include/vector.h
 obj/tl.o: src/tl.c include/tl.h include/rasterizer.h include/predef.h\
-				include/context.h include/config.h
+				include/context.h include/config.h include/vector.h
 

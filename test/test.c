@@ -4,6 +4,7 @@
 #include "texture.h"
 #include "context.h"
 #include "window.h"
+#include "vector.h"
 #include "3ds.h"
 #include "tl.h"
 
@@ -101,7 +102,7 @@ int main( void )
     near   = 500.0f;
     aspect = ((float)w->fb.width) / ((float)w->fb.height);
     f      = 1.0 / tan( 60.0f * (3.14159265359f/180.0f) * 0.5f );
-	iNF    = 1.0 / ( near - far );
+    iNF    = 1.0 / ( near - far );
 
     m[0]=f/aspect; m[4]=0.0f; m[ 8]= 0.0f;           m[12]=0.0f;
     m[1]=0.0f;     m[5]=f;    m[ 9]= 0.0f;           m[13]=0.0f;
@@ -130,26 +131,14 @@ int main( void )
     ctx.flags |= DEPTH_TEST|FRONT_CCW;
 
     ctx.light[0].enable = 1;
-    ctx.light[0].diffuse[0] = 1.0f;
-    ctx.light[0].diffuse[1] = 1.0f;
-    ctx.light[0].diffuse[2] = 1.0f;
-    ctx.light[0].specular[0] = 1.0f;
-    ctx.light[0].specular[1] = 1.0f;
-    ctx.light[0].specular[2] = 1.0f;
+    vec4_set( &ctx.light[0].diffuse, 1.0f, 1.0f, 1.0f, 1.0f );
+    vec4_set( &ctx.light[0].specular, 1.0f, 1.0f, 1.0f, 1.0f );
     ctx.light[0].attenuation_constant = 1.0f;
 
-    ctx.material.diffuse[0] = 0.5f;
-    ctx.material.diffuse[1] = 0.5f;
-    ctx.material.diffuse[2] = 0.5f;
-    ctx.material.specular[0] = 0.5f;
-    ctx.material.specular[1] = 0.5f;
-    ctx.material.specular[2] = 0.5f;
-    ctx.material.ambient[0] = 0.0f;
-    ctx.material.ambient[1] = 0.0f;
-    ctx.material.ambient[2] = 0.0f;
-    ctx.material.emission[0] = 0.0f;
-    ctx.material.emission[1] = 0.0f;
-    ctx.material.emission[2] = 0.0f;
+    vec4_set( &ctx.material.diffuse, 0.5f, 0.5f, 0.5f, 1.0f );
+    vec4_set( &ctx.material.specular, 0.5f, 0.5f, 0.5f, 1.0f );
+    vec4_set( &ctx.material.ambient, 0.0f, 0.0f, 0.0f, 1.0f );
+    vec4_set( &ctx.material.emission, 0.0f, 0.0f, 0.0f, 1.0f );
     ctx.material.shininess = 127;
 
     ctx.target = &w->fb;

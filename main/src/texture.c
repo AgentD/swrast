@@ -1,5 +1,6 @@
 #include "texture.h"
 #include "config.h"
+#include "vector.h"
 
 #include <stdlib.h>
 
@@ -31,15 +32,15 @@ void texture_destroy( texture* t )
     }
 }
 
-void texture_sample( texture* t, float x, float y, float* out )
+void texture_sample( texture* t, const vec4* tc, vec4* out )
 {
     unsigned char* ptr;
     unsigned int X, Y;
 
-    if( t && out )
+    if( t && tc && out )
     {
-        X = x<0.0 ? 0 : x*t->width;
-        Y = y<0.0 ? 0 : y*t->height;
+        X = tc->x<0.0f ? 0.0f : tc->x*t->width;
+        Y = tc->y<0.0f ? 0.0f : tc->y*t->height;
 
         if( X>=t->width )
             X = t->width - 1;
@@ -49,10 +50,10 @@ void texture_sample( texture* t, float x, float y, float* out )
 
         ptr = t->data + (Y*t->width + X)*4;
 
-        out[RED  ] = (float)ptr[ RED   ] / 255.0f;
-        out[GREEN] = (float)ptr[ GREEN ] / 255.0f;
-        out[BLUE ] = (float)ptr[ BLUE  ] / 255.0f;
-        out[ALPHA] = (float)ptr[ ALPHA ] / 255.0f;
+        out->x = (float)ptr[0] / 255.0f;
+        out->y = (float)ptr[1] / 255.0f;
+        out->z = (float)ptr[2] / 255.0f;
+        out->w = (float)ptr[3] / 255.0f;
     }
 }
 

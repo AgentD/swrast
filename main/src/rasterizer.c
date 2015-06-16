@@ -36,64 +36,88 @@ scan_line;
 static void scaled_vertex_diff( rs_vertex* V, const rs_vertex* A,
                                 const rs_vertex* B, float scale )
 {
-    const float *a = (float*)A, *b = (float*)B;
-    float* v = (float*)V;
-    unsigned int i;
+    int i;
 
-    for( i=0; i<sizeof(rs_vertex)/sizeof(float); ++i )
-        *(v++) = (*(a++) - *(b++)) * scale;
+    vec4_diff( &V->pos, &A->pos, &B->pos );
+    vec4_diff( &V->normal, &A->normal, &B->normal );
+    vec4_diff( &V->color, &A->color, &B->color );
+
+    vec4_scale( &V->pos, scale );
+    vec4_scale( &V->normal, scale );
+    vec4_scale( &V->color, scale );
+
+    for( i=0; i<MAX_TEXTURES; ++i )
+    {
+        vec4_diff( V->texcoord+i, A->texcoord+i, B->texcoord+i );
+        vec4_scale( V->texcoord+i, scale );
+    }
 }
 
 static void scaled_vertex_add( rs_vertex* V, const rs_vertex* A,
                                const rs_vertex* B, float scale )
 {
-    const float *a = (float*)A, *b = (float*)B;
-    float* v = (float*)V;
-    unsigned int i;
+    vec4 v;
+    int i;
 
-    for( i=0; i<sizeof(rs_vertex)/sizeof(float); ++i )
-        *(v++) = *(a++) + *(b++) * scale;
+    vec4_get_scaled( &v, &B->pos, scale );
+    vec4_sum( &V->pos, &A->pos, &v );
+
+    vec4_get_scaled( &v, &B->normal, scale );
+    vec4_sum( &V->normal, &A->normal, &v );
+
+    vec4_get_scaled( &v, &B->color, scale );
+    vec4_sum( &V->color, &A->color, &v );
+
+    for( i=0; i<MAX_TEXTURES; ++i )
+    {
+        vec4_get_scaled( &v, B->texcoord+i, scale );
+        vec4_sum( V->texcoord+i, A->texcoord+i, &v );
+    }
 }
 
 static void vertex_prepare(rs_vertex* out, const rs_vertex* in, context* ctx)
 {
-    const float* I = ((const float*)in) + 4;
-    float d, *O = ((float*)out) + 4;
-    unsigned int i;
-
-    /* perspective divide and viewport mapping */
-    out->w = 1.0/in->w;
-    out->x = (1.0f + in->x*out->w) * 0.5f * (float)ctx->viewport.width;
-    out->y = (1.0f - in->y*out->w) * 0.5f * (float)ctx->viewport.height;
-
-    d = (1.0f - in->z*out->w) * 0.5f;
-    out->z = d*ctx->depth_far + (1.0f - d)*ctx->depth_near;
-
-    out->x += ctx->viewport.x;
-    out->y += ctx->viewport.y;
+    float d, w = 1.0f / in->pos.w;
+    int i;
 
     /* perspective divide of attributes */
-    for( i=4; i<sizeof(rs_vertex)/sizeof(float); ++i )
-        *(O++) = *(I++) * out->w;
+    vec4_get_scaled( &out->normal, &in->normal, w );
+    vec4_get_scaled( &out->color, &in->color, w );
+    vec4_get_scaled( &out->pos, &in->pos, w );
+
+    for( i=0; i<MAX_TEXTURES; ++i )
+        vec4_get_scaled( out->texcoord+i, in->texcoord+i, w );
+
+    /* viewport mapping */
+    d = (1.0f - out->pos.z) * 0.5f;
+
+    out->pos.x = (1.0f + out->pos.x) * 0.5f * (float)ctx->viewport.width;
+    out->pos.y = (1.0f - out->pos.y) * 0.5f * (float)ctx->viewport.height;
+    out->pos.z = d*ctx->depth_far + (1.0f - d)*ctx->depth_near;
+    out->pos.w = w;
+
+    out->pos.x += ctx->viewport.x;
+    out->pos.y += ctx->viewport.y;
 }
 
 /****************************************************************************/
 
 static void draw_scanline( int y, context* ctx, const edge_data* s )
 {
-    float sub_pixel, w, *z_buffer, tex[4], c[4];
-    int x0, x1, i, j, depthtest[8];
+    float sub_pixel, w, *z_buffer;
+    int x0, x1, i, depthtest[8];
     unsigned char *start, *end;
+    vec4 tc, tex, c, old, new;
     scan_line l;
 
     /* get line start and end */
-    x0 = ceil( s->edge[s->left].v.x );
-    x1 = ceil( s->edge[s->right].v.x );
+    x0 = ceil( s->edge[s->left].v.pos.x );
+    x1 = ceil( s->edge[s->right].v.pos.x );
 
-    sub_pixel = (float)x0 - s->edge[s->left].v.x;
+    sub_pixel = (float)x0 - s->edge[s->left].v.pos.x;
 
     /* compuate start values and slopes */
-    l.pixelscale = 1.0f / (s->edge[s->right].v.x - s->edge[s->left].v.x);
+    l.pixelscale = 1.0f/(s->edge[s->right].v.pos.x-s->edge[s->left].v.pos.x);
 
     scaled_vertex_diff( &l.dvdx, &s->edge[s->right].v, &s->edge[s->left].v,
                         l.pixelscale );
@@ -125,8 +149,8 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
         {
             depthtest[COMPARE_ALWAYS       ] = 1;
             depthtest[COMPARE_NEVER        ] = 0;
-            depthtest[COMPARE_LESS         ] = (l.v.z < *z_buffer);
-            depthtest[COMPARE_GREATER      ] = (l.v.z > *z_buffer);
+            depthtest[COMPARE_LESS         ] = (l.v.pos.z < *z_buffer);
+            depthtest[COMPARE_GREATER      ] = (l.v.pos.z > *z_buffer);
             depthtest[COMPARE_NOT_EQUAL    ] = depthtest[COMPARE_LESS] |
                                                depthtest[COMPARE_GREATER];
             depthtest[COMPARE_EQUAL        ] = !depthtest[COMPARE_NOT_EQUAL];
@@ -139,52 +163,46 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
                 goto skip_fragment;
         }
         if( (ctx->flags & DEPTH_CLIP) &&
-            (l.v.z > ctx->depth_far || l.v.z < ctx->depth_near) )
+            (l.v.pos.z > ctx->depth_far || l.v.pos.z < ctx->depth_near) )
         {
             goto skip_fragment;
         }
 
-        w = 1.0f / l.v.w;
+        w = 1.0f / l.v.pos.w;
 
         /* interpolate colors */
-        c[RED  ] = l.v.r * w;
-        c[GREEN] = l.v.g * w;
-        c[BLUE ] = l.v.b * w;
-        c[ALPHA] = l.v.a * w;
+        vec4_get_scaled( &c, &l.v.color, w );
 
         /* interpolate texture coordinates, fetch texture colors */
         for( i=0; i<MAX_TEXTURES; ++i )
         {
             if( ctx->texture_enable[ i ] )
             {
-                texture_sample(ctx->textures[i], l.v.s[i]*w, l.v.t[i]*w, tex);
-
-                for( j=0; j<4; ++j )
-                    c[j] *= tex[j];
+                vec4_get_scaled( &tc, l.v.texcoord+i, w );
+                texture_sample( ctx->textures[i], &tc, &tex );
+                vec4_mul( &c, &tex );
             }
         }
 
         /* blend onto framebuffer color */
         if( ctx->flags & BLEND_ENABLE )
         {
-            float a = c[ALPHA], ia = 1.0f - a;
-
-            c[RED  ] = start[RED  ]*ia + c[RED  ]*a*255.0f;
-            c[GREEN] = start[GREEN]*ia + c[GREEN]*a*255.0f;
-            c[BLUE ] = start[BLUE ]*ia + c[BLUE ]*a*255.0f;
-            c[ALPHA] = start[ALPHA]*ia +          a*255.0f;
+            vec4_set( &old,start[RED],start[GREEN],start[BLUE],start[ALPHA] );
+            vec4_scale( &old, 1.0f/255.0f );
+            vec4_mix( &new, &old, &c, c.w );
         }
         else
         {
-            for( i=0; i<4; ++i )
-                c[i] *= 255.0f;
+            new = c;
         }
 
-        if( ctx->flags & WRITE_RED   ) start[RED  ] = (unsigned char)c[RED  ];
-        if( ctx->flags & WRITE_GREEN ) start[GREEN] = (unsigned char)c[GREEN];
-        if( ctx->flags & WRITE_BLUE  ) start[BLUE ] = (unsigned char)c[BLUE ];
-        if( ctx->flags & WRITE_ALPHA ) start[ALPHA] = (unsigned char)c[ALPHA];
-        if( ctx->flags & DEPTH_WRITE ) z_buffer[0]  = l.v.z;
+        vec4_scale( &new, 255.0f );
+
+        if( ctx->flags & WRITE_RED   ) start[RED  ] = new.x;
+        if( ctx->flags & WRITE_GREEN ) start[GREEN] = new.y;
+        if( ctx->flags & WRITE_BLUE  ) start[BLUE ] = new.z;
+        if( ctx->flags & WRITE_ALPHA ) start[ALPHA] = new.w;
+        if( ctx->flags & DEPTH_WRITE ) z_buffer[0]  = l.v.pos.z;
     skip_fragment:
         scaled_vertex_add( &l.v, &l.v, &l.dvdx, 1.0f );
     }
@@ -202,10 +220,10 @@ static void draw_half_triangle( edge_data* s, rs_vertex* A, rs_vertex* B,
     int y0, y1;
 
     /* apply top-left fill convention */
-    y0 = ceil( A->y );
-    y1 = ceil( B->y ) - 1;
+    y0 = ceil( A->pos.y );
+    y1 = ceil( B->pos.y ) - 1;
 
-    advance_line( s, (float)y0 - A->y );
+    advance_line( s, (float)y0 - A->pos.y );
 
     /* draw scanlines */
     if( y0 < ctx->draw_area.miny )
@@ -229,23 +247,23 @@ static void draw_triangle( rs_vertex* A, rs_vertex* B,
     edge_data s;
 
     /* sort on Y axis */
-    if( A->y > B->y ) { temp_v = A; A = B; B = temp_v; }
-    if( B->y > C->y ) { temp_v = B; B = C; C = temp_v; }
-    if( A->y > B->y ) { temp_v = A; A = B; B = temp_v; }
+    if( A->pos.y > B->pos.y ) { temp_v = A; A = B; B = temp_v; }
+    if( B->pos.y > C->pos.y ) { temp_v = B; B = C; C = temp_v; }
+    if( A->pos.y > B->pos.y ) { temp_v = A; A = B; B = temp_v; }
 
     /* calculate y step per line */
-    s.linescale[0] = 1.0f / (C->y - A->y);
-    s.linescale[1] = 1.0f / (B->y - A->y);
-    s.linescale[2] = 1.0f / (C->y - B->y);
+    s.linescale[0] = 1.0f / (C->pos.y - A->pos.y);
+    s.linescale[1] = 1.0f / (B->pos.y - A->pos.y);
+    s.linescale[2] = 1.0f / (C->pos.y - B->pos.y);
 
     if( s.linescale[0] <= 0.0f )
         return;
 
     /* check if the major edge is left or right */
-    temp[0] = A->x - C->x;
-    temp[1] = A->y - C->y;
-    temp[2] = B->x - A->x;
-    temp[3] = B->y - A->y;
+    temp[0] = A->pos.x - C->pos.x;
+    temp[1] = A->pos.y - C->pos.y;
+    temp[2] = B->pos.x - A->pos.x;
+    temp[3] = B->pos.y - A->pos.y;
 
     s.left = (temp[0]*temp[3] - temp[1]*temp[2]) > 0.0f ? 0 : 1;
     s.right = !s.left;
@@ -271,7 +289,7 @@ static void draw_triangle( rs_vertex* A, rs_vertex* B,
         /* advance to center */
         if( s.linescale[1] > 0.0f )
         {
-            temp[0] = B->y - A->y;
+            temp[0] = B->pos.y - A->pos.y;
             scaled_vertex_add( &s.edge[0].v, A, &s.edge[0].dvdy, temp[0] );
         }
 
@@ -298,7 +316,7 @@ void rasterizer_process_triangle( context* ctx, const rs_vertex* v0,
     if( (ctx->flags & DEPTH_TEST) && ctx->depth_test==COMPARE_NEVER )
         return;
 
-    if( v0->w<=0.0 || v1->w<=0.0 || v2->w<=0.0 )
+    if( v0->pos.w<=0.0f || v1->pos.w<=0.0f || v2->pos.w<=0.0f )
         return;
 
     if( ctx->draw_area.minx>=ctx->draw_area.maxx ||
@@ -313,29 +331,34 @@ void rasterizer_process_triangle( context* ctx, const rs_vertex* v0,
     vertex_prepare( &C, v2, ctx );
 
     /* clipping */
-    if( (int)A.y>ctx->draw_area.maxy && (int)B.y>ctx->draw_area.maxy &&
-        (int)C.y>ctx->draw_area.maxy )
+    if( (int)A.pos.y>ctx->draw_area.maxy &&
+        (int)B.pos.y>ctx->draw_area.maxy &&
+        (int)C.pos.y>ctx->draw_area.maxy )
     {
         return;
     }
-    if( (int)A.x>ctx->draw_area.maxx && (int)B.x>ctx->draw_area.maxx &&
-        (int)C.x>ctx->draw_area.maxx )
+    if( (int)A.pos.x>ctx->draw_area.maxx &&
+        (int)B.pos.x>ctx->draw_area.maxx &&
+        (int)C.pos.x>ctx->draw_area.maxx )
     {
         return;
     }
-    if( (int)A.y<ctx->draw_area.miny && (int)B.y<ctx->draw_area.miny &&
-        (int)C.y<ctx->draw_area.miny )
+    if( (int)A.pos.y<ctx->draw_area.miny &&
+        (int)B.pos.y<ctx->draw_area.miny &&
+        (int)C.pos.y<ctx->draw_area.miny )
     {
         return;
     }
-    if( (int)A.x<ctx->draw_area.minx && (int)B.x<ctx->draw_area.minx &&
-        (int)C.x<ctx->draw_area.minx )
+    if( (int)A.pos.x<ctx->draw_area.minx &&
+        (int)B.pos.x<ctx->draw_area.minx &&
+        (int)C.pos.x<ctx->draw_area.minx )
     {
         return;
     }
 
     /* culling */
-    ccw = ((C.x - A.x) * (C.y - B.y) - (C.y - A.y) * (C.x - B.x)) < 0.0f;
+    ccw = ((C.pos.x - A.pos.x) * (C.pos.y - B.pos.y) -
+           (C.pos.y - A.pos.y) * (C.pos.x - B.pos.x)) < 0.0f;
 
     cullccw = (ctx->flags & (FRONT_CCW|CULL_FRONT)) == (FRONT_CCW|CULL_FRONT);
     cullccw = cullccw || ((ctx->flags & (FRONT_CCW|CULL_BACK)) == CULL_BACK);

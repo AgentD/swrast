@@ -12,6 +12,7 @@ typedef struct texture texture;
 typedef struct framebuffer framebuffer;
 typedef struct context context;
 typedef struct rs_vertex rs_vertex;
+typedef struct vec4 vec4;
 
 
 

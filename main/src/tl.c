@@ -8,8 +8,8 @@
 
 void tl_light_vertex( context* ctx, rs_vertex* v )
 {
-    float color[3] = { 0.0f, 0.0f, 0.0f };
-    float L[3], V[3], H[3], d, k, a;
+    vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f }, L, V, H, ca, cd, cs;
+    float d, a;
     int i;
 
     for( i=0; i<MAX_LIGHTS; ++i )
@@ -18,115 +18,74 @@ void tl_light_vertex( context* ctx, rs_vertex* v )
             continue;
 
         /* compute light vector and distance */
-        L[0] = ctx->light[i].position[0] - v->x;
-        L[1] = ctx->light[i].position[1] - v->y;
-        L[2] = ctx->light[i].position[2] - v->z;
-        d = sqrt( L[0]*L[0] + L[1]*L[1] + L[2]*L[2] );
-        k = 1.0f / d;
-        L[0] *= k;
-        L[1] *= k;
-        L[2] *= k;
+        vec4_diff( &L, &ctx->light[i].position, &v->pos );
+        L.w = 0.0f;
+        d = sqrt( vec4_dot( &L, &L ) );
+        vec4_scale( &L, d>0.0f ? 1.0f/d : 0.0f );
 
         /* compute view vector */
-        V[0] = -(v->x);
-        V[1] = -(v->y);
-        V[2] = -(v->z);
-        k = 1.0f / sqrt( V[0]*V[0] + V[1]*V[1] + V[2]*V[2] );
-        V[0] *= k;
-        V[1] *= k;
-        V[2] *= k;
+        vec4_get_inverted( &V, &v->pos );
+        V.w = 0.0f;
+        vec4_normalize( &V );
 
         /* compute half vector */
-        H[0] = L[0] + V[0];
-        H[1] = L[1] + V[1];
-        H[2] = L[2] + V[2];
-        k = 1.0f / sqrt( H[0]*H[0] + H[1]*H[1] + H[2]*H[2] );
-        H[0] *= k;
-        H[1] *= k;
-        H[2] *= k;
+        vec4_sum( &H, &L, &V );
+        vec4_normalize( &H );
 
         /* attenuation factor */
         a = 1.0f / (ctx->light[i].attenuation_constant +
                     ctx->light[i].attenuation_linear * d + 
                     ctx->light[i].attenuation_quadratic * d * d);
 
-        /* emissive component */
-        color[0] += ctx->material.emission[0];
-        color[1] += ctx->material.emission[1];
-        color[2] += ctx->material.emission[2];
-
         /* ambient component */
-        color[0] += ctx->light[i].ambient[0]*ctx->material.ambient[0];
-        color[1] += ctx->light[i].ambient[1]*ctx->material.ambient[1];
-        color[2] += ctx->light[i].ambient[2]*ctx->material.ambient[2];
+        vec4_product( &ca, &ctx->light[i].ambient, &ctx->material.ambient );
 
         /* diffuse component */
-        d = (v->nx*L[0] + v->ny*L[1] + v->nz*L[2]) * a;
+        d = vec4_dot( &v->normal, &L );
         d = d<0.0f ? 0.0f : (d>1.0f ? 1.0f : d);
 
-        color[0]+=ctx->light[i].diffuse[0]*ctx->material.diffuse[0]*d;
-        color[1]+=ctx->light[i].diffuse[1]*ctx->material.diffuse[1]*d;
-        color[2]+=ctx->light[i].diffuse[2]*ctx->material.diffuse[2]*d;
+        vec4_product( &cd, &ctx->light[i].diffuse, &ctx->material.diffuse );
+        vec4_scale( &cd, d * a );
 
         /* specular component */
-        d = v->nx*H[0] + v->ny*H[1] + v->nz*H[2];
+        d = vec4_dot( &v->normal, &H );
         d = d<0.0f ? 0.0f : (d>1.0f ? 1.0f : d);
         d = pow( d, ctx->material.shininess );
 
-        color[0] += ctx->light[i].specular[0]*ctx->material.specular[0]*d;
-        color[1] += ctx->light[i].specular[1]*ctx->material.specular[1]*d;
-        color[2] += ctx->light[i].specular[2]*ctx->material.specular[2]*d;
+        vec4_product( &cs, &ctx->light[i].specular, &ctx->material.specular );
+        vec4_scale( &cs, d * a );
+
+        vec4_add( &color, &ctx->material.emission );
+        vec4_add( &color, &ca );
+        vec4_add( &color, &cd );
+        vec4_add( &color, &cs );
     }
 
-    v->r *= color[0];
-    v->g *= color[1];
-    v->b *= color[2];
+    vec4_mul( &v->color, &color );
 }
 
 void tl_transform_vertex( context* ctx, rs_vertex* v )
 {
-    float *normal = ctx->normalmatrix, *mv = ctx->modelview, x, y, z, w;
-
     /* transform normal to viewspace */
-    x = normal[0]*v->nx + normal[4]*v->ny + normal[ 8]*v->nz;
-    y = normal[1]*v->nx + normal[5]*v->ny + normal[ 9]*v->nz;
-    z = normal[2]*v->nx + normal[6]*v->ny + normal[10]*v->nz;
-
-    w = x*x + y*y + z*z;
-    w = (w>0.0) ? (1.0f / sqrt( w )) : 1.0f;
-
-    v->nx = x * w;
-    v->ny = y * w;
-    v->nz = z * w;
+    vec4_transform( &v->normal, ctx->normalmatrix, &v->normal );
+    v->normal.w = 0.0f;
+    vec4_normalize( &v->normal );
 
     /* transform position to viewspace */
-    x = mv[0]*v->x + mv[4]*v->y + mv[ 8]*v->z + mv[12]*v->w;
-    y = mv[1]*v->x + mv[5]*v->y + mv[ 9]*v->z + mv[13]*v->w;
-    z = mv[2]*v->x + mv[6]*v->y + mv[10]*v->z + mv[14]*v->w;
-    w = mv[3]*v->x + mv[7]*v->y + mv[11]*v->z + mv[15]*v->w;
-
-    v->x = x;
-    v->y = y;
-    v->z = z;
-    v->w = w;
+    vec4_transform( &v->pos, ctx->modelview, &v->pos );
 }
 
 void tl_project_vertex( context* ctx, rs_vertex* v )
 {
-    float x = v->x, y = v->y, z = v->z, w = v->w;
-    float* proj = ctx->projection;
-
-    v->x = proj[0]*x + proj[4]*y + proj[ 8]*z + proj[12]*w;
-    v->y = proj[1]*x + proj[5]*y + proj[ 9]*z + proj[13]*w;
-    v->z = proj[2]*x + proj[6]*y + proj[10]*z + proj[14]*w;
-    v->w = proj[3]*x + proj[7]*y + proj[11]*z + proj[15]*w;
+    vec4_transform( &v->pos, ctx->projection, &v->pos );
 }
 
 void tl_transform_and_light( context* ctx, rs_vertex* v0, rs_vertex* v1,
                              rs_vertex* v2 )
 {
-    float u[4], v[4], s;
     rs_vertex p;
+    vec4 u, v;
+    float s;
 
     tl_transform_vertex( ctx, v0 );
     tl_transform_vertex( ctx, v1 );
@@ -138,26 +97,22 @@ void tl_transform_and_light( context* ctx, rs_vertex* v0, rs_vertex* v1,
             !(ctx->vertex_format & VF_NORMAL_F3) )
         {
             /* compute normal for entire triangle */
-            u[0] = v1->x - v0->x; u[1] = v1->y - v0->y; u[2] = v1->z - v0->z;
-            v[0] = v2->x - v0->x; v[1] = v2->y - v0->y; v[2] = v2->z - v0->z;
+            vec4_diff( &u, &v1->pos, &v0->pos );
+            vec4_diff( &v, &v2->pos, &v0->pos );
 
-            p.nx = u[1]*v[2] - u[2]*v[1];
-            p.ny = u[2]*v[0] - u[0]*v[2];
-            p.nz = u[0]*v[1] - u[1]*v[0];
-            s = p.nx*p.nx + p.ny*p.ny + p.nz*p.nz;
+            vec4_cross( &p.normal, &u, &v, 0.0f );
+            s = vec4_dot( &p.normal, &p.normal );
 
             if( !(ctx->flags & FRONT_CCW) )
                 s = -s;
 
             s = s<0.0f ? 0.0f : (1.0f/sqrt( s ));
-            p.nx *= s;
-            p.ny *= s;
-            p.nz *= s;
+            vec4_scale( &p.normal, s );
 
             /* set normal for every vertex */
-            v0->nx = v1->nx = v2->nx = p.nx;
-            v0->ny = v1->ny = v2->ny = p.ny;
-            v0->nz = v1->nz = v2->nz = p.nz;
+            v0->normal = p.normal;
+            v1->normal = p.normal;
+            v2->normal = p.normal;
         }
 
         if( ctx->shade_model==SHADE_GOURAUD )
@@ -171,30 +126,19 @@ void tl_transform_and_light( context* ctx, rs_vertex* v0, rs_vertex* v1,
             /* get position of provoking vertex */
             switch( ctx->provoking_vertex )
             {
-            case 0: p.x=v0->x; p.y=v0->y; p.z=v0->z; p.w=v0->w; break;
-            case 1: p.x=v1->x; p.y=v1->y; p.z=v1->z; p.w=v1->w; break;
-            case 2: p.x=v2->x; p.y=v2->y; p.z=v2->z; p.w=v2->w; break;
+            case 0: p.pos = v0->pos; break;
+            case 1: p.pos = v1->pos; break;
+            case 2: p.pos = v2->pos; break;
             }
 
             /* compute lighting for provoking vertex */
-            p.r = p.g = p.b = p.a = 1.0f;
+            vec4_set( &p.color, 1.0f, 1.0f, 1.0f, 1.0f );
             tl_light_vertex( ctx, &p );
 
             /* apply lighting */
-            v0->r *= p.r;
-            v0->g *= p.g;
-            v0->b *= p.b;
-            v0->a *= p.a;
-
-            v1->r *= p.r;
-            v1->g *= p.g;
-            v1->b *= p.b;
-            v1->a *= p.a;
-
-            v2->r *= p.r;
-            v2->g *= p.g;
-            v2->b *= p.b;
-            v2->a *= p.a;
+            vec4_mul( &v0->color, &p.color );
+            vec4_mul( &v1->color, &p.color );
+            vec4_mul( &v2->color, &p.color );
         }
     }
 

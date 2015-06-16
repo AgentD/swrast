@@ -57,12 +57,10 @@ void texture_destroy( texture* t );
  * \memberof texture
  *
  * \param t   A pointer to a texture structure
- * \param x   A value in the range [0,1]. 0=left, 1=right
- * \param y   A value in the range [0,1]. 0=top, 1=bottom
- * \param out A pointer to write the resulting color value to. The color is
- *            returned in the color ordering used by the framebuffer.
+ * \param tc  Texture coordinate in the range [0,1], where (0,0) is top left.
+ * \param out A pointer to write the resulting color value to.
  */
-void texture_sample( texture* t, float x, float y, float* out );
+void texture_sample( texture* t, const vec4* tc, vec4* out );
 
 #ifdef __cplusplus
 }

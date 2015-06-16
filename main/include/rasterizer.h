@@ -10,6 +10,7 @@
 
 #include "predef.h"
 #include "config.h"
+#include "vector.h"
 
 
 
@@ -20,10 +21,10 @@
  */
 struct rs_vertex
 {
-    float x, y, z, w;
-    float nx, ny, nz;
-    float s[MAX_TEXTURES], t[MAX_TEXTURES];
-    float r, g, b, a;
+    vec4 pos;
+    vec4 normal;
+    vec4 texcoord[MAX_TEXTURES];
+    vec4 color;
 };
 
 
