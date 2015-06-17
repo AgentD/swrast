@@ -180,12 +180,12 @@ int main( void )
 
         context_set_viewport( &ctx, 0, w->fb.height/2,
                                     w->fb.width/2, w->fb.height/2 );
-        ctx.shader = SHADER_GOURAUD;
+        ctx.shader = SHADER_PHONG;
         draw_scene( );
 
         context_set_viewport( &ctx, w->fb.width/2, w->fb.height/2,
                                     w->fb.width/2, w->fb.height/2 );
-        ctx.shader = SHADER_FLAT;
+        ctx.shader = SHADER_PHONG;
         draw_scene( );
 
         a += 0.02f;

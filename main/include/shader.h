@@ -30,7 +30,13 @@ typedef enum
      * \brief Calculate lighting for every vertex and interpolate inside
      *        the triangle
      */
-    SHADER_GOURAUD = 1
+    SHADER_GOURAUD = 1,
+
+    /**
+     * \brief Interpolate lighting parameters (e.g. normal) and calculate
+     *        lighting per fragment
+     */
+    SHADER_PHONG = 2
 }
 SHADER_PROGRAM;
 

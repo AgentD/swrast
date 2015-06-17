@@ -86,23 +86,36 @@ static void mv_transform( context* ctx, rs_vertex* v )
                     v->attribs+ATTRIB_POS );
 }
 
+static void apply_textures( context* ctx, rs_vertex* frag )
+{
+    vec4 tex;
+    int i;
+
+    for( i=0; i<MAX_TEXTURES; ++i )
+    {
+        if( ctx->texture_enable[ i ] )
+        {
+            texture_sample(ctx->textures[i],frag->attribs+ATTRIB_TEX0+i,&tex);
+            vec4_mul( frag->attribs+ATTRIB_COLOR, &tex );
+        }
+    }
+}
+
 /****************************************************************************/
 
-static void shader_vertex_light( context* ctx, rs_vertex* vert,
-                                 int provoking )
+static void shader_default_vertex( context* ctx, rs_vertex* vert,
+                                   int provoking )
 {
     mv_transform( ctx, vert );
 
-    if( ctx->flags & LIGHT_ENABLE )
-    {
-        if( ctx->shader!=SHADER_FLAT || provoking )
-            calculate_lighting( ctx, vert );
-    }
+    if( (ctx->flags & LIGHT_ENABLE) && (ctx->shader!=SHADER_FLAT||provoking) )
+        calculate_lighting( ctx, vert );
 
     vec4_transform( vert->attribs+ATTRIB_POS, ctx->projection,
                     vert->attribs+ATTRIB_POS );
 
-    vert->used &= ~ATTRIB_FLAG_NORMAL;
+    if( ctx->shader!=SHADER_PHONG )
+        vert->used &= ~ATTRIB_FLAG_NORMAL;
 }
 
 static void shader_geometry_flat( context* ctx, rs_vertex* v0, rs_vertex* v1,
@@ -128,23 +141,40 @@ static void shader_geometry_flat( context* ctx, rs_vertex* v0, rs_vertex* v1,
     }
 }
 
-static vec4 shader_per_vertex_fragment( context* ctx, rs_vertex* frag )
+static vec4 shader_default_fragment( context* ctx, rs_vertex* frag )
 {
-    vec4 c, tex;
-    int i;
+    apply_textures( ctx, frag );
+    return frag->attribs[ATTRIB_COLOR];
+}
 
-    c = frag->attribs[ATTRIB_COLOR];
+/****************************************************************************/
 
-    for( i=0; i<MAX_TEXTURES; ++i )
+static void shader_phong_vertex( context* ctx, rs_vertex* vert,
+                                 int provoking )
+{
+    (void)provoking;
+    mv_transform( ctx, vert );
+
+    vert->attribs[ ATTRIB_USR0 ] = vert->attribs[ ATTRIB_POS ];
+    vert->used |= (ATTRIB_FLAG_USR0|ATTRIB_FLAG_COLOR);
+
+    vec4_normalize( vert->attribs+ATTRIB_NORMAL );
+
+    vec4_transform( vert->attribs+ATTRIB_POS, ctx->projection,
+                    vert->attribs+ATTRIB_POS );
+}
+
+static vec4 shader_phong_fragment( context* ctx, rs_vertex* frag )
+{
+    if( ctx->flags & LIGHT_ENABLE )
     {
-        if( ctx->texture_enable[ i ] )
-        {
-            texture_sample(ctx->textures[i],frag->attribs+ATTRIB_TEX0+i,&tex);
-            vec4_mul( &c, &tex );
-        }
+        frag->attribs[ATTRIB_POS] = frag->attribs[ATTRIB_USR0];
+        vec4_normalize( frag->attribs+ATTRIB_NORMAL );
+        calculate_lighting( ctx, frag );
     }
 
-    return c;
+    apply_textures( ctx, frag );
+    return frag->attribs[ATTRIB_COLOR];
 }
 
 /****************************************************************************/
@@ -158,8 +188,9 @@ static struct shader
 }
 shaders[ ] =
 {
-    { shader_vertex_light, shader_geometry_flat, shader_per_vertex_fragment },
-    { shader_vertex_light, NULL,                 shader_per_vertex_fragment }
+    { shader_default_vertex, shader_geometry_flat, shader_default_fragment },
+    { shader_default_vertex, NULL,                 shader_default_fragment },
+    { shader_phong_vertex,   NULL,                 shader_phong_fragment   }
 };
 
 
