@@ -11,9 +11,11 @@
   - Subpixel correct triangle rasterization
   - Configurable back face culling (cull by vertex winding)
   - Vertex buffers and index buffers
-  - Fixed function OpenGL(R) style transform & lighting with model view &
-    projection matrix and up to 8 independend light sources
-  - Flat and Gouraud shading (configurable)
+  - Programmable shader pipeline (shaders defined as C functions)
+     - Default shaders implement fixed function OpenGL(R) style
+       transform & lighting with model view & projection matrix and
+       up to 8 independend light sources
+     - Flat, Gouraud and Phong shading for lighting
   - Perspective correct interpolation of vertex attributes
   - Multpile texture layers with nearest neighbour sampling
   - Depth buffering (OpenGL(R) style comparison function)
@@ -21,21 +23,27 @@
   - Multiple framebuffer objects (can be used for e.g. render to texture)
   - viewport mapping
   - OpenGL(R) style depth masking/mapping/clipping
-  - Writ to color channels can be flagged individually
+  - Write to color channels can be flagged individually
   - Immediate mode rendering
 
 
   Rendering Pipeline
   ******************
 
-     _________________
-    | Input Assembler |     Vertices are decoded from vertex and index
-    |_________________|     buffers.
+     _________________      Vertices are decoded from vertex and index
+    | Input Assembler |     buffers. The input assembler stage assembles
+    |_________________|     vertices to triangles and walks them through the
+            | |             rest of the pipeline.
            _| |_
+     ______\___/______      Vertices are transformed with modelview and
+    |  Vertex Shader  |     projection matrix. Depending on the shader used,
+    |_________________|     vertex lighting values are computed in viewspace.
+            | |             Other arbitrary values can be generated that are
+           _| |_            later interpolated across the triangle area.
      ______\___/______
-    |Transform & Light|     Vertices are transformed with modelview and
-    |_________________|     projection matrix. Lighting values for each
-           _| |_            vertex are computed in viewspace.
+    | Geometry Shader |     Optional, per primitive operations can be
+    |_________________|     performed here, depending on the shader used.
+           _| |_
      ______\___/______
     |  Rasterization  |     Pixels are generated from tripples of vertices.
     |_________________|     Vertex attributes are interpolated over the
@@ -45,16 +53,14 @@
     |_________________|     depth buffer value. Pixels are dropped if the
            _| |_            specified comparison opartation returns false.
      ______\___/______
-    |    Texturing    |     Texture color values are fetched and multiplied
-    |_________________|     to the pixel color values.
-           _| |_
+    | Fragment Shader |     The interpolated vertex attributes (e.g. texture
+    |_________________|     coordinates) are used to compute a final fragment
+           _| |_            color.
      ______\___/______
-    |   Framebuffer   |     The pixel color is alpha blended onto framebuffer.
-    |     blending    |
-    |_________________|
+    |   Framebuffer   |     The final color is (optionally) alpha blended onto
+    |     blending    |     framebuffer. Individual color channels can be
+    |_________________|     masked out.
 
- Lighting, texturing, depth test and blending can be turned on and off or
- configured.
 
 
   Source code overview
@@ -68,14 +74,17 @@
 
     include/predef.h          - Forward declarations of structures
 
+    include/vector.h          - Helper functions for working with
+                                four component vectors
+
     include/context.h         - Context structure. Encapsulates all global
     src/context.c               state of the pipeline.
 
     include/inputassembler.h  - Implementation of the input assembler stage
     src/inputassembler.c
 
-    include/tl.h              - Implementation of the T&L stage
-    src/tl.c
+    include/shader.h          - Implementation shader stages
+    src/shader.c
 
     include/rasterizer.h      - Implementation of the rasterizer stage and
     src/rasterizer.c            pixel merging (depth test, texturing
