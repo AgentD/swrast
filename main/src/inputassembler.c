@@ -141,6 +141,8 @@ void ia_draw_triangles( context* ctx, unsigned int vertexcount )
     if( ctx->immediate.active )
         return;
 
+    vertexcount -= vertexcount % 3;
+
     for( i=0; i<vertexcount; i+=3 )
     {
         ptr = read_vertex( &v0, ptr, ctx->vertex_format );
@@ -154,10 +156,8 @@ void ia_draw_triangles( context* ctx, unsigned int vertexcount )
 void ia_draw_triangles_indexed( context* ctx, unsigned int vertexcount,
                                 unsigned int indexcount )
 {
-    unsigned int vsize = 0;
+    unsigned int i0, i1, i2, i = 0, vsize = 0;
     rs_vertex v0, v1, v2;
-    unsigned short index;
-    unsigned int i;
 
     if( ctx->immediate.active )
         return;
@@ -179,104 +179,75 @@ void ia_draw_triangles_indexed( context* ctx, unsigned int vertexcount,
     /* for each triangle */
     indexcount -= indexcount % 3;
 
-    for( i=0; i<indexcount; i+=3 )
+    while( i<indexcount )
     {
-        /* read first vertex */
-        index = ctx->indexbuffer[ i ];
+        i0 = ctx->indexbuffer[ i++ ];
+        i1 = ctx->indexbuffer[ i++ ];
+        i2 = ctx->indexbuffer[ i++ ];
 
-        if( index>=vertexcount )
-            continue;
-        
-        read_vertex( &(v0), ((unsigned char*)ctx->vertexbuffer)+vsize*index,
-                     ctx->vertex_format );
-
-        /* read second vertex */
-        index = ctx->indexbuffer[ i+1 ];
-
-        if( index>=vertexcount )
+        if( i0>=vertexcount || i1>=vertexcount || i2>=vertexcount )
             continue;
 
-        read_vertex( &(v1), ((unsigned char*)ctx->vertexbuffer)+vsize*index,
+        read_vertex( &(v0), ((unsigned char*)ctx->vertexbuffer)+vsize*i0,
                      ctx->vertex_format );
 
-        /* read third vertex */
-        index = ctx->indexbuffer[ i+2 ];
-
-        if( index>=vertexcount )
-            continue;
-
-        read_vertex( &(v2), ((unsigned char*)ctx->vertexbuffer)+vsize*index,
+        read_vertex( &(v1), ((unsigned char*)ctx->vertexbuffer)+vsize*i1,
                      ctx->vertex_format );
 
-        /* rasterize */
+        read_vertex( &(v2), ((unsigned char*)ctx->vertexbuffer)+vsize*i2,
+                     ctx->vertex_format );
+
         draw_triangle( ctx, &v0, &v1, &v2 );
     }
 }
 
 void ia_begin( context* ctx )
 {
-    if( !ctx->immediate.active )
-    {
-        ctx->immediate.next.used = 0;
-        ctx->immediate.current = 0;
-        ctx->immediate.active = 1;
-    }
+    ctx->immediate.next.used = 0;
+    ctx->immediate.current = 0;
+    ctx->immediate.active = 1;
 }
 
 void ia_vertex( context* ctx, float x, float y, float z, float w )
 {
-    if( ctx->immediate.active )
-    {
-        vec4_set( ctx->immediate.next.attribs+ATTRIB_POS, x, y, z, w );
-        ctx->immediate.next.used |= ATTRIB_FLAG_POS;
+    if( !ctx->immediate.active )
+        return;
 
-        ctx->immediate.vertex[ctx->immediate.current++] = ctx->immediate.next;
+    vec4_set( ctx->immediate.next.attribs+ATTRIB_POS, x, y, z, w );
+    ctx->immediate.next.used |= ATTRIB_FLAG_POS;
 
-        if( ctx->immediate.current == 3 )
-        {
-            draw_triangle( ctx, ctx->immediate.vertex,
-                                ctx->immediate.vertex+1,
-                                ctx->immediate.vertex+2 );
-            ctx->immediate.current = 0;
-        }
-    }
+    ctx->immediate.vertex[ ctx->immediate.current++ ] = ctx->immediate.next;
+
+    if( ctx->immediate.current < 3 )
+        return;
+
+    ctx->immediate.current = 0;
+    draw_triangle( ctx, ctx->immediate.vertex, ctx->immediate.vertex+1,
+                        ctx->immediate.vertex+2 );
 }
 
 void ia_color( context* ctx, float r, float g, float b, float a )
 {
-    if( ctx->immediate.active )
-    {
-        vec4_set( ctx->immediate.next.attribs+ATTRIB_COLOR, r, g, b, a );
-        ctx->immediate.next.used |= ATTRIB_FLAG_COLOR;
-    }
+    vec4_set( ctx->immediate.next.attribs+ATTRIB_COLOR, r, g, b, a );
+    ctx->immediate.next.used |= ATTRIB_FLAG_COLOR;
 }
 
 void ia_normal( context* ctx, float x, float y, float z )
 {
-    if( ctx->immediate.active )
-    {
-        vec4_set( ctx->immediate.next.attribs+ATTRIB_NORMAL, x, y, z, 0.0f );
-        ctx->immediate.next.used |= ATTRIB_FLAG_NORMAL;
-    }
+    vec4_set( ctx->immediate.next.attribs+ATTRIB_NORMAL, x, y, z, 0.0f );
+    ctx->immediate.next.used |= ATTRIB_FLAG_NORMAL;
 }
 
 void ia_texcoord( context* ctx, int layer, float s, float t )
 {
-    if( ctx->immediate.active )
-    {
-        vec4_set( ctx->immediate.next.attribs+ATTRIB_TEX0+layer,
-                  s, t, 0.0f, 1.0f );
-        ctx->immediate.next.used |= (ATTRIB_FLAG_TEX0 << layer);
-    }
+    vec4_set(ctx->immediate.next.attribs+ATTRIB_TEX0+layer, s, t, 0.0f, 1.0f);
+    ctx->immediate.next.used |= (ATTRIB_FLAG_TEX0 << layer);
 }
 
 void ia_end( context* ctx )
 {
-    if( ctx->immediate.active )
-    {
-        ctx->immediate.next.used = 0;
-        ctx->immediate.current = 0;
-        ctx->immediate.active = 0;
-    }
+    ctx->immediate.next.used = 0;
+    ctx->immediate.current = 0;
+    ctx->immediate.active = 0;
 }
 

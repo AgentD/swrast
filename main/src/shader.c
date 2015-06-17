@@ -9,8 +9,8 @@
 
 static void calculate_lighting( context* ctx, rs_vertex* v )
 {
-    vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f }, L, V, H, ca, cd, cs;
-    float d, a;
+    vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f }, L, V, H, N, ca, cd, cs;
+    float dist, a;
     int i;
 
     for( i=0; i<MAX_LIGHTS; ++i )
@@ -18,43 +18,46 @@ static void calculate_lighting( context* ctx, rs_vertex* v )
         if( !ctx->light[ i ].enable )
             continue;
 
-        /* compute light vector and distance */
-        vec4_diff( &L, &ctx->light[i].position, v->attribs+ATTRIB_POS );
-        L.w = 0.0f;
-        d = sqrt( vec4_dot( &L, &L ) );
-        vec4_scale( &L, d>0.0f ? 1.0f/d : 0.0f );
+        vec4_get_inverted( &V, v->attribs+ATTRIB_POS ); /* view vector */
+        vec4_sum( &L, &ctx->light[i].position, &V );    /* light vector */
+        N = v->attribs[ATTRIB_NORMAL];                  /* surface normal */
+        N.w = V.w = L.w = 0.0f;
 
-        /* compute view vector */
-        vec4_get_inverted( &V, v->attribs+ATTRIB_POS );
-        V.w = 0.0f;
+        vec4_sum( &H, &L, &V );                         /* half vector */
+
+        dist = sqrt( vec4_dot( &L, &L ) );
+        vec4_scale( &L, dist>0.0f ? 1.0f/dist : 0.0f );
+
         vec4_normalize( &V );
-
-        /* compute half vector */
-        vec4_sum( &H, &L, &V );
         vec4_normalize( &H );
-
-        /* attenuation factor */
-        a = 1.0f / (ctx->light[i].attenuation_constant +
-                    ctx->light[i].attenuation_linear * d + 
-                    ctx->light[i].attenuation_quadratic * d * d);
+        vec4_normalize( &N );
 
         /* ambient component */
         vec4_product( &ca, &ctx->light[i].ambient, &ctx->material.ambient );
 
         /* diffuse component */
-        d = vec4_dot( v->attribs+ATTRIB_NORMAL, &L );
-        d = d<0.0f ? 0.0f : (d>1.0f ? 1.0f : d);
+        a = vec4_dot( &N, &L );
+        a = a<0.0f ? 0.0f : a;
 
         vec4_product( &cd, &ctx->light[i].diffuse, &ctx->material.diffuse );
-        vec4_scale( &cd, d * a );
+        vec4_scale( &cd, a );
 
         /* specular component */
-        d = vec4_dot( v->attribs+ATTRIB_NORMAL, &H );
-        d = d<0.0f ? 0.0f : (d>1.0f ? 1.0f : d);
-        d = pow( d, ctx->material.shininess );
+        a = vec4_dot( &N, &H );
+        a = a<0.0f ? 0.0f : a;
+        a = pow( a, ctx->material.shininess );
 
         vec4_product( &cs, &ctx->light[i].specular, &ctx->material.specular );
-        vec4_scale( &cs, d * a );
+        vec4_scale( &cs, a );
+
+        /* attenuation factor */
+        a = ctx->light[i].attenuation_constant +
+            ctx->light[i].attenuation_linear * dist + 
+            ctx->light[i].attenuation_quadratic * dist * dist;
+        a = a>0.0f ? 1.0f/a : 0.0f;
+
+        vec4_scale( &cd, a );
+        vec4_scale( &cs, a );
 
         /* accumulate */
         vec4_add( &color, &ctx->material.emission );
@@ -66,15 +69,8 @@ static void calculate_lighting( context* ctx, rs_vertex* v )
     color.w = 1.0f;
 
     /* modulate color */
-    if( v->used & ATTRIB_FLAG_COLOR )
-    {
-        vec4_mul( v->attribs + ATTRIB_COLOR, &color );
-    }
-    else
-    {
-        v->used |= ATTRIB_FLAG_COLOR;
-        v->attribs[ ATTRIB_COLOR ] = color;
-    }
+    vec4_mul( v->attribs + ATTRIB_COLOR, &color );
+    v->used |= ATTRIB_FLAG_COLOR;
 }
 
 static void mv_transform( context* ctx, rs_vertex* v )
@@ -83,7 +79,6 @@ static void mv_transform( context* ctx, rs_vertex* v )
     vec4_transform( v->attribs+ATTRIB_NORMAL, ctx->normalmatrix,
                     v->attribs+ATTRIB_NORMAL );
     v->attribs[ATTRIB_NORMAL].w = 0.0f;
-    vec4_normalize( v->attribs+ATTRIB_NORMAL );
 
     /* transform position to viewspace */
     vec4_transform( v->attribs+ATTRIB_POS, ctx->modelview,
@@ -116,10 +111,7 @@ vec4 shader_process_fragment( context* ctx, rs_vertex* frag )
     vec4 c, tex;
     int i;
 
-    if( frag->used & ATTRIB_FLAG_COLOR )
-        c = frag->attribs[ATTRIB_COLOR];
-    else
-        vec4_set( &c, 1.0f, 1.0f, 1.0f, 1.0f );
+    c = frag->attribs[ATTRIB_COLOR];
 
     for( i=0; i<MAX_TEXTURES; ++i )
     {
