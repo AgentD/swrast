@@ -17,20 +17,25 @@ extern "C" {
 #endif
 
 /**
- * \brief Apply only transformation to a vertex
- *
- * \param ctx  A pointer to a context
- * \param vert A pointer to a vertex to process
- */
-void shader_ftransform( context* ctx, rs_vertex* vert );
-
-/**
  * \brief Run the vertex shader on a vertex
  *
- * \param ctx  A pointer to a context
- * \param vert A pointer to a vertex to process
+ * \param ctx       A pointer to a context
+ * \param vert      A pointer to a vertex to process
+ * \param provoking Non-zero if the given vertex is the provokig vertex of a
+ *                  primitive.
  */
-void shader_process_vertex( context* ctx, rs_vertex* vert );
+void shader_process_vertex( context* ctx, rs_vertex* vert, int provoking );
+
+/**
+ * \brief Run the geometry shader on a triangle
+ *
+ * \param ctx A pointer to a context
+ * \param v0  A pointer to the first vertex of a triangle
+ * \param v1  A pointer to the second vertex of a triangle
+ * \param v2  A pointer to the third vertex of a triangle
+ */
+void shader_process_triangle( context* ctx,
+                              rs_vertex* v0, rs_vertex* v1, rs_vertex* v2 );
 
 /**
  * \brief Run the frament shader on the interpolated vertex attributes

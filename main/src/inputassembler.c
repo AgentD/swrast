@@ -98,36 +98,10 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
 static void draw_triangle( context* ctx, rs_vertex* v0, rs_vertex* v1,
                            rs_vertex* v2 )
 {
-    rs_vertex* p;
-    int i, j;
-
-    if( ctx->shade_model==SHADE_FLAT )
-    {
-        switch( ctx->provoking_vertex )
-        {
-        case 0:p=v0;shader_ftransform(ctx,v1);shader_ftransform(ctx,v2);break;
-        case 1:p=v1;shader_ftransform(ctx,v0);shader_ftransform(ctx,v2);break;
-        case 2:p=v2;shader_ftransform(ctx,v0);shader_ftransform(ctx,v1);break;
-        default:
-            return;
-        }
-
-        shader_process_vertex( ctx, p );
-
-        v0->used = v1->used = v2->used = p->used;
-
-        for( i=0, j=0x01; i<ATTRIB_COUNT; ++i, j<<=1 )
-        {
-            if( (p->used & j) && i!=ATTRIB_POS )
-                v0->attribs[i]=v1->attribs[i]=v2->attribs[i]=p->attribs[i];
-        }
-    }
-    else
-    {
-        shader_process_vertex( ctx, v0 );
-        shader_process_vertex( ctx, v1 );
-        shader_process_vertex( ctx, v2 );
-    }
+    shader_process_vertex( ctx, v0, ctx->provoking_vertex==0 );
+    shader_process_vertex( ctx, v1, ctx->provoking_vertex==1 );
+    shader_process_vertex( ctx, v2, ctx->provoking_vertex==2 );
+    shader_process_triangle( ctx, v0, v1, v2 );
 
     rasterizer_process_triangle( ctx, v0, v1, v2 );
 }

@@ -87,23 +87,44 @@ static void mv_transform( context* ctx, rs_vertex* v )
 
 /****************************************************************************/
 
-void shader_ftransform( context* ctx, rs_vertex* vert )
+void shader_process_vertex( context* ctx, rs_vertex* vert, int provoking )
 {
     mv_transform( ctx, vert );
+
+    if( ctx->flags & LIGHT_ENABLE )
+    {
+        if( ctx->shade_model!=SHADE_FLAT || provoking )
+            calculate_lighting( ctx, vert );
+    }
 
     vec4_transform( vert->attribs+ATTRIB_POS, ctx->projection,
                     vert->attribs+ATTRIB_POS );
 }
 
-void shader_process_vertex( context* ctx, rs_vertex* vert )
+void shader_process_triangle( context* ctx,
+                              rs_vertex* v0, rs_vertex* v1, rs_vertex* v2 )
 {
-    mv_transform( ctx, vert );
+    rs_vertex* p;
+    int i, j;
 
-    if( ctx->flags & LIGHT_ENABLE )
-        calculate_lighting( ctx, vert );
+    if( ctx->shade_model==SHADE_FLAT )
+    {
+        switch( ctx->provoking_vertex )
+        {
+        case 0: p = v0; break;
+        case 1: p = v1; break;
+        case 2: p = v2; break;
+        default:        return;
+        }
 
-    vec4_transform( vert->attribs+ATTRIB_POS, ctx->projection,
-                    vert->attribs+ATTRIB_POS );
+        v0->used = v1->used = v2->used = p->used;
+
+        for( i=0, j=0x01; i<ATTRIB_COUNT; ++i, j<<=1 )
+        {
+            if( (p->used & j) && i!=ATTRIB_POS )
+                v0->attribs[i]=v1->attribs[i]=v2->attribs[i]=p->attribs[i];
+        }
+    }
 }
 
 vec4 shader_process_fragment( context* ctx, rs_vertex* frag )
