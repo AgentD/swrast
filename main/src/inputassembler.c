@@ -2,8 +2,10 @@
 #include "rasterizer.h"
 #include "context.h"
 #include "config.h"
-#include "tl.h"
+#include "shader.h"
+#include "vector.h"
 #include <math.h>
+
 
 
 static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
@@ -13,8 +15,8 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
     vec4_set( v->attribs + ATTRIB_POS,    0.0f, 0.0f, 0.0f, 1.0f );
     vec4_set( v->attribs + ATTRIB_COLOR,  1.0f, 1.0f, 1.0f, 1.0f );
     vec4_set( v->attribs + ATTRIB_NORMAL, 0.0f, 0.0f, 0.0f, 0.0f );
-    vec4_set( v->attribs + ATTRIB_TEX0,   0.0f, 0.0f, 0.0f, 0.0f );
-    vec4_set( v->attribs + ATTRIB_TEX1,   0.0f, 0.0f, 0.0f, 0.0f );
+    vec4_set( v->attribs + ATTRIB_TEX0,   0.0f, 0.0f, 0.0f, 1.0f );
+    vec4_set( v->attribs + ATTRIB_TEX1,   0.0f, 0.0f, 0.0f, 1.0f );
     v->used = 0;
 
     /* decode position */
@@ -93,6 +95,43 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
     return ptr;
 }
 
+static void draw_triangle( context* ctx, rs_vertex* v0, rs_vertex* v1,
+                           rs_vertex* v2 )
+{
+    rs_vertex* p;
+    int i, j;
+
+    if( ctx->shade_model==SHADE_FLAT )
+    {
+        switch( ctx->provoking_vertex )
+        {
+        case 0:p=v0;shader_ftransform(ctx,v1);shader_ftransform(ctx,v2);break;
+        case 1:p=v1;shader_ftransform(ctx,v0);shader_ftransform(ctx,v2);break;
+        case 2:p=v2;shader_ftransform(ctx,v0);shader_ftransform(ctx,v1);break;
+        default:
+            return;
+        }
+
+        shader_process_vertex( ctx, p );
+
+        v0->used = v1->used = v2->used = p->used;
+
+        for( i=0, j=0x01; i<ATTRIB_COUNT; ++i, j<<=1 )
+        {
+            if( (p->used & j) && i!=ATTRIB_POS )
+                v0->attribs[i]=v1->attribs[i]=v2->attribs[i]=p->attribs[i];
+        }
+    }
+    else
+    {
+        shader_process_vertex( ctx, v0 );
+        shader_process_vertex( ctx, v1 );
+        shader_process_vertex( ctx, v2 );
+    }
+
+    rasterizer_process_triangle( ctx, v0, v1, v2 );
+}
+
 void ia_draw_triangles( context* ctx, unsigned int vertexcount )
 {
     void* ptr = ctx->vertexbuffer;
@@ -107,8 +146,8 @@ void ia_draw_triangles( context* ctx, unsigned int vertexcount )
         ptr = read_vertex( &v0, ptr, ctx->vertex_format );
         ptr = read_vertex( &v1, ptr, ctx->vertex_format );
         ptr = read_vertex( &v2, ptr, ctx->vertex_format );
-        tl_transform_and_light( ctx, &v0, &v1, &v2 );
-        rasterizer_process_triangle( ctx, &v0, &v1, &v2 );
+
+        draw_triangle( ctx, &v0, &v1, &v2 );
     }
 }
 
@@ -170,8 +209,7 @@ void ia_draw_triangles_indexed( context* ctx, unsigned int vertexcount,
                      ctx->vertex_format );
 
         /* rasterize */
-        tl_transform_and_light( ctx, &v0, &v1, &v2 );
-        rasterizer_process_triangle( ctx, &v0, &v1, &v2 );
+        draw_triangle( ctx, &v0, &v1, &v2 );
     }
 }
 
@@ -196,12 +234,9 @@ void ia_vertex( context* ctx, float x, float y, float z, float w )
 
         if( ctx->immediate.current == 3 )
         {
-            tl_transform_and_light( ctx, ctx->immediate.vertex,
-                                         ctx->immediate.vertex+1,
-                                         ctx->immediate.vertex+2 );
-            rasterizer_process_triangle( ctx, ctx->immediate.vertex,
-                                              ctx->immediate.vertex+1,
-                                              ctx->immediate.vertex+2 );
+            draw_triangle( ctx, ctx->immediate.vertex,
+                                ctx->immediate.vertex+1,
+                                ctx->immediate.vertex+2 );
             ctx->immediate.current = 0;
         }
     }

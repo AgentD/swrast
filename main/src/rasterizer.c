@@ -2,6 +2,7 @@
 #include "rasterizer.h"
 #include "context.h"
 #include "texture.h"
+#include "shader.h"
 #include <math.h>
 
 
@@ -95,28 +96,6 @@ static void vertex_prepare(rs_vertex* out, const rs_vertex* in, context* ctx)
 }
 
 /****************************************************************************/
-
-static vec4 run_fragment_shader( context* ctx, rs_vertex* frag )
-{
-    vec4 c, tex;
-    int i;
-
-    if( frag->used & ATTRIB_FLAG_COLOR )
-        c = frag->attribs[ATTRIB_COLOR];
-    else
-        vec4_set( &c, 1.0f, 1.0f, 1.0f, 1.0f );
-
-    for( i=0; i<MAX_TEXTURES; ++i )
-    {
-        if( ctx->texture_enable[ i ] )
-        {
-            texture_sample(ctx->textures[i],frag->attribs+ATTRIB_TEX0+i,&tex);
-            vec4_mul( &c, &tex );
-        }
-    }
-
-    return c;
-}
 
 static void write_fragment( context* ctx,
                             const vec4* frag_color, float frag_depth,
@@ -226,7 +205,7 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
         }
 
         /* */
-        c = run_fragment_shader( ctx, &frag );
+        c = shader_process_fragment( ctx, &frag );
 
         write_fragment( ctx, &c, z, start, z_buffer );
     skip_fragment:

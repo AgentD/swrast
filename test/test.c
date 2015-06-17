@@ -6,7 +6,6 @@
 #include "window.h"
 #include "vector.h"
 #include "3ds.h"
-#include "tl.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -22,6 +21,7 @@ static mesh* teapot;
 static void draw_scene( void )
 {
     float c, s, m[16];
+    int model;
 
     /* rasterize triangles */
     c = cos( a ), s = sin( a );
@@ -36,6 +36,8 @@ static void draw_scene( void )
     ctx.vertexbuffer = NULL;
     ctx.texture_enable[0] = 1;
     ctx.textures[0] = tex;
+    model = ctx.shade_model;
+    ctx.shade_model = SHADE_GOURAUD;
     context_set_modelview_matrix( &ctx, m );
 
     ia_begin( &ctx );
@@ -53,6 +55,7 @@ static void draw_scene( void )
     ia_vertex( &ctx, 0.0f, 2.0f, 0.0f, 1.0f );
 
     ia_end( &ctx );
+    ctx.shade_model = model;
 
     /* yellow transparent triangle */
     ctx.texture_enable[0] = 0;

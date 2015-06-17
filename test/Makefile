@@ -24,7 +24,7 @@ window.o: window.c window.h ../main/include/framebuffer.h
 test.o: test.c window.h window.h 3ds.h ../main/include/inputassembler.h \
 		../main/include/framebuffer.h ../main/include/rasterizer.h \
 		../main/include/texture.h ../main/include/context.h \
-		../main/include/tl.h ../main/include/vector.h
+		../main/include/shader.h ../main/include/vector.h
 3ds.o: 3ds.c 3ds.h ../main/include/inputassembler.h ../main/include/context.h
 subpixel.o: subpixel.c window.h ../main/include/context.h \
 		../main/include/framebuffer.h \
