@@ -36,8 +36,8 @@ static void draw_scene( void )
     ctx.vertexbuffer = NULL;
     ctx.texture_enable[0] = 1;
     ctx.textures[0] = tex;
-    model = ctx.shade_model;
-    ctx.shade_model = SHADE_GOURAUD;
+    model = ctx.shader;
+    ctx.shader = SHADER_GOURAUD;
     context_set_modelview_matrix( &ctx, m );
 
     ia_begin( &ctx );
@@ -55,7 +55,7 @@ static void draw_scene( void )
     ia_vertex( &ctx, 0.0f, 2.0f, 0.0f, 1.0f );
 
     ia_end( &ctx );
-    ctx.shade_model = model;
+    ctx.shader = model;
 
     /* yellow transparent triangle */
     ctx.texture_enable[0] = 0;
@@ -170,22 +170,22 @@ int main( void )
 
         /* draw scene into multiple view ports */
         context_set_viewport( &ctx, 0, 0, w->fb.width/2, w->fb.height/2 );
-        ctx.shade_model = SHADE_GOURAUD;
+        ctx.shader = SHADER_GOURAUD;
         draw_scene( );
 
         context_set_viewport( &ctx, w->fb.width/2, 0,
                                     w->fb.width/2, w->fb.height/2 );
-        ctx.shade_model = SHADE_FLAT;
+        ctx.shader = SHADER_FLAT;
         draw_scene( );
 
         context_set_viewport( &ctx, 0, w->fb.height/2,
                                     w->fb.width/2, w->fb.height/2 );
-        ctx.shade_model = SHADE_GOURAUD;
+        ctx.shader = SHADER_GOURAUD;
         draw_scene( );
 
         context_set_viewport( &ctx, w->fb.width/2, w->fb.height/2,
                                     w->fb.width/2, w->fb.height/2 );
-        ctx.shade_model = SHADE_FLAT;
+        ctx.shader = SHADER_FLAT;
         draw_scene( );
 
         a += 0.02f;

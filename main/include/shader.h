@@ -12,6 +12,30 @@
 
 
 
+
+/**
+ * \enum SHADER_PROGRAM
+ *
+ * \brief Shader program enumerator
+ */
+typedef enum
+{
+    /**
+     * \brief Calculate lighting for one vertex and use values for
+     *        entire triangle
+     */
+    SHADER_FLAT = 0,
+
+    /**
+     * \brief Calculate lighting for every vertex and interpolate inside
+     *        the triangle
+     */
+    SHADER_GOURAUD = 1
+}
+SHADER_PROGRAM;
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif

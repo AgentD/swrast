@@ -4,6 +4,7 @@
 #include "shader.h"
 
 #include <math.h>
+#include <stddef.h>
 
 
 
@@ -87,47 +88,47 @@ static void mv_transform( context* ctx, rs_vertex* v )
 
 /****************************************************************************/
 
-void shader_process_vertex( context* ctx, rs_vertex* vert, int provoking )
+static void shader_vertex_light( context* ctx, rs_vertex* vert,
+                                 int provoking )
 {
     mv_transform( ctx, vert );
 
     if( ctx->flags & LIGHT_ENABLE )
     {
-        if( ctx->shade_model!=SHADE_FLAT || provoking )
+        if( ctx->shader!=SHADER_FLAT || provoking )
             calculate_lighting( ctx, vert );
     }
 
     vec4_transform( vert->attribs+ATTRIB_POS, ctx->projection,
                     vert->attribs+ATTRIB_POS );
+
+    vert->used &= ~ATTRIB_FLAG_NORMAL;
 }
 
-void shader_process_triangle( context* ctx,
-                              rs_vertex* v0, rs_vertex* v1, rs_vertex* v2 )
+static void shader_geometry_flat( context* ctx, rs_vertex* v0, rs_vertex* v1,
+                                  rs_vertex* v2 )
 {
     rs_vertex* p;
     int i, j;
 
-    if( ctx->shade_model==SHADE_FLAT )
+    switch( ctx->provoking_vertex )
     {
-        switch( ctx->provoking_vertex )
-        {
-        case 0: p = v0; break;
-        case 1: p = v1; break;
-        case 2: p = v2; break;
-        default:        return;
-        }
+    case 0: p = v0; break;
+    case 1: p = v1; break;
+    case 2: p = v2; break;
+    default:        return;
+    }
 
-        v0->used = v1->used = v2->used = p->used;
+    v0->used = v1->used = v2->used = p->used;
 
-        for( i=0, j=0x01; i<ATTRIB_COUNT; ++i, j<<=1 )
-        {
-            if( (p->used & j) && i!=ATTRIB_POS )
-                v0->attribs[i]=v1->attribs[i]=v2->attribs[i]=p->attribs[i];
-        }
+    for( i=0, j=0x01; i<ATTRIB_COUNT; ++i, j<<=1 )
+    {
+        if( (p->used & j) && i!=ATTRIB_POS )
+            v0->attribs[i]=v1->attribs[i]=v2->attribs[i]=p->attribs[i];
     }
 }
 
-vec4 shader_process_fragment( context* ctx, rs_vertex* frag )
+static vec4 shader_per_vertex_fragment( context* ctx, rs_vertex* frag )
 {
     vec4 c, tex;
     int i;
@@ -144,5 +145,40 @@ vec4 shader_process_fragment( context* ctx, rs_vertex* frag )
     }
 
     return c;
+}
+
+/****************************************************************************/
+
+static struct shader
+{
+    void(* vertex )( context* ctx, rs_vertex* vert, int provoking );
+    void(* geometry )( context* ctx,
+                       rs_vertex* v0, rs_vertex* v1, rs_vertex* v2 );
+    vec4(* fragment )( context* ctx, rs_vertex* frag );
+}
+shaders[ ] =
+{
+    { shader_vertex_light, shader_geometry_flat, shader_per_vertex_fragment },
+    { shader_vertex_light, NULL,                 shader_per_vertex_fragment }
+};
+
+
+void shader_process_vertex( context* ctx, rs_vertex* vert, int provoking )
+{
+    shaders[ ctx->shader ].vertex( ctx, vert, provoking );
+}
+
+void shader_process_triangle( context* ctx,
+                              rs_vertex* v0, rs_vertex* v1, rs_vertex* v2 )
+{
+    struct shader* s = shaders + ctx->shader;
+
+    if( s->geometry )
+        s->geometry( ctx, v0, v1, v2 );
+}
+
+vec4 shader_process_fragment( context* ctx, rs_vertex* frag )
+{
+    return shaders[ ctx->shader ].fragment( ctx, frag );
 }
 

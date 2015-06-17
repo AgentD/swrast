@@ -136,7 +136,7 @@ void context_init( context* ctx )
     ctx->projection[10] = ctx->modelview[10] = ctx->normalmatrix[10] = 1.0f;
     ctx->projection[15] = ctx->modelview[15] = ctx->normalmatrix[15] = 1.0f;
 
-    ctx->shade_model = SHADE_GOURAUD;
+    ctx->shader = SHADER_GOURAUD;
     ctx->provoking_vertex = 0;
 
     ctx->depth_test = COMPARE_ALWAYS;

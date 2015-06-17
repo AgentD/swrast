@@ -11,6 +11,7 @@
 #include "predef.h"
 #include "config.h"
 #include "rasterizer.h"
+#include "shader.h"
 #include "vector.h"
 
 
@@ -32,27 +33,6 @@ typedef enum
     COMPARE_GREATER_EQUAL = 0x07    /**< \brief Pass if greater or equal */
 }
 COMPARE_FUNCTION;
-
-/**
- * \enum SHADING_MODEL
- *
- * \brief Shade model enumerator
- */
-typedef enum
-{
-    /**
-     * \brief Calculate lighting for one vertex and use values for
-     *        entire triangle
-     */
-    SHADE_FLAT = 0,
-
-    /**
-     * \brief Calculate lighting for every vertex and interpolate inside
-     *        the triangle
-     */
-    SHADE_GOURAUD = 1
-}
-SHADE_MODEL;
 
 /**
  * \enum VERTEX_FORMAT
@@ -204,8 +184,8 @@ struct context
     /** \brief Index buffer for input assembler */
     unsigned short* indexbuffer;
 
-    /** \brief Shade model to use for lighting values */
-    SHADE_MODEL shade_model;
+    /** \brief Which shader program to use */
+    SHADER_PROGRAM shader;
 
     /** \brief Vertex used for flat shading */
     int provoking_vertex;
