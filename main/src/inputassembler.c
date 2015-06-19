@@ -98,9 +98,9 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
 static void draw_triangle( context* ctx, rs_vertex* v0, rs_vertex* v1,
                            rs_vertex* v2 )
 {
-    shader_process_vertex( ctx, v0, ctx->provoking_vertex==0 );
-    shader_process_vertex( ctx, v1, ctx->provoking_vertex==1 );
-    shader_process_vertex( ctx, v2, ctx->provoking_vertex==2 );
+    shader_process_vertex( ctx, v0 );
+    shader_process_vertex( ctx, v1 );
+    shader_process_vertex( ctx, v2 );
     shader_process_triangle( ctx, v0, v1, v2 );
 
     rasterizer_process_triangle( ctx, v0, v1, v2 );

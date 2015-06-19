@@ -49,12 +49,10 @@ extern "C" {
 /**
  * \brief Run the vertex shader on a vertex
  *
- * \param ctx       A pointer to a context
- * \param vert      A pointer to a vertex to process
- * \param provoking Non-zero if the given vertex is the provokig vertex of a
- *                  primitive.
+ * \param ctx  A pointer to a context
+ * \param vert A pointer to a vertex to process
  */
-void shader_process_vertex( context* ctx, rs_vertex* vert, int provoking );
+void shader_process_vertex( context* ctx, rs_vertex* vert );
 
 /**
  * \brief Run the geometry shader on a triangle

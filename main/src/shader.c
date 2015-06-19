@@ -79,7 +79,6 @@ static void mv_transform( context* ctx, rs_vertex* v )
     /* transform normal to viewspace */
     vec4_transform( v->attribs+ATTRIB_NORMAL, ctx->normalmatrix,
                     v->attribs+ATTRIB_NORMAL );
-    v->attribs[ATTRIB_NORMAL].w = 0.0f;
 
     /* transform position to viewspace */
     vec4_transform( v->attribs+ATTRIB_POS, ctx->modelview,
@@ -103,19 +102,17 @@ static void apply_textures( context* ctx, rs_vertex* frag )
 
 /****************************************************************************/
 
-static void shader_default_vertex( context* ctx, rs_vertex* vert,
-                                   int provoking )
+static void shader_gouraud_vertex( context* ctx, rs_vertex* vert )
 {
     mv_transform( ctx, vert );
 
-    if( (ctx->flags & LIGHT_ENABLE) && (ctx->shader!=SHADER_FLAT||provoking) )
+    if( ctx->flags & LIGHT_ENABLE )
         calculate_lighting( ctx, vert );
 
     vec4_transform( vert->attribs+ATTRIB_POS, ctx->projection,
                     vert->attribs+ATTRIB_POS );
 
-    if( ctx->shader!=SHADER_PHONG )
-        vert->used &= ~ATTRIB_FLAG_NORMAL;
+    vert->used &= ~ATTRIB_FLAG_NORMAL;
 }
 
 static void shader_geometry_flat( context* ctx, rs_vertex* v0, rs_vertex* v1,
@@ -124,6 +121,7 @@ static void shader_geometry_flat( context* ctx, rs_vertex* v0, rs_vertex* v1,
     rs_vertex* p;
     int i, j;
 
+    /* get provoking vertex */
     switch( ctx->provoking_vertex )
     {
     case 0: p = v0; break;
@@ -132,6 +130,20 @@ static void shader_geometry_flat( context* ctx, rs_vertex* v0, rs_vertex* v1,
     default:        return;
     }
 
+    /* compute light for provoking vertex */
+    if( ctx->flags & LIGHT_ENABLE )
+        calculate_lighting( ctx, p );
+
+    /* apply projection all vertices */
+    vec4_transform( v0->attribs+ATTRIB_POS, ctx->projection,
+                    v0->attribs+ATTRIB_POS );
+    vec4_transform( v1->attribs+ATTRIB_POS, ctx->projection,
+                    v1->attribs+ATTRIB_POS );
+    vec4_transform( v2->attribs+ATTRIB_POS, ctx->projection,
+                    v2->attribs+ATTRIB_POS );
+
+    /* copy attributes of provoking vertex */
+    p->used &= ~ATTRIB_FLAG_NORMAL;
     v0->used = v1->used = v2->used = p->used;
 
     for( i=0, j=0x01; i<ATTRIB_COUNT; ++i, j<<=1 )
@@ -149,10 +161,8 @@ static vec4 shader_default_fragment( context* ctx, rs_vertex* frag )
 
 /****************************************************************************/
 
-static void shader_phong_vertex( context* ctx, rs_vertex* vert,
-                                 int provoking )
+static void shader_phong_vertex( context* ctx, rs_vertex* vert )
 {
-    (void)provoking;
     mv_transform( ctx, vert );
 
     vert->attribs[ ATTRIB_USR0 ] = vert->attribs[ ATTRIB_POS ];
@@ -181,22 +191,22 @@ static vec4 shader_phong_fragment( context* ctx, rs_vertex* frag )
 
 static struct shader
 {
-    void(* vertex )( context* ctx, rs_vertex* vert, int provoking );
+    void(* vertex )( context* ctx, rs_vertex* vert );
     void(* geometry )( context* ctx,
                        rs_vertex* v0, rs_vertex* v1, rs_vertex* v2 );
     vec4(* fragment )( context* ctx, rs_vertex* frag );
 }
 shaders[ ] =
 {
-    { shader_default_vertex, shader_geometry_flat, shader_default_fragment },
-    { shader_default_vertex, NULL,                 shader_default_fragment },
+    { mv_transform,          shader_geometry_flat, shader_default_fragment },
+    { shader_gouraud_vertex, NULL,                 shader_default_fragment },
     { shader_phong_vertex,   NULL,                 shader_phong_fragment   }
 };
 
 
-void shader_process_vertex( context* ctx, rs_vertex* vert, int provoking )
+void shader_process_vertex( context* ctx, rs_vertex* vert )
 {
-    shaders[ ctx->shader ].vertex( ctx, vert, provoking );
+    shaders[ ctx->shader ].vertex( ctx, vert );
 }
 
 void shader_process_triangle( context* ctx,
