@@ -1,4 +1,6 @@
-a.out
+test/a.out
+test/benchmark
+test/subpixel
 *~
 *.o
 *.a
