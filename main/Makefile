@@ -1,5 +1,5 @@
 CONFFLAGS = -D_XOPEN_SOURCE=500
-OPTFLAGS = -O3 -msse2
+OPTFLAGS = -O3 -Ofast -msse3 -mfpmath=sse
 CFLAGS = -ansi -pedantic -Wall -Wextra -Iinclude $(CONFFLAGS) $(OPTFLAGS)\
 		-Wno-unused-function
 
