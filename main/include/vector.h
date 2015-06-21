@@ -123,7 +123,7 @@ static float vec4_dot( const vec4* a, const vec4* b )
 
 static void vec4_normalize( vec4* v )
 {
-    float s = vec4_dot( v, v );
+    float s = v->x * v->x + v->y * v->y + v->z * v->z;
     s = s>0.0f ? 1.0f/sqrt( s ) : 0.0f;
     vec4_scale( v, s );
 }
