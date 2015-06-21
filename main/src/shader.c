@@ -8,65 +8,71 @@
 
 
 
+static void blinn_phong( context* ctx, int i, const vec4* V, const vec4* N,
+                         vec4* out )
+{
+    float dist, att, ks, kd;
+    vec4 L, H, cd, cs;
+
+    /* light vector */
+    vec4_sum( &L, &ctx->light[i].position, V );
+    L.w = 0.0f;
+
+    dist = sqrt( vec4_dot( &L, &L ) );
+    vec4_scale( &L, dist>0.0f ? 1.0f/dist : 0.0f );
+
+    /* half vector */
+    vec4_sum( &H, &L, V );
+    vec4_normalize( &H );
+
+    /* attenuation factor */
+    att = ctx->light[i].attenuation_constant +
+          ctx->light[i].attenuation_linear * dist +
+          ctx->light[i].attenuation_quadratic * dist * dist;
+    att = att>0.0f ? 1.0f/att : 0.0f;
+
+    /* diffuse component */
+    kd = vec4_dot( N, &L );
+    kd = kd<0.0f ? 0.0f : kd;
+
+    /* specular component */
+    ks = vec4_dot( N, &H );
+    ks = ks<0.0f ? 0.0f : ks;
+    ks = pow( ks, ctx->material.shininess );
+
+    /* combine */
+    vec4_product( &cd, &ctx->light[i].diffuse, &ctx->material.diffuse );
+    vec4_product( &cs, &ctx->light[i].specular, &ctx->material.specular );
+    vec4_scale( &cd, kd*att );
+    vec4_scale( &cs, ks*att );
+    vec4_add( out, &cd );
+    vec4_add( out, &cs );
+}
+
 static void calculate_lighting( context* ctx, rs_vertex* v )
 {
-    vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f }, L, V, H, N, ca, cd, cs;
-    float dist, a;
+    vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f }, V, N, ca;
     int i;
+
+    vec4_get_inverted( &V, v->attribs+ATTRIB_POS ); /* view vector */
+    N = v->attribs[ATTRIB_NORMAL];                  /* surface normal */
+    V.w = 0.0f;
+
+    vec4_normalize( &V );
+    vec4_normalize( &N );
 
     for( i=0; i<MAX_LIGHTS; ++i )
     {
-        if( !ctx->light[ i ].enable )
-            continue;
+        if( ctx->light[ i ].enable )
+        {
+            blinn_phong( ctx, i, &V, &N, &color );
 
-        vec4_get_inverted( &V, v->attribs+ATTRIB_POS ); /* view vector */
-        vec4_sum( &L, &ctx->light[i].position, &V );    /* light vector */
-        N = v->attribs[ATTRIB_NORMAL];                  /* surface normal */
-        N.w = V.w = L.w = 0.0f;
-
-        vec4_sum( &H, &L, &V );                         /* half vector */
-
-        dist = sqrt( vec4_dot( &L, &L ) );
-        vec4_scale( &L, dist>0.0f ? 1.0f/dist : 0.0f );
-
-        vec4_normalize( &V );
-        vec4_normalize( &H );
-        vec4_normalize( &N );
-
-        /* ambient component */
-        vec4_product( &ca, &ctx->light[i].ambient, &ctx->material.ambient );
-
-        /* diffuse component */
-        a = vec4_dot( &N, &L );
-        a = a<0.0f ? 0.0f : a;
-
-        vec4_product( &cd, &ctx->light[i].diffuse, &ctx->material.diffuse );
-        vec4_scale( &cd, a );
-
-        /* specular component */
-        a = vec4_dot( &N, &H );
-        a = a<0.0f ? 0.0f : a;
-        a = pow( a, ctx->material.shininess );
-
-        vec4_product( &cs, &ctx->light[i].specular, &ctx->material.specular );
-        vec4_scale( &cs, a );
-
-        /* attenuation factor */
-        a = ctx->light[i].attenuation_constant +
-            ctx->light[i].attenuation_linear * dist + 
-            ctx->light[i].attenuation_quadratic * dist * dist;
-        a = a>0.0f ? 1.0f/a : 0.0f;
-
-        vec4_scale( &cd, a );
-        vec4_scale( &cs, a );
-
-        /* accumulate */
-        vec4_add( &color, &ctx->material.emission );
-        vec4_add( &color, &ca );
-        vec4_add( &color, &cd );
-        vec4_add( &color, &cs );
+            vec4_product(&ca, &ctx->light[i].ambient, &ctx->material.ambient);
+            vec4_add( &color, &ca );
+        }
     }
 
+    vec4_add( &color, &ctx->material.emission );
     color.w = 1.0f;
 
     /* modulate color */
