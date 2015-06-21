@@ -31,13 +31,13 @@ static void draw_scene( void )
     m[2] = -s;   m[6] = 0.0f; m[10] =    c; m[14] = -10.0f;
     m[3] = 0.0f; m[7] = 0.0f; m[11] = 0.0f; m[15] =   1.0f;
 
-    ctx.flags &= ~(CULL_FRONT|CULL_BACK|LIGHT_ENABLE);
+    ctx.flags &= ~(CULL_FRONT|CULL_BACK);
     ctx.vertex_format = 0;
     ctx.vertexbuffer = NULL;
     ctx.texture_enable[0] = 1;
     ctx.textures[0] = tex;
     model = ctx.shader;
-    ctx.shader = SHADER_GOURAUD;
+    ctx.shader = SHADER_UNLIT;
     context_set_modelview_matrix( &ctx, m );
 
     ia_begin( &ctx );
@@ -55,7 +55,6 @@ static void draw_scene( void )
     ia_vertex( &ctx, 0.0f, 2.0f, 0.0f, 1.0f );
 
     ia_end( &ctx );
-    ctx.shader = model;
 
     /* yellow transparent triangle */
     ctx.texture_enable[0] = 0;
@@ -69,6 +68,8 @@ static void draw_scene( void )
     ia_vertex( &ctx, 0.0f, 2.0f, 0.0f, 1.0f );
     ia_end( &ctx );
 
+    ctx.shader = model;
+
     /* rasterize teapot */
     m[0] =    c*0.05f; m[4] = 0.0f;  m[ 8] =    s*0.05f; m[12] =  2.0f;
     m[1] = 0.0f;       m[5] = 0.05f; m[ 9] = 0.0f;       m[13] = -1.0f;
@@ -76,7 +77,7 @@ static void draw_scene( void )
     m[3] = 0.0f;       m[7] = 0.0f;  m[11] = 0.0f;       m[15] =  1.0f;
 
     ctx.flags            &= ~BLEND_ENABLE;
-    ctx.flags            |= CULL_BACK|LIGHT_ENABLE;
+    ctx.flags            |= CULL_BACK;
     ctx.vertex_format     = teapot->format;
     ctx.vertexbuffer      = teapot->vertexbuffer;
     ctx.indexbuffer       = teapot->indexbuffer;

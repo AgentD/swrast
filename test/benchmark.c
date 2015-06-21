@@ -46,7 +46,6 @@ static void run_fillrate_test( int shader )
     memset( &ctx, 0, sizeof(ctx) );
     context_init( &ctx );
 
-    ctx.flags  = LIGHT_ENABLE;
     ctx.target = &fb;
     ctx.shader = shader;
 
@@ -106,7 +105,7 @@ static void run_vertex_throughput_test( int shader )
     memset( &ctx, 0, sizeof(ctx) );
     context_init( &ctx );
 
-    ctx.flags          = FRONT_CCW|LIGHT_ENABLE|CULL_BACK|CULL_FRONT;
+    ctx.flags          = FRONT_CCW|CULL_BACK|CULL_FRONT;
     ctx.target         = &fb;
     ctx.vertex_format  = teapot->format;
     ctx.vertexbuffer   = teapot->vertexbuffer;
@@ -151,6 +150,8 @@ int main( void )
     teapot = load_3ds( "teapot.3ds" );
 
     puts( "*********** VERTEX THROUGHPUT TEST ***********" );
+    fputs( "BUILT IN UNLIT SHADER: ", stdout );
+    run_vertex_throughput_test( SHADER_UNLIT );
     fputs( "BUILT IN FLAT SHADER: ", stdout );
     run_vertex_throughput_test( SHADER_FLAT );
     fputs( "BUILT IN GOURAUD SHADER: ", stdout );
@@ -159,6 +160,8 @@ int main( void )
     run_vertex_throughput_test( SHADER_PHONG );
 
     puts( "*************** FILL RATE TEST ***************" );
+    fputs( "BUILT IN UNLIT SHADER: ", stdout );
+    run_fillrate_test( SHADER_UNLIT );
     fputs( "BUILT IN FLAT SHADER: ", stdout );
     run_fillrate_test( SHADER_FLAT );
     fputs( "BUILT IN GOURAUD SHADER: ", stdout );

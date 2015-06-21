@@ -77,8 +77,7 @@ typedef enum
     FRONT_CCW    = 0x0080,  /**< \brief Counter-clock-wise is front facing */
     CULL_FRONT   = 0x0100,  /**< \brief Cull front facing triangles */
     CULL_BACK    = 0x0200,  /**< \brief Cull back facing triangles */
-    LIGHT_ENABLE = 0x0400,  /**< \brief Enable lighting calculations */
-    BLEND_ENABLE = 0x0800   /**< \brief Enable color blending */
+    BLEND_ENABLE = 0x0400   /**< \brief Enable color blending */
 }
 CONTEXT_FLAGS;
 

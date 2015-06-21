@@ -21,22 +21,28 @@
 typedef enum
 {
     /**
+     * \brief Do not do any lighting calulation, simply use interpolated
+     *        vertex colors and apply texture colors
+     */
+    SHADER_UNLIT = 0,
+
+    /**
      * \brief Calculate lighting for one vertex and use values for
      *        entire triangle
      */
-    SHADER_FLAT = 0,
+    SHADER_FLAT = 1,
 
     /**
      * \brief Calculate lighting for every vertex and interpolate inside
      *        the triangle
      */
-    SHADER_GOURAUD = 1,
+    SHADER_GOURAUD = 2,
 
     /**
      * \brief Interpolate lighting parameters (e.g. normal) and calculate
      *        lighting per fragment
      */
-    SHADER_PHONG = 2
+    SHADER_PHONG = 3
 }
 SHADER_PROGRAM;
 
