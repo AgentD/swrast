@@ -73,6 +73,7 @@ typedef enum
     WRITE_GREEN  = 0x0010,  /**< \brief Enable write to green color channel */
     WRITE_BLUE   = 0x0020,  /**< \brief Enable write to blue color channel */
     WRITE_ALPHA  = 0x0040,  /**< \brief Enable write to alpha color channel */
+    WRITE_COLOR  = 0x0078,  /**< \brief Enable write to all color channels */
     FRONT_CCW    = 0x0080,  /**< \brief Counter-clock-wise is front facing */
     CULL_FRONT   = 0x0100,  /**< \brief Cull front facing triangles */
     CULL_BACK    = 0x0200,  /**< \brief Cull back facing triangles */
