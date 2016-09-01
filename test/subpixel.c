@@ -15,6 +15,7 @@ int main( void )
 
     context_init( &ctx );
     ctx.target = &w->fb;
+    ctx.shader = SHADER_UNLIT;
 
     context_set_viewport( &ctx, 0, 0, w->fb.width, w->fb.height );
 
