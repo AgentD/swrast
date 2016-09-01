@@ -141,14 +141,14 @@ void ia_draw_triangles_indexed( context* ctx, unsigned int vertexcount,
     else if(ctx->vertex_format & VF_POSITION_F3) { vsize += 3*sizeof(float); }
     else if(ctx->vertex_format & VF_POSITION_F4) { vsize += 4*sizeof(float); }
 
-         if( ctx->vertex_format & VF_NORMAL_F3 ) { vsize += 3*sizeof(float); }
+    if( ctx->vertex_format & VF_NORMAL_F3 ) { vsize += 3*sizeof(float); }
 
          if( ctx->vertex_format & VF_COLOR_F3  ) { vsize += 3*sizeof(float); }
     else if( ctx->vertex_format & VF_COLOR_F4  ) { vsize += 4*sizeof(float); }
     else if( ctx->vertex_format & VF_COLOR_UB3 ) { vsize += 3;               }
     else if( ctx->vertex_format & VF_COLOR_UB4 ) { vsize += 4;               }
 
-         if( ctx->vertex_format & VF_TEX0      ) { vsize += 2*sizeof(float); }
+    if( ctx->vertex_format & VF_TEX0 ) { vsize += 2*sizeof(float); }
 
     /* for each triangle */
     indexcount -= indexcount % 3;
