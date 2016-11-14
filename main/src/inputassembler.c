@@ -12,11 +12,11 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
                                    int vertex_format )
 {
     /* initialize vertex structure */
-    vec4_set( v->attribs + ATTRIB_POS,    0.0f, 0.0f, 0.0f, 1.0f );
-    vec4_set( v->attribs + ATTRIB_COLOR,  1.0f, 1.0f, 1.0f, 1.0f );
-    vec4_set( v->attribs + ATTRIB_NORMAL, 0.0f, 0.0f, 0.0f, 0.0f );
-    vec4_set( v->attribs + ATTRIB_TEX0,   0.0f, 0.0f, 0.0f, 1.0f );
-    vec4_set( v->attribs + ATTRIB_TEX1,   0.0f, 0.0f, 0.0f, 1.0f );
+    v->attribs[ATTRIB_POS] = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
+    v->attribs[ATTRIB_COLOR] = vec4_set( 1.0f, 1.0f, 1.0f, 1.0f );
+    v->attribs[ATTRIB_NORMAL] = vec4_set( 0.0f, 0.0f, 0.0f, 0.0f );
+    v->attribs[ATTRIB_TEX0] = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
+    v->attribs[ATTRIB_TEX1] = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
     v->used = 0;
 
     /* decode position */
@@ -25,20 +25,20 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
 
     if( vertex_format & VF_POSITION_F2 )
     {
-        vec4_set( v->attribs + ATTRIB_POS,
-                  ((float*)ptr)[0], ((float*)ptr)[1], 0.0f, 1.0f );
+        v->attribs[ATTRIB_POS] = vec4_set( ((float*)ptr)[0], ((float*)ptr)[1],
+                                           0.0f, 1.0f );
         ptr += 2*sizeof(float);
     }
     else if( vertex_format & VF_POSITION_F3 )
     {
-        vec4_set( v->attribs + ATTRIB_POS,
-                  ((float*)ptr)[0], ((float*)ptr)[1], ((float*)ptr)[2], 1.0f );
+        v->attribs[ATTRIB_POS] = vec4_set( ((float*)ptr)[0], ((float*)ptr)[1],
+                                           ((float*)ptr)[2], 1.0f );
         ptr += 3*sizeof(float);
     }
     else if( vertex_format & VF_POSITION_F4 )
     {
-        vec4_set( v->attribs + ATTRIB_POS, ((float*)ptr)[0], ((float*)ptr)[1],
-                  ((float*)ptr)[2], ((float*)ptr)[3] );
+        v->attribs[ATTRIB_POS] = vec4_set(((float*)ptr)[0], ((float*)ptr)[1],
+                                          ((float*)ptr)[2], ((float*)ptr)[3]);
         ptr += 4*sizeof(float);
     }
 
@@ -46,8 +46,8 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
     if( vertex_format & VF_NORMAL_F3 )
     {
         v->used |= ATTRIB_FLAG_NORMAL;
-        vec4_set( v->attribs + ATTRIB_NORMAL,
-                  ((float*)ptr)[0],((float*)ptr)[1],((float*)ptr)[2],0.0f );
+        v->attribs[ATTRIB_NORMAL] = vec4_set(((float*)ptr)[0],((float*)ptr)[1],
+                                             ((float*)ptr)[2],0.0f );
         ptr += 3*sizeof(float);
     }
 
@@ -57,29 +57,29 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
 
     if( vertex_format & VF_COLOR_F3 )
     {
-        vec4_set( v->attribs + ATTRIB_COLOR,
-                  ((float*)ptr)[0],((float*)ptr)[1],((float*)ptr)[2],1.0f );
+        v->attribs[ATTRIB_COLOR] = vec4_set(((float*)ptr)[0],((float*)ptr)[1],
+                                            ((float*)ptr)[2],1.0f );
         ptr += 3*sizeof(float);
     }
     else if( vertex_format & VF_COLOR_F4 )
     {
-        vec4_set( v->attribs + ATTRIB_COLOR,
-                  ((float*)ptr)[0], ((float*)ptr)[1],
-                  ((float*)ptr)[2], ((float*)ptr)[3] );
+        v->attribs[ATTRIB_COLOR] = vec4_set(((float*)ptr)[0],((float*)ptr)[1],
+                                            ((float*)ptr)[2],((float*)ptr)[3]);
         ptr += 4*sizeof(float);
     }
     else if( vertex_format & VF_COLOR_UB3 )
     {
-        vec4_set( v->attribs + ATTRIB_COLOR,
-                  ((float)ptr[0])/255.0f, ((float)ptr[1])/255.0f,
-                  ((float)ptr[2])/255.0f, 1.0f );
+        v->attribs[ATTRIB_COLOR] = vec4_set( ((float)ptr[0])/255.0f,
+                                             ((float)ptr[1])/255.0f,
+                                             ((float)ptr[2])/255.0f, 1.0f );
         ptr += 3;
     }
     else if( vertex_format & VF_COLOR_UB4 )
     {
-        vec4_set( v->attribs + ATTRIB_COLOR,
-                  ((float)ptr[0])/255.0f, ((float)ptr[1])/255.0f,
-                  ((float)ptr[2])/255.0f, ((float)ptr[3])/255.0f );
+        v->attribs[ATTRIB_COLOR] = vec4_set( ((float)ptr[0])/255.0f,
+                                             ((float)ptr[1])/255.0f,
+                                             ((float)ptr[2])/255.0f,
+                                             ((float)ptr[3])/255.0f );
         ptr += 4;
     }
 
@@ -87,8 +87,8 @@ static unsigned char* read_vertex( rs_vertex* v, unsigned char* ptr,
     if( vertex_format & VF_TEX0 )
     {
         v->used |= ATTRIB_FLAG_TEX0;
-        vec4_set( v->attribs + ATTRIB_TEX0,
-                  ((float*)ptr)[0], ((float*)ptr)[1], 0.0f, 0.0f );
+        v->attribs[ATTRIB_TEX0] = vec4_set(((float*)ptr)[0], ((float*)ptr)[1],
+                                           0.0f, 0.0f);
         ptr += 2*sizeof(float);
     }
 
@@ -187,7 +187,7 @@ void ia_vertex( context* ctx, float x, float y, float z, float w )
     if( !ctx->immediate.active )
         return;
 
-    vec4_set( ctx->immediate.next.attribs+ATTRIB_POS, x, y, z, w );
+    ctx->immediate.next.attribs[ATTRIB_POS] = vec4_set( x, y, z, w );
     ctx->immediate.next.used |= ATTRIB_FLAG_POS;
 
     ctx->immediate.vertex[ ctx->immediate.current++ ] = ctx->immediate.next;
@@ -202,19 +202,19 @@ void ia_vertex( context* ctx, float x, float y, float z, float w )
 
 void ia_color( context* ctx, float r, float g, float b, float a )
 {
-    vec4_set( ctx->immediate.next.attribs+ATTRIB_COLOR, r, g, b, a );
+    ctx->immediate.next.attribs[ATTRIB_COLOR] = vec4_set( r, g, b, a );
     ctx->immediate.next.used |= ATTRIB_FLAG_COLOR;
 }
 
 void ia_normal( context* ctx, float x, float y, float z )
 {
-    vec4_set( ctx->immediate.next.attribs+ATTRIB_NORMAL, x, y, z, 0.0f );
+    ctx->immediate.next.attribs[ATTRIB_NORMAL] = vec4_set( x, y, z, 0.0f );
     ctx->immediate.next.used |= ATTRIB_FLAG_NORMAL;
 }
 
 void ia_texcoord( context* ctx, int layer, float s, float t )
 {
-    vec4_set(ctx->immediate.next.attribs+ATTRIB_TEX0+layer, s, t, 0.0f, 1.0f);
+    ctx->immediate.next.attribs[ATTRIB_TEX0+layer] = vec4_set(s,t,0.0f,1.0f);
     ctx->immediate.next.used |= (ATTRIB_FLAG_TEX0 << layer);
 }
 

@@ -80,25 +80,25 @@ void context_init( context* ctx )
 
     for( i=0; i<MAX_LIGHTS; ++i )
     {
-        vec4_set( &ctx->light[i].position, 0.0f, 0.0f, 0.0f, 1.0f );
-        vec4_set( &ctx->light[i].ambient, 0.0f, 0.0f, 0.0f, 1.0f );
+        ctx->light[i].position = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
+        ctx->light[i].ambient = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
 
         if( i==0 )
         {
-            vec4_set( &ctx->light[i].diffuse, 1.0f, 1.0f, 1.0f, 1.0f );
-            vec4_set( &ctx->light[i].specular, 1.0f, 1.0f, 1.0f, 1.0f );
+            ctx->light[i].diffuse = vec4_set( 1.0f, 1.0f, 1.0f, 1.0f );
+            ctx->light[i].specular = vec4_set( 1.0f, 1.0f, 1.0f, 1.0f );
         }
         else
         {
-            vec4_set( &ctx->light[i].diffuse, 0.0f, 0.0f, 0.0f, 1.0f );
-            vec4_set( &ctx->light[i].specular, 0.0f, 0.0f, 0.0f, 1.0f );
+            ctx->light[i].diffuse = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
+            ctx->light[i].specular = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
         }
     }
 
-    vec4_set( &ctx->material.ambient, 1.0f, 1.0f, 1.0f, 1.0f );
-    vec4_set( &ctx->material.diffuse, 1.0f, 1.0f, 1.0f, 1.0f );
-    vec4_set( &ctx->material.specular, 1.0f, 1.0f, 1.0f, 1.0f );
-    vec4_set( &ctx->material.emission, 0.0f, 0.0f, 0.0f, 1.0f );
+    ctx->material.ambient = vec4_set( 1.0f, 1.0f, 1.0f, 1.0f );
+    ctx->material.diffuse = vec4_set( 1.0f, 1.0f, 1.0f, 1.0f );
+    ctx->material.specular = vec4_set( 1.0f, 1.0f, 1.0f, 1.0f );
+    ctx->material.emission = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
 
     ctx->projection[ 0] = ctx->modelview[ 0] = ctx->normalmatrix[ 0] = 1.0f;
     ctx->projection[ 5] = ctx->modelview[ 5] = ctx->normalmatrix[ 5] = 1.0f;

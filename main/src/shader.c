@@ -8,22 +8,20 @@
 
 
 
-static void blinn_phong( context* ctx, int i, const vec4* V, const vec4* N,
-                         vec4* out )
+static vec4 blinn_phong( context* ctx, int i, const vec4 V, const vec4 N )
 {
     float dist, att, ks, kd;
     vec4 L, H, cd, cs;
 
     /* light vector */
-    vec4_sum( &L, &ctx->light[i].position, V );
+    L = vec4_add( ctx->light[i].position, V );
     L.w = 0.0f;
 
-    dist = sqrt( vec4_dot( &L, &L ) );
-    vec4_scale( &L, dist>0.0f ? 1.0f/dist : 0.0f );
+    dist = sqrt( vec4_dot(L, L) );
+    L = vec4_scale( L, dist>0.0f ? 1.0f/dist : 0.0f );
 
     /* half vector */
-    vec4_sum( &H, &L, V );
-    vec4_normalize( &H );
+    H = vec4_normalize( vec4_add( L, V ) );
 
     /* attenuation factor */
     att = ctx->light[i].attenuation_constant +
@@ -32,21 +30,19 @@ static void blinn_phong( context* ctx, int i, const vec4* V, const vec4* N,
     att = att>0.0f ? 1.0f/att : 0.0f;
 
     /* diffuse component */
-    kd = vec4_dot( N, &L );
+    kd = vec4_dot( N, L );
     kd = kd<0.0f ? 0.0f : kd;
 
     /* specular component */
-    ks = vec4_dot( N, &H );
+    ks = vec4_dot( N, H );
     ks = ks<0.0f ? 0.0f : ks;
     ks = pow( ks, ctx->material.shininess );
 
     /* combine */
-    vec4_product( &cd, &ctx->light[i].diffuse, &ctx->material.diffuse );
-    vec4_product( &cs, &ctx->light[i].specular, &ctx->material.specular );
-    vec4_scale( &cd, kd*att );
-    vec4_scale( &cs, ks*att );
-    vec4_add( out, &cd );
-    vec4_add( out, &cs );
+    cd = vec4_mul( ctx->light[i].diffuse, ctx->material.diffuse );
+    cs = vec4_mul( ctx->light[i].specular, ctx->material.specular );
+
+    return vec4_add( vec4_scale(cd, kd*att), vec4_scale(cs, ks*att) );
 }
 
 static void calculate_lighting( context* ctx, rs_vertex* v )
@@ -54,56 +50,56 @@ static void calculate_lighting( context* ctx, rs_vertex* v )
     vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f }, V, N, ca;
     int i;
 
-    vec4_get_inverted( &V, v->attribs+ATTRIB_POS ); /* view vector */
-    N = v->attribs[ATTRIB_NORMAL];                  /* surface normal */
+    V = vec4_normalize( vec4_invert( v->attribs[ATTRIB_POS] ) );
     V.w = 0.0f;
-
-    vec4_normalize( &V );
-    vec4_normalize( &N );
+    N = vec4_normalize( v->attribs[ATTRIB_NORMAL] );
 
     for( i=0; i<MAX_LIGHTS; ++i )
     {
         if( ctx->light[ i ].enable )
         {
-            blinn_phong( ctx, i, &V, &N, &color );
+            ca = vec4_mul( ctx->light[i].ambient, ctx->material.ambient );
 
-            vec4_product(&ca, &ctx->light[i].ambient, &ctx->material.ambient);
-            vec4_add( &color, &ca );
+            color = vec4_add( blinn_phong( ctx, i, V, N ), ca );
         }
     }
 
-    vec4_add( &color, &ctx->material.emission );
+    color = vec4_add( color, ctx->material.emission );
     color.w = 1.0f;
 
     /* modulate color */
-    vec4_mul( v->attribs + ATTRIB_COLOR, &color );
+    v->attribs[ATTRIB_COLOR] = vec4_mul( v->attribs[ATTRIB_COLOR], color );
     v->used |= ATTRIB_FLAG_COLOR;
 }
 
 static void mv_transform( context* ctx, rs_vertex* v )
 {
     /* transform normal to viewspace */
-    vec4_transform( v->attribs+ATTRIB_NORMAL, ctx->normalmatrix,
-                    v->attribs+ATTRIB_NORMAL );
+    v->attribs[ATTRIB_NORMAL] = vec4_transform( ctx->normalmatrix,
+                                                v->attribs[ATTRIB_NORMAL] );
 
     /* transform position to viewspace */
-    vec4_transform( v->attribs+ATTRIB_POS, ctx->modelview,
-                    v->attribs+ATTRIB_POS );
+    v->attribs[ATTRIB_POS] = vec4_transform( ctx->modelview,
+                                             v->attribs[ATTRIB_POS] );
 }
 
 static void apply_textures( context* ctx, rs_vertex* frag )
 {
-    vec4 tex;
+    vec4 tex, c;
     int i;
+
+    c = frag->attribs[ATTRIB_COLOR];
 
     for( i=0; i<MAX_TEXTURES; ++i )
     {
         if( ctx->texture_enable[ i ] )
         {
             texture_sample(ctx->textures[i],frag->attribs+ATTRIB_TEX0+i,&tex);
-            vec4_mul( frag->attribs+ATTRIB_COLOR, &tex );
+            c = vec4_mul( c, tex );
         }
     }
+
+    frag->attribs[ATTRIB_COLOR] = c;
 }
 
 /****************************************************************************/
@@ -114,8 +110,8 @@ static void shader_gouraud_vertex( context* ctx, rs_vertex* vert )
 
     calculate_lighting( ctx, vert );
 
-    vec4_transform( vert->attribs+ATTRIB_POS, ctx->projection,
-                    vert->attribs+ATTRIB_POS );
+    vert->attribs[ATTRIB_POS] = vec4_transform( ctx->projection,
+                                                vert->attribs[ATTRIB_POS] );
 
     vert->used &= ~ATTRIB_FLAG_NORMAL;
 }
@@ -139,12 +135,12 @@ static void shader_geometry_flat( context* ctx, rs_vertex* v0, rs_vertex* v1,
     calculate_lighting( ctx, p );
 
     /* apply projection all vertices */
-    vec4_transform( v0->attribs+ATTRIB_POS, ctx->projection,
-                    v0->attribs+ATTRIB_POS );
-    vec4_transform( v1->attribs+ATTRIB_POS, ctx->projection,
-                    v1->attribs+ATTRIB_POS );
-    vec4_transform( v2->attribs+ATTRIB_POS, ctx->projection,
-                    v2->attribs+ATTRIB_POS );
+    v0->attribs[ATTRIB_POS] = vec4_transform( ctx->projection,
+                                              v0->attribs[ATTRIB_POS] );
+    v1->attribs[ATTRIB_POS] = vec4_transform( ctx->projection,
+                                              v1->attribs[ATTRIB_POS] );
+    v2->attribs[ATTRIB_POS] = vec4_transform( ctx->projection,
+                                              v2->attribs[ATTRIB_POS] );
 
     /* copy attributes of provoking vertex */
     p->used &= ~ATTRIB_FLAG_NORMAL;
@@ -159,11 +155,8 @@ static void shader_geometry_flat( context* ctx, rs_vertex* v0, rs_vertex* v1,
 
 static void shader_unlit_vertex( context* ctx, rs_vertex* v )
 {
-    vec4_transform( v->attribs+ATTRIB_POS, ctx->modelview,
-                    v->attribs+ATTRIB_POS );
-
-    vec4_transform( v->attribs+ATTRIB_POS, ctx->projection,
-                    v->attribs+ATTRIB_POS );
+    vec4 V = vec4_transform( ctx->modelview, v->attribs[ATTRIB_POS] );
+    v->attribs[ATTRIB_POS] = vec4_transform( ctx->projection, V );
 
     v->used &= ~(ATTRIB_FLAG_NORMAL|ATTRIB_FLAG_USR0|ATTRIB_FLAG_USR1);
 }
@@ -183,25 +176,24 @@ static void shader_phong_vertex( context* ctx, rs_vertex* vert )
 
     mv_transform( ctx, vert );
 
-    vec4_get_inverted( &V, vert->attribs + ATTRIB_POS );
+    V = vec4_invert( vert->attribs[ATTRIB_POS] );
     V.w = 0.0f;
-    vert->attribs[ ATTRIB_USR0 ] = V;
+    vert->attribs[ATTRIB_USR0] = V;
+
+    V = vec4_set(0.0f,0.0f,0.0f,0.0f);
 
     for( i=0; i<MAX_LIGHTS; ++i )
     {
         if( ctx->light[ i ].enable )
-        {
-            vec4_product(vert->attribs+ATTRIB_USR1,&ctx->light[i].ambient,
-                         &ctx->material.ambient);
-        }
+            V = vec4_mul(ctx->light[i].ambient, ctx->material.ambient);
     }
 
-    vec4_add( vert->attribs+ATTRIB_USR1, &ctx->material.emission );
+    vert->attribs[ATTRIB_USR1] = vec4_add(V, ctx->material.emission);
 
     vert->used |= ATTRIB_FLAG_USR0|ATTRIB_FLAG_USR1;
 
-    vec4_transform( vert->attribs+ATTRIB_POS, ctx->projection,
-                    vert->attribs+ATTRIB_POS );
+    vert->attribs[ATTRIB_POS] = vec4_transform(ctx->projection,
+                                               vert->attribs[ATTRIB_POS]);
 }
 
 static vec4 shader_phong_fragment( context* ctx, rs_vertex* frag )
@@ -210,25 +202,21 @@ static vec4 shader_phong_fragment( context* ctx, rs_vertex* frag )
     int i;
 
     color = frag->attribs[ATTRIB_USR1];
-    V = frag->attribs[ATTRIB_USR0];
-    N = frag->attribs[ATTRIB_NORMAL];
-
-    vec4_normalize( &V );
-    vec4_normalize( &N );
+    V = vec4_normalize( frag->attribs[ATTRIB_USR0] );
+    N = vec4_normalize( frag->attribs[ATTRIB_NORMAL] );
 
     for( i=0; i<MAX_LIGHTS; ++i )
     {
         if( ctx->light[ i ].enable )
-            blinn_phong( ctx, i, &V, &N, &color );
+            color = blinn_phong( ctx, i, V, N );
     }
 
     color.w = 1.0f;
 
     if( frag->used & ATTRIB_FLAG_COLOR )
-        vec4_mul( frag->attribs + ATTRIB_COLOR, &color );
-    else
-        frag->attribs[ ATTRIB_COLOR ] = color;
+        color = vec4_mul( frag->attribs[ATTRIB_COLOR], color );
 
+    frag->attribs[ATTRIB_COLOR] = color;
     apply_textures( ctx, frag );
     return frag->attribs[ ATTRIB_COLOR ];
 }

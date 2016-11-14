@@ -51,15 +51,15 @@ static void run_fillrate_test( int shader )
 
     context_set_viewport( &ctx, 0, 0, 1024, 768 );
 
-    vec4_set( &ctx.light[0].diffuse, 1.0f, 1.0f, 1.0f, 1.0f );
-    vec4_set( &ctx.light[0].specular, 1.0f, 1.0f, 1.0f, 1.0f );
+    ctx.light[0].diffuse = vec4_set( 1.0f, 1.0f, 1.0f, 1.0f );
+    ctx.light[0].specular = vec4_set( 1.0f, 1.0f, 1.0f, 1.0f );
     ctx.light[0].enable = 1;
     ctx.light[0].attenuation_constant = 1.0f;
 
-    vec4_set( &ctx.material.diffuse, 0.5f, 0.5f, 0.5f, 1.0f );
-    vec4_set( &ctx.material.specular, 0.5f, 0.5f, 0.5f, 1.0f );
-    vec4_set( &ctx.material.ambient, 0.0f, 0.0f, 0.0f, 1.0f );
-    vec4_set( &ctx.material.emission, 0.0f, 0.0f, 0.0f, 1.0f );
+    ctx.material.diffuse = vec4_set( 0.5f, 0.5f, 0.5f, 1.0f );
+    ctx.material.specular = vec4_set( 0.5f, 0.5f, 0.5f, 1.0f );
+    ctx.material.ambient = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
+    ctx.material.emission = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
     ctx.material.shininess = 127;
 
     /* drawing loop */
@@ -114,15 +114,15 @@ static void run_vertex_throughput_test( int shader )
 
     context_set_viewport( &ctx, 0, 0, 320, 200 );
 
-    vec4_set( &ctx.light[0].diffuse, 1.0f, 1.0f, 1.0f, 1.0f );
-    vec4_set( &ctx.light[0].specular, 1.0f, 1.0f, 1.0f, 1.0f );
+    ctx.light[0].diffuse = vec4_set( 1.0f, 1.0f, 1.0f, 1.0f );
+    ctx.light[0].specular = vec4_set( 1.0f, 1.0f, 1.0f, 1.0f );
     ctx.light[0].enable = 1;
     ctx.light[0].attenuation_constant = 1.0f;
 
-    vec4_set( &ctx.material.diffuse, 0.5f, 0.5f, 0.5f, 1.0f );
-    vec4_set( &ctx.material.specular, 0.5f, 0.5f, 0.5f, 1.0f );
-    vec4_set( &ctx.material.ambient, 0.0f, 0.0f, 0.0f, 1.0f );
-    vec4_set( &ctx.material.emission, 0.0f, 0.0f, 0.0f, 1.0f );
+    ctx.material.diffuse = vec4_set( 0.5f, 0.5f, 0.5f, 1.0f );
+    ctx.material.specular = vec4_set( 0.5f, 0.5f, 0.5f, 1.0f );
+    ctx.material.ambient = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
+    ctx.material.emission = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
     ctx.material.shininess = 127;
 
     /* drawing loop */

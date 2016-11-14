@@ -45,8 +45,8 @@ static void scaled_vertex_diff( rs_vertex* V, const rs_vertex* A,
     {
         if( V->used & j )
         {
-            vec4_diff( V->attribs+i, A->attribs+i, B->attribs+i );
-            vec4_scale( V->attribs+i, scale );
+            V->attribs[i] = vec4_scale( vec4_sub(A->attribs[i],B->attribs[i]),
+                                        scale );
         }
     }
 }
@@ -55,7 +55,6 @@ static void scaled_vertex_add( rs_vertex* V, const rs_vertex* A,
                                const rs_vertex* B, float scale )
 {
     int i, j;
-    vec4 v;
 
     V->used = A->used & B->used;
 
@@ -63,8 +62,8 @@ static void scaled_vertex_add( rs_vertex* V, const rs_vertex* A,
     {
         if( V->used & j )
         {
-            vec4_get_scaled( &v, B->attribs+i, scale );
-            vec4_sum( V->attribs+i, A->attribs+i, &v );
+            V->attribs[i] = vec4_add( A->attribs[i],
+                                      vec4_scale(B->attribs[i], scale) );
         }
     }
 }
@@ -79,7 +78,7 @@ static void vertex_prepare(rs_vertex* out, const rs_vertex* in, context* ctx)
     for( i=0, j=0x01; i<ATTRIB_COUNT; ++i, j<<=1 )
     {
         if( in->used & j )
-            vec4_get_scaled( out->attribs+i, in->attribs+i, w );
+            out->attribs[i] = vec4_scale( in->attribs[i], w );
     }
 
     /* viewport mapping */
@@ -98,24 +97,24 @@ static void vertex_prepare(rs_vertex* out, const rs_vertex* in, context* ctx)
 /****************************************************************************/
 
 static void write_fragment( context* ctx,
-                            const vec4* frag_color, float frag_depth,
+                            const vec4 frag_color, float frag_depth,
                             unsigned char* color_buffer, float* depth_buffer )
 {
     vec4 old, new;
 
     if( ctx->flags & BLEND_ENABLE )
     {
-        vec4_set( &old, color_buffer[RED], color_buffer[GREEN],
+        old = vec4_set( color_buffer[RED], color_buffer[GREEN],
                         color_buffer[BLUE], color_buffer[ALPHA] );
-        vec4_scale( &old, 1.0f/255.0f );
-        vec4_mix( &new, &old, frag_color, frag_color->w );
+        old = vec4_scale( old, 1.0f/255.0f );
+        new = vec4_mix( old, frag_color, frag_color.w );
     }
     else
     {
-        new = *frag_color;
+        new = frag_color;
     }
 
-    vec4_scale( &new, 255.0f );
+    new = vec4_scale( new, 255.0f );
 
     if( ctx->flags & WRITE_RED   ) color_buffer[RED  ] = new.x;
     if( ctx->flags & WRITE_GREEN ) color_buffer[GREEN] = new.y;
@@ -201,13 +200,13 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
         for( i=0, j=0x01; i<ATTRIB_COUNT; ++i, j<<=1 )
         {
             if( frag.used & j )
-                vec4_get_scaled( frag.attribs+i, l.v.attribs+i, w );
+                frag.attribs[i] = vec4_scale( l.v.attribs[i], w );
         }
 
         /* */
         c = shader_process_fragment( ctx, &frag );
 
-        write_fragment( ctx, &c, z, start, z_buffer );
+        write_fragment( ctx, c, z, start, z_buffer );
     skip_fragment:
         scaled_vertex_add( &l.v, &l.v, &l.dvdx, 1.0f );
     }
