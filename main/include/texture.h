@@ -58,9 +58,10 @@ void texture_destroy( texture* t );
  *
  * \param t   A pointer to a texture structure
  * \param tc  Texture coordinate in the range [0,1], where (0,0) is top left.
- * \param out A pointer to write the resulting color value to.
+ *
+ * \return The resulting color value.
  */
-void texture_sample( texture* t, const vec4* tc, vec4* out );
+MATH_CONST vec4 texture_sample( const texture* t, const vec4 tc );
 
 #ifdef __cplusplus
 }

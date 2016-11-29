@@ -8,7 +8,7 @@
 
 
 
-static vec4 blinn_phong( context* ctx, int i, const vec4 V, const vec4 N )
+static vec4 blinn_phong(const context* ctx, int i, const vec4 V, const vec4 N)
 {
     float dist, att, ks, kd;
     vec4 L, H, cd, cs;
@@ -45,7 +45,7 @@ static vec4 blinn_phong( context* ctx, int i, const vec4 V, const vec4 N )
     return vec4_add( vec4_scale(cd, kd*att), vec4_scale(cs, ks*att) );
 }
 
-static void calculate_lighting( context* ctx, rs_vertex* v )
+static void calculate_lighting( const context* ctx, rs_vertex* v )
 {
     vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f }, V, N, ca;
     int i;
@@ -72,7 +72,7 @@ static void calculate_lighting( context* ctx, rs_vertex* v )
     v->used |= ATTRIB_FLAG_COLOR;
 }
 
-static void mv_transform( context* ctx, rs_vertex* v )
+static void mv_transform( const context* ctx, rs_vertex* v )
 {
     /* transform normal to viewspace */
     v->attribs[ATTRIB_NORMAL] = vec4_transform( ctx->normalmatrix,
@@ -83,28 +83,26 @@ static void mv_transform( context* ctx, rs_vertex* v )
                                              v->attribs[ATTRIB_POS] );
 }
 
-static void apply_textures( context* ctx, rs_vertex* frag )
+static vec4 apply_textures( const context* ctx, const rs_vertex* frag )
 {
-    vec4 tex, c;
+    vec4 tex, c = { 1.0f, 1.0f, 1.0f, 1.0f };
     int i;
-
-    c = frag->attribs[ATTRIB_COLOR];
 
     for( i=0; i<MAX_TEXTURES; ++i )
     {
         if( ctx->texture_enable[ i ] )
         {
-            texture_sample(ctx->textures[i],frag->attribs+ATTRIB_TEX0+i,&tex);
+            tex = texture_sample(ctx->textures[i],frag->attribs[ATTRIB_TEX0+i]);
             c = vec4_mul( c, tex );
         }
     }
 
-    frag->attribs[ATTRIB_COLOR] = c;
+    return c;
 }
 
 /****************************************************************************/
 
-static void shader_gouraud_vertex( context* ctx, rs_vertex* vert )
+static void shader_gouraud_vertex( const context* ctx, rs_vertex* vert )
 {
     mv_transform( ctx, vert );
 
@@ -116,8 +114,8 @@ static void shader_gouraud_vertex( context* ctx, rs_vertex* vert )
     vert->used &= ~ATTRIB_FLAG_NORMAL;
 }
 
-static void shader_geometry_flat( context* ctx, rs_vertex* v0, rs_vertex* v1,
-                                  rs_vertex* v2 )
+static void shader_geometry_flat( const context* ctx, rs_vertex* v0,
+                                  rs_vertex* v1, rs_vertex* v2 )
 {
     rs_vertex* p;
     int i, j;
@@ -153,7 +151,7 @@ static void shader_geometry_flat( context* ctx, rs_vertex* v0, rs_vertex* v1,
     }
 }
 
-static void shader_unlit_vertex( context* ctx, rs_vertex* v )
+static void shader_unlit_vertex( const context* ctx, rs_vertex* v )
 {
     vec4 V = vec4_transform( ctx->modelview, v->attribs[ATTRIB_POS] );
     v->attribs[ATTRIB_POS] = vec4_transform( ctx->projection, V );
@@ -161,15 +159,14 @@ static void shader_unlit_vertex( context* ctx, rs_vertex* v )
     v->used &= ~(ATTRIB_FLAG_NORMAL|ATTRIB_FLAG_USR0|ATTRIB_FLAG_USR1);
 }
 
-static vec4 shader_default_fragment( context* ctx, rs_vertex* frag )
+static vec4 shader_default_fragment(const context* ctx, const rs_vertex* frag)
 {
-    apply_textures( ctx, frag );
-    return frag->attribs[ATTRIB_COLOR];
+    return vec4_mul( apply_textures(ctx, frag), frag->attribs[ATTRIB_COLOR] );
 }
 
 /****************************************************************************/
 
-static void shader_phong_vertex( context* ctx, rs_vertex* vert )
+static void shader_phong_vertex( const context* ctx, rs_vertex* vert )
 {
     vec4 V;
     int i;
@@ -196,7 +193,7 @@ static void shader_phong_vertex( context* ctx, rs_vertex* vert )
                                                vert->attribs[ATTRIB_POS]);
 }
 
-static vec4 shader_phong_fragment( context* ctx, rs_vertex* frag )
+static vec4 shader_phong_fragment( const context* ctx, const rs_vertex* frag )
 {
     vec4 color, V, N;
     int i;
@@ -208,7 +205,7 @@ static vec4 shader_phong_fragment( context* ctx, rs_vertex* frag )
     for( i=0; i<MAX_LIGHTS; ++i )
     {
         if( ctx->light[ i ].enable )
-            color = blinn_phong( ctx, i, V, N );
+            color = vec4_add( color, blinn_phong( ctx, i, V, N ) );
     }
 
     color.w = 1.0f;
@@ -216,19 +213,17 @@ static vec4 shader_phong_fragment( context* ctx, rs_vertex* frag )
     if( frag->used & ATTRIB_FLAG_COLOR )
         color = vec4_mul( frag->attribs[ATTRIB_COLOR], color );
 
-    frag->attribs[ATTRIB_COLOR] = color;
-    apply_textures( ctx, frag );
-    return frag->attribs[ ATTRIB_COLOR ];
+    return vec4_mul(apply_textures(ctx, frag), color);
 }
 
 /****************************************************************************/
 
 static struct shader
 {
-    void(* vertex )( context* ctx, rs_vertex* vert );
-    void(* geometry )( context* ctx,
+    void(* vertex )( const context* ctx, rs_vertex* vert );
+    void(* geometry )( const context* ctx,
                        rs_vertex* v0, rs_vertex* v1, rs_vertex* v2 );
-    vec4(* fragment )( context* ctx, rs_vertex* frag );
+    vec4(* fragment )( const context* ctx, const rs_vertex* frag );
 }
 shaders[ ] =
 {
@@ -239,12 +234,12 @@ shaders[ ] =
 };
 
 
-void shader_process_vertex( context* ctx, rs_vertex* vert )
+void shader_process_vertex( const context* ctx, rs_vertex* vert )
 {
     shaders[ ctx->shader ].vertex( ctx, vert );
 }
 
-void shader_process_triangle( context* ctx,
+void shader_process_triangle( const context* ctx,
                               rs_vertex* v0, rs_vertex* v1, rs_vertex* v2 )
 {
     struct shader* s = shaders + ctx->shader;
@@ -253,7 +248,7 @@ void shader_process_triangle( context* ctx,
         s->geometry( ctx, v0, v1, v2 );
 }
 
-vec4 shader_process_fragment( context* ctx, rs_vertex* frag )
+vec4 shader_process_fragment( const context* ctx, const rs_vertex* frag )
 {
     return shaders[ ctx->shader ].fragment( ctx, frag );
 }

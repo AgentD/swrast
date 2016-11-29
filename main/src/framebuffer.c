@@ -33,47 +33,33 @@ int framebuffer_init( framebuffer* fb,
 
 void framebuffer_cleanup( framebuffer* fb )
 {
-    if( fb )
-    {
-        free( fb->depth );
-        free( fb->color );
-    }
+    free( fb->depth );
+    free( fb->color );
 }
 
 void framebuffer_clear( framebuffer* fb, unsigned char r, unsigned char g,
                                          unsigned char b, unsigned char a )
 {
-    unsigned int i, count;
+    unsigned int i, count = fb->height*fb->width;
     unsigned char* ptr;
 
-    if( fb )
+    for( ptr=fb->color, i=0; i<count; ++i, ptr+=4 )
     {
-        count = fb->height*fb->width;
-
-        for( ptr=fb->color, i=0; i<count; ++i, ptr+=4 )
-        {
-            ptr[ RED   ] = r;
-            ptr[ GREEN ] = g;
-            ptr[ BLUE  ] = b;
-            ptr[ ALPHA ] = a;
-        }
+        ptr[ RED   ] = r;
+        ptr[ GREEN ] = g;
+        ptr[ BLUE  ] = b;
+        ptr[ ALPHA ] = a;
     }
 }
 
 void framebuffer_clear_depth( framebuffer* fb, float value )
 {
-    unsigned int i, count;
+    unsigned int i, count = fb->height*fb->width;
     float* ptr;
 
-    if( fb )
-    {
-        count = fb->height*fb->width;
-        value = value<0.0f ? 0.0f : (value>1.0f ? 1.0f : value);
+    value = value<0.0f ? 0.0f : (value>1.0f ? 1.0f : value);
 
-        for( ptr=fb->depth, i=0; i<count; ++i, ++ptr )
-        {
-            *ptr = value;
-        }
-    }
+    for( ptr=fb->depth, i=0; i<count; ++i, ++ptr )
+        *ptr = value;
 }
 

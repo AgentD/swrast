@@ -58,7 +58,7 @@ extern "C" {
  * \param ctx  A pointer to a context
  * \param vert A pointer to a vertex to process
  */
-void shader_process_vertex( context* ctx, rs_vertex* vert );
+void shader_process_vertex( const context* ctx, rs_vertex* vert );
 
 /**
  * \brief Run the geometry shader on a triangle
@@ -68,7 +68,7 @@ void shader_process_vertex( context* ctx, rs_vertex* vert );
  * \param v1  A pointer to the second vertex of a triangle
  * \param v2  A pointer to the third vertex of a triangle
  */
-void shader_process_triangle( context* ctx,
+void shader_process_triangle( const context* ctx,
                               rs_vertex* v0, rs_vertex* v1, rs_vertex* v2 );
 
 /**
@@ -79,7 +79,7 @@ void shader_process_triangle( context* ctx,
  *
  * \return A color value for the fragment
  */
-vec4 shader_process_fragment( context* ctx, rs_vertex* frag );
+vec4 shader_process_fragment( const context* ctx, const rs_vertex* frag );
 
 #ifdef __cplusplus
 }
