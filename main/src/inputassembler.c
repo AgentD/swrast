@@ -106,6 +106,53 @@ static void draw_triangle( context* ctx, rs_vertex* v0, rs_vertex* v1,
     rasterizer_process_triangle( ctx, v0, v1, v2 );
 }
 
+static void invalidate_tl_cache( context* ctx )
+{
+    int i;
+    for( i=0; i<MAX_INDEX_CACHE; ++i )
+        ctx->post_tl_cache[i].index = -1;
+}
+
+static int get_cached_index( context* ctx, rs_vertex *v,
+                             unsigned int vsize, unsigned int i )
+{
+    int idx, slot = i % MAX_INDEX_CACHE;
+
+    idx = ctx->post_tl_cache[slot].index;
+
+    if( idx > 0 && (unsigned int)idx == i )
+    {
+        *v = ctx->post_tl_cache[slot].vtx;
+        return 1;
+    }
+
+    read_vertex( v, ((unsigned char*)ctx->vertexbuffer) + vsize*i,
+                 ctx->vertex_format );
+
+    shader_process_vertex( ctx, v );
+
+    ctx->post_tl_cache[slot].vtx = *v;
+    ctx->post_tl_cache[slot].index = i;
+    return 0;
+}
+
+static void draw_triangle_indexed( context* ctx, unsigned int vsize,
+                                   unsigned int i0, unsigned int i1,
+                                   unsigned int i2 )
+{
+    rs_vertex v0, v1, v2;
+    int done = 1;
+
+    done &= get_cached_index( ctx, &v0, vsize, i0 );
+    done &= get_cached_index( ctx, &v1, vsize, i1 );
+    done &= get_cached_index( ctx, &v2, vsize, i2 );
+
+    if( !done )
+        shader_process_triangle( ctx, &v0, &v1, &v2 );
+
+    rasterizer_process_triangle( ctx, &v0, &v1, &v2 );
+}
+
 void ia_draw_triangles( context* ctx, unsigned int vertexcount )
 {
     void* ptr = ctx->vertexbuffer;
@@ -131,7 +178,6 @@ void ia_draw_triangles_indexed( context* ctx, unsigned int vertexcount,
                                 unsigned int indexcount )
 {
     unsigned int i0, i1, i2, i = 0, vsize = 0;
-    rs_vertex v0, v1, v2;
 
     if( ctx->immediate.active )
         return;
@@ -151,6 +197,8 @@ void ia_draw_triangles_indexed( context* ctx, unsigned int vertexcount,
     if( ctx->vertex_format & VF_TEX0 ) { vsize += 2*sizeof(float); }
 
     /* for each triangle */
+    invalidate_tl_cache( ctx );
+
     indexcount -= indexcount % 3;
 
     while( i<indexcount )
@@ -159,19 +207,8 @@ void ia_draw_triangles_indexed( context* ctx, unsigned int vertexcount,
         i1 = ctx->indexbuffer[ i++ ];
         i2 = ctx->indexbuffer[ i++ ];
 
-        if( i0>=vertexcount || i1>=vertexcount || i2>=vertexcount )
-            continue;
-
-        read_vertex( &(v0), ((unsigned char*)ctx->vertexbuffer)+vsize*i0,
-                     ctx->vertex_format );
-
-        read_vertex( &(v1), ((unsigned char*)ctx->vertexbuffer)+vsize*i1,
-                     ctx->vertex_format );
-
-        read_vertex( &(v2), ((unsigned char*)ctx->vertexbuffer)+vsize*i2,
-                     ctx->vertex_format );
-
-        draw_triangle( ctx, &v0, &v1, &v2 );
+        if( i0 < vertexcount && i1 < vertexcount && i2 < vertexcount )
+            draw_triangle_indexed( ctx, vsize, i0, i1, i2 );
     }
 }
 

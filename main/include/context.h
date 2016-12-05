@@ -155,6 +155,13 @@ struct context
     }
     draw_area;
 
+    struct
+    {
+        int index;
+        rs_vertex vtx;
+    }
+    post_tl_cache[MAX_INDEX_CACHE];
+
     int flags;      /**< \brief A set of CONTEXT_FLAGS */
 
     /** \brief Depth test comparison function */

@@ -12,6 +12,7 @@
 #define MAX_LIGHTS 8
 #define FB_BGRA
 
+#define MAX_INDEX_CACHE 31
 
 
 #ifdef FB_BGRA
