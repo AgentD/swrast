@@ -167,6 +167,9 @@ struct context
     /** \brief Depth test comparison function */
     COMPARE_FUNCTION depth_test;
 
+    /** \brief How shading is done on triangles */
+    SHADING_MODE shade_mode;
+
     /** \brief Non-zero to enable a texture layer, zero to disable */
     int texture_enable[MAX_TEXTURES];
 

@@ -114,43 +114,6 @@ static void shader_gouraud_vertex( const context* ctx, rs_vertex* vert )
     vert->used &= ~ATTRIB_FLAG_NORMAL;
 }
 
-static void shader_geometry_flat( const context* ctx, rs_vertex* v0,
-                                  rs_vertex* v1, rs_vertex* v2 )
-{
-    rs_vertex* p;
-    int i, j;
-
-    /* get provoking vertex */
-    switch( ctx->provoking_vertex )
-    {
-    case 0: p = v0; break;
-    case 1: p = v1; break;
-    case 2: p = v2; break;
-    default:        return;
-    }
-
-    /* compute light for provoking vertex */
-    calculate_lighting( ctx, p );
-
-    /* apply projection all vertices */
-    v0->attribs[ATTRIB_POS] = vec4_transform( ctx->projection,
-                                              v0->attribs[ATTRIB_POS] );
-    v1->attribs[ATTRIB_POS] = vec4_transform( ctx->projection,
-                                              v1->attribs[ATTRIB_POS] );
-    v2->attribs[ATTRIB_POS] = vec4_transform( ctx->projection,
-                                              v2->attribs[ATTRIB_POS] );
-
-    /* copy attributes of provoking vertex */
-    p->used &= ~ATTRIB_FLAG_NORMAL;
-    v0->used = v1->used = v2->used = p->used;
-
-    for( i=0, j=0x01; i<ATTRIB_COUNT; ++i, j<<=1 )
-    {
-        if( (p->used & j) && i!=ATTRIB_POS )
-            v0->attribs[i]=v1->attribs[i]=v2->attribs[i]=p->attribs[i];
-    }
-}
-
 static void shader_unlit_vertex( const context* ctx, rs_vertex* v )
 {
     vec4 V = vec4_transform( ctx->modelview, v->attribs[ATTRIB_POS] );
@@ -221,31 +184,19 @@ static vec4 shader_phong_fragment( const context* ctx, const rs_vertex* frag )
 static struct shader
 {
     void(* vertex )( const context* ctx, rs_vertex* vert );
-    void(* geometry )( const context* ctx,
-                       rs_vertex* v0, rs_vertex* v1, rs_vertex* v2 );
     vec4(* fragment )( const context* ctx, const rs_vertex* frag );
 }
 shaders[ ] =
 {
-    { shader_unlit_vertex,   NULL,                 shader_default_fragment },
-    { mv_transform,          shader_geometry_flat, shader_default_fragment },
-    { shader_gouraud_vertex, NULL,                 shader_default_fragment },
-    { shader_phong_vertex,   NULL,                 shader_phong_fragment   }
+    { shader_unlit_vertex,   shader_default_fragment },
+    { shader_gouraud_vertex, shader_default_fragment },
+    { shader_phong_vertex,   shader_phong_fragment   },
 };
 
 
 void shader_process_vertex( const context* ctx, rs_vertex* vert )
 {
     shaders[ ctx->shader ].vertex( ctx, vert );
-}
-
-void shader_process_triangle( const context* ctx,
-                              rs_vertex* v0, rs_vertex* v1, rs_vertex* v2 )
-{
-    struct shader* s = shaders + ctx->shader;
-
-    if( s->geometry )
-        s->geometry( ctx, v0, v1, v2 );
 }
 
 vec4 shader_process_fragment( const context* ctx, const rs_vertex* frag )

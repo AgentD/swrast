@@ -40,6 +40,16 @@ typedef enum
 }
 ATTRIB_FLAGS;
 
+typedef enum
+{
+    /** \brief Interpolate vertex attributes, compute final color per pixel */
+    SHADE_PER_PIXEL = 0,
+
+    /** \brief Compute color for one vertex, use result for all pixels */
+    SHADE_FLAT = 1
+}
+SHADING_MODE;
+
 
 
 /**

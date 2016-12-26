@@ -101,7 +101,6 @@ static void draw_triangle( context* ctx, rs_vertex* v0, rs_vertex* v1,
     shader_process_vertex( ctx, v0 );
     shader_process_vertex( ctx, v1 );
     shader_process_vertex( ctx, v2 );
-    shader_process_triangle( ctx, v0, v1, v2 );
 
     rasterizer_process_triangle( ctx, v0, v1, v2 );
 }
@@ -146,9 +145,6 @@ static void draw_triangle_indexed( context* ctx, unsigned int vsize,
     done &= get_cached_index( ctx, &v0, vsize, i0 );
     done &= get_cached_index( ctx, &v1, vsize, i1 );
     done &= get_cached_index( ctx, &v2, vsize, i2 );
-
-    if( !done )
-        shader_process_triangle( ctx, &v0, &v1, &v2 );
 
     rasterizer_process_triangle( ctx, &v0, &v1, &v2 );
 }
