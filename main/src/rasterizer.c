@@ -12,6 +12,9 @@ extern void draw_triangle_flat(vec4 A, vec4 B, vec4 C,
 extern void draw_triangle_per_pixel(rs_vertex* A, rs_vertex* B,
                                     rs_vertex* C, context* ctx);
 
+extern void draw_triangle_per_vertex(rs_vertex* A, rs_vertex* B,
+                                     rs_vertex* C, context* ctx);
+
 void write_fragment(const context* ctx, const vec4 frag_color,
                     float frag_depth, unsigned char* color_buffer,
                     float* depth_buffer)
@@ -149,6 +152,44 @@ static void per_pixel( context* ctx, const rs_vertex* v0,
     draw_triangle_per_pixel( &A, &B, &C, ctx );
 }
 
+static void per_vertex( context* ctx, const rs_vertex* v0,
+                        const rs_vertex* v1, const rs_vertex* v2 )
+{
+    rs_vertex A, B, C, temp;
+
+    /* prepare vertices */
+    temp.attribs[ATTRIB_POS] = v0->attribs[ATTRIB_POS];
+    temp.attribs[ATTRIB_COLOR] = shader_process_fragment(ctx, v0);
+    temp.used = ATTRIB_FLAG_POS | ATTRIB_FLAG_COLOR;
+    vertex_prepare(&A, &temp, ctx);
+
+    temp.attribs[ATTRIB_POS] = v1->attribs[ATTRIB_POS];
+    temp.attribs[ATTRIB_COLOR] = shader_process_fragment(ctx, v1);
+    temp.used = ATTRIB_FLAG_POS | ATTRIB_FLAG_COLOR;
+    vertex_prepare(&B, &temp, ctx);
+
+    temp.attribs[ATTRIB_POS] = v2->attribs[ATTRIB_POS];
+    temp.attribs[ATTRIB_COLOR] = shader_process_fragment(ctx, v2);
+    temp.used = ATTRIB_FLAG_POS | ATTRIB_FLAG_COLOR;
+    vertex_prepare(&C, &temp, ctx);
+
+    /* clipping */
+    if( clip(ctx, A.attribs[ATTRIB_POS], B.attribs[ATTRIB_POS],
+                  C.attribs[ATTRIB_POS]) )
+    {
+        return;
+    }
+
+    /* culling */
+    if( cull(ctx, A.attribs[ATTRIB_POS], B.attribs[ATTRIB_POS],
+                  C.attribs[ATTRIB_POS]) )
+    {
+        return;
+    }
+
+    draw_triangle_per_vertex( &A, &B, &C, ctx );
+}
+
 static void rsflat( context* ctx, const rs_vertex* v0, const rs_vertex* v1,
                     const rs_vertex* v2 )
 {
@@ -169,11 +210,7 @@ static void rsflat( context* ctx, const rs_vertex* v0, const rs_vertex* v1,
     case 2:  ref = *v2; break;
     }
 
-    if( ref.used & ATTRIB_FLAG_COLOR )
-        color = shader_process_fragment( ctx, &ref );
-    else
-        color = vec4_set(1.0f, 1.0f, 1.0f, 1.0f);
-
+    color = shader_process_fragment( ctx, &ref );
     draw_triangle_flat( A, B, C, color, ctx );
 }
 
@@ -203,6 +240,9 @@ void rasterizer_process_triangle( context* ctx, const rs_vertex* v0,
         break;
     case SHADE_FLAT:
         rsflat( ctx, v0, v1, v2 );
+        break;
+    case SHADE_PER_VERTEX:
+        per_vertex( ctx, v0, v1, v2 );
         break;
     default:
         return;

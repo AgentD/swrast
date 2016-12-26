@@ -105,7 +105,8 @@ void context_init( context* ctx )
     ctx->projection[10] = ctx->modelview[10] = ctx->normalmatrix[10] = 1.0f;
     ctx->projection[15] = ctx->modelview[15] = ctx->normalmatrix[15] = 1.0f;
 
-    ctx->shader = SHADER_GOURAUD;
+    ctx->shader = SHADER_PHONG;
+    ctx->shade_mode = SHADE_PER_VERTEX;
     ctx->depth_test = COMPARE_ALWAYS;
     ctx->depth_far = 1.0f;
     ctx->flags = DEPTH_CLIP|DEPTH_WRITE|WRITE_COLOR|FRONT_CCW;

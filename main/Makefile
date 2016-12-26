@@ -12,7 +12,7 @@ clean:
 
 libraster.a: obj/inputassembler.o obj/framebuffer.o obj/rspixel.o \
 		obj/texture.o obj/shader.o obj/context.o obj/rsflat.o \
-		obj/rasterizer.o
+		obj/rasterizer.o obj/rsvertex.o
 	$(AR) rcs $@ $^
 	ranlib $@
 
@@ -20,6 +20,9 @@ obj/%.o: src/%.c
 	@mkdir -p obj
 	$(CC) $(CFLAGS) -c $< -o $@
 
+obj/rsvertex.o: src/rsvertex.c include/shader.h include/rasterizer.h\
+				include/predef.h include/context.h\
+				include/config.h include/vector.h
 obj/rasterizer.o: src/rasterizer.c include/shader.h include/rasterizer.h\
 				include/predef.h include/context.h\
 				include/config.h include/vector.h

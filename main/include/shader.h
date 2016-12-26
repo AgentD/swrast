@@ -27,16 +27,9 @@ typedef enum
     SHADER_UNLIT = 0,
 
     /**
-     * \brief Calculate lighting for every vertex and interpolate inside
-     *        the triangle
+     * \brief Compute colors based on blinn-phong lighting model
      */
-    SHADER_GOURAUD = 1,
-
-    /**
-     * \brief Interpolate lighting parameters (e.g. normal) and calculate
-     *        lighting per fragment
-     */
-    SHADER_PHONG = 2
+    SHADER_PHONG = 1
 }
 SHADER_PROGRAM;
 

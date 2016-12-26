@@ -155,9 +155,9 @@ int main( void )
     fputs( "BUILT IN UNLIT SHADER: ", stdout );
     run_vertex_throughput_test( SHADER_UNLIT, SHADE_PER_PIXEL );
     fputs( "BUILT IN FLAT SHADER: ", stdout );
-    run_vertex_throughput_test( SHADER_GOURAUD, SHADE_FLAT );
+    run_vertex_throughput_test( SHADER_PHONG, SHADE_FLAT );
     fputs( "BUILT IN GOURAUD SHADER: ", stdout );
-    run_vertex_throughput_test( SHADER_GOURAUD, SHADE_PER_PIXEL );
+    run_vertex_throughput_test( SHADER_PHONG, SHADE_PER_VERTEX );
     fputs( "BUILT IN PHONG SHADER: ", stdout );
     run_vertex_throughput_test( SHADER_PHONG, SHADE_PER_PIXEL );
 
@@ -165,9 +165,9 @@ int main( void )
     fputs( "BUILT IN UNLIT SHADER: ", stdout );
     run_fillrate_test( SHADER_UNLIT, SHADE_PER_PIXEL );
     fputs( "BUILT IN FLAT SHADER: ", stdout );
-    run_fillrate_test( SHADER_GOURAUD, SHADE_FLAT );
+    run_fillrate_test( SHADER_PHONG, SHADE_FLAT );
     fputs( "BUILT IN GOURAUD SHADER: ", stdout );
-    run_fillrate_test( SHADER_GOURAUD, SHADE_PER_PIXEL );
+    run_fillrate_test( SHADER_PHONG, SHADE_PER_VERTEX );
     fputs( "BUILT IN PHONG SHADER: ", stdout );
     run_fillrate_test( SHADER_PHONG, SHADE_PER_PIXEL );
 

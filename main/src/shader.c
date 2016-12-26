@@ -102,18 +102,6 @@ static vec4 apply_textures( const context* ctx, const rs_vertex* frag )
 
 /****************************************************************************/
 
-static void shader_gouraud_vertex( const context* ctx, rs_vertex* vert )
-{
-    mv_transform( ctx, vert );
-
-    calculate_lighting( ctx, vert );
-
-    vert->attribs[ATTRIB_POS] = vec4_transform( ctx->projection,
-                                                vert->attribs[ATTRIB_POS] );
-
-    vert->used &= ~ATTRIB_FLAG_NORMAL;
-}
-
 static void shader_unlit_vertex( const context* ctx, rs_vertex* v )
 {
     vec4 V = vec4_transform( ctx->modelview, v->attribs[ATTRIB_POS] );
@@ -188,9 +176,8 @@ static struct shader
 }
 shaders[ ] =
 {
-    { shader_unlit_vertex,   shader_default_fragment },
-    { shader_gouraud_vertex, shader_default_fragment },
-    { shader_phong_vertex,   shader_phong_fragment   },
+    { shader_unlit_vertex, shader_default_fragment },
+    { shader_phong_vertex, shader_phong_fragment   },
 };
 
 

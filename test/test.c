@@ -34,8 +34,16 @@ static void draw_scene( void )
     ctx.flags &= ~(CULL_FRONT|CULL_BACK);
     ctx.vertex_format = 0;
     ctx.vertexbuffer = NULL;
-    ctx.texture_enable[0] = 1;
-    ctx.textures[0] = tex;
+    if( ctx.shade_mode==SHADE_PER_PIXEL )
+    {
+        ctx.texture_enable[0] = 1;
+        ctx.textures[0] = tex;
+    }
+    else
+    {
+        ctx.texture_enable[0] = 0;
+        ctx.textures[0] = NULL;
+    }
     model = ctx.shader;
     ctx.shader = SHADER_UNLIT;
     context_set_modelview_matrix( &ctx, m );
@@ -171,24 +179,26 @@ int main( void )
 
         /* draw scene into multiple view ports */
         context_set_viewport( &ctx, 0, 0, w->fb.width/2, w->fb.height/2 );
-        ctx.shader = SHADER_GOURAUD;
+        ctx.shader = SHADER_PHONG;
+        ctx.shade_mode = SHADE_PER_VERTEX;
         draw_scene( );
 
         context_set_viewport( &ctx, w->fb.width/2, 0,
                                     w->fb.width/2, w->fb.height/2 );
-        ctx.shader = SHADER_GOURAUD;
+        ctx.shader = SHADER_PHONG;
         ctx.shade_mode = SHADE_FLAT;
         draw_scene( );
-        ctx.shade_mode = SHADE_PER_PIXEL;
 
         context_set_viewport( &ctx, 0, w->fb.height/2,
                                     w->fb.width/2, w->fb.height/2 );
         ctx.shader = SHADER_PHONG;
+        ctx.shade_mode = SHADE_PER_PIXEL;
         draw_scene( );
 
         context_set_viewport( &ctx, w->fb.width/2, w->fb.height/2,
                                     w->fb.width/2, w->fb.height/2 );
         ctx.shader = SHADER_PHONG;
+        ctx.shade_mode = SHADE_PER_PIXEL;
         draw_scene( );
 
         a += 0.02f;
