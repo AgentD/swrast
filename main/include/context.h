@@ -212,6 +212,39 @@ struct context
 
 
 
+static MATH_CONST int depth_test(const context *ctx,
+                                  const float z, const float ref)
+{
+    int depthtest[8];
+
+    if( ctx->flags & DEPTH_TEST )
+    {
+        depthtest[COMPARE_ALWAYS       ] = 1;
+        depthtest[COMPARE_NEVER        ] = 0;
+        depthtest[COMPARE_LESS         ] = z < ref;
+        depthtest[COMPARE_GREATER      ] = z > ref;
+        depthtest[COMPARE_NOT_EQUAL    ] = depthtest[COMPARE_LESS] |
+                                           depthtest[COMPARE_GREATER];
+        depthtest[COMPARE_EQUAL        ] = !depthtest[COMPARE_NOT_EQUAL];
+        depthtest[COMPARE_LESS_EQUAL   ] = depthtest[COMPARE_EQUAL] |
+                                           depthtest[COMPARE_LESS];
+        depthtest[COMPARE_GREATER_EQUAL] = depthtest[COMPARE_EQUAL] |
+                                           depthtest[COMPARE_GREATER];
+
+        if( !depthtest[ctx->depth_test] )
+            return 0;
+    }
+
+    if( (ctx->flags & DEPTH_CLIP) &&
+        (z > ctx->depth_far || z < ctx->depth_near) )
+    {
+        return 0;
+    }
+    return 1;
+}
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif

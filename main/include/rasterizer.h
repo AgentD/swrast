@@ -88,6 +88,22 @@ void rasterizer_process_triangle( context* ctx,
                                   const rs_vertex* v0, const rs_vertex* v1,
                                   const rs_vertex* v2 );
 
+/**
+ * \brief Combine a fragment color & depth with the one
+ *        already in the framebuffer
+ *
+ * \param ctx          A pointer to a context object with blending
+ *                     configuration.
+ * \param frag_color   The new color to write.
+ * \param frag_depth   The new depth value to write.
+ * \param color_buffer A pointer into the framebuffers color buffer
+ *                     to write to.
+ * \param depth_buffer A pointer into the detph buffer to write to.
+ */
+void write_fragment( const context* ctx, const vec4 frag_color,
+                     float frag_depth, unsigned char* color_buffer,
+                     float* depth_buffer );
+
 #ifdef __cplusplus
 }
 #endif

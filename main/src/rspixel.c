@@ -70,38 +70,11 @@ static void scaled_vertex_add( rs_vertex* V, const rs_vertex* A,
 
 /****************************************************************************/
 
-static void write_fragment( context* ctx,
-                            const vec4 frag_color, float frag_depth,
-                            unsigned char* color_buffer, float* depth_buffer )
-{
-    vec4 old, new;
-
-    if( ctx->flags & BLEND_ENABLE )
-    {
-        old = vec4_set( color_buffer[RED], color_buffer[GREEN],
-                        color_buffer[BLUE], color_buffer[ALPHA] );
-        old = vec4_scale( old, 1.0f/255.0f );
-        new = vec4_mix( old, frag_color, frag_color.w );
-    }
-    else
-    {
-        new = frag_color;
-    }
-
-    new = vec4_scale( new, 255.0f );
-
-    if( ctx->flags & WRITE_RED   ) color_buffer[RED  ] = new.x;
-    if( ctx->flags & WRITE_GREEN ) color_buffer[GREEN] = new.y;
-    if( ctx->flags & WRITE_BLUE  ) color_buffer[BLUE ] = new.z;
-    if( ctx->flags & WRITE_ALPHA ) color_buffer[ALPHA] = new.w;
-    if( ctx->flags & DEPTH_WRITE ) depth_buffer[0    ] = frag_depth;
-}
-
 static void draw_scanline( int y, context* ctx, const edge_data* s )
 {
     float sub_pixel, z, w, *z_buffer;
-    int x0, x1, i, j, depthtest[8];
     unsigned char *start, *end;
+    int x0, x1, i, j;
     rs_vertex frag;
     scan_line l;
     vec4 c;
@@ -144,28 +117,8 @@ static void draw_scanline( int y, context* ctx, const edge_data* s )
         /* depth test */
         z = l.v.attribs[ATTRIB_POS].z;
 
-        if( ctx->flags & DEPTH_TEST )
-        {
-            depthtest[COMPARE_ALWAYS       ] = 1;
-            depthtest[COMPARE_NEVER        ] = 0;
-            depthtest[COMPARE_LESS         ] = (z < *z_buffer);
-            depthtest[COMPARE_GREATER      ] = (z > *z_buffer);
-            depthtest[COMPARE_NOT_EQUAL    ] = depthtest[COMPARE_LESS] |
-                                               depthtest[COMPARE_GREATER];
-            depthtest[COMPARE_EQUAL        ] = !depthtest[COMPARE_NOT_EQUAL];
-            depthtest[COMPARE_LESS_EQUAL   ] = depthtest[COMPARE_EQUAL] |
-                                               depthtest[COMPARE_LESS];
-            depthtest[COMPARE_GREATER_EQUAL] = depthtest[COMPARE_EQUAL] |
-                                               depthtest[COMPARE_GREATER];
-
-            if( !depthtest[ctx->depth_test] )
-                goto skip_fragment;
-        }
-        if( (ctx->flags & DEPTH_CLIP) &&
-            (z > ctx->depth_far || z < ctx->depth_near) )
-        {
+        if( !depth_test(ctx, z, *z_buffer) )
             goto skip_fragment;
-        }
 
         /* calculate interpolated attributes */
         w = 1.0f / l.v.attribs[ATTRIB_POS].w;

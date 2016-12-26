@@ -21,39 +21,12 @@ typedef struct
 }
 edge_data;
 
-static void write_fragment( const context* ctx,
-                            const vec4 frag_color, float frag_depth,
-                            unsigned char* color_buffer, float* depth_buffer )
-{
-    vec4 old, new;
-
-    if( ctx->flags & BLEND_ENABLE )
-    {
-        old = vec4_set( color_buffer[RED], color_buffer[GREEN],
-                        color_buffer[BLUE], color_buffer[ALPHA] );
-        old = vec4_scale( old, 1.0f/255.0f );
-        new = vec4_mix( old, frag_color, frag_color.w );
-    }
-    else
-    {
-        new = frag_color;
-    }
-
-    new = vec4_scale( new, 255.0f );
-
-    if( ctx->flags & WRITE_RED   ) color_buffer[RED  ] = new.x;
-    if( ctx->flags & WRITE_GREEN ) color_buffer[GREEN] = new.y;
-    if( ctx->flags & WRITE_BLUE  ) color_buffer[BLUE ] = new.z;
-    if( ctx->flags & WRITE_ALPHA ) color_buffer[ALPHA] = new.w;
-    if( ctx->flags & DEPTH_WRITE ) depth_buffer[0    ] = frag_depth;
-}
-
 static void draw_scanline( int y, const context* ctx, const edge_data* s,
                            vec4 color )
 {
     float sub_pixel, *z_buffer, pixelscale, z, dzdx;
     unsigned char *start, *end;
-    int x0, x1, depthtest[8];
+    int x0, x1;
 
     /* get line start and end */
     x0 = ceil( s->edge[s->left].v.x );
@@ -87,31 +60,8 @@ static void draw_scanline( int y, const context* ctx, const edge_data* s,
     /* for each fragment */
     for( ; start!=end && x0<=ctx->draw_area.maxx; start+=4, ++z_buffer, ++x0 )
     {
-        if( ctx->flags & DEPTH_TEST )
-        {
-            depthtest[COMPARE_ALWAYS       ] = 1;
-            depthtest[COMPARE_NEVER        ] = 0;
-            depthtest[COMPARE_LESS         ] = (z < *z_buffer);
-            depthtest[COMPARE_GREATER      ] = (z > *z_buffer);
-            depthtest[COMPARE_NOT_EQUAL    ] = depthtest[COMPARE_LESS] |
-                                               depthtest[COMPARE_GREATER];
-            depthtest[COMPARE_EQUAL        ] = !depthtest[COMPARE_NOT_EQUAL];
-            depthtest[COMPARE_LESS_EQUAL   ] = depthtest[COMPARE_EQUAL] |
-                                               depthtest[COMPARE_LESS];
-            depthtest[COMPARE_GREATER_EQUAL] = depthtest[COMPARE_EQUAL] |
-                                               depthtest[COMPARE_GREATER];
-
-            if( !depthtest[ctx->depth_test] )
-                goto skip_fragment;
-        }
-        if( (ctx->flags & DEPTH_CLIP) &&
-            (z > ctx->depth_far || z < ctx->depth_near) )
-        {
-            goto skip_fragment;
-        }
-
-        write_fragment( ctx, color, z, start, z_buffer );
-    skip_fragment:
+        if( depth_test(ctx, z, *z_buffer) )
+            write_fragment( ctx, color, z, start, z_buffer );
         z += dzdx;
     }
 }
