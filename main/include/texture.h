@@ -6,25 +6,18 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
-
-
 #include "predef.h"
-
-
 
 /**
  * \struct texture
  *
  * \brief Holds the data of a texture
  */
-struct texture
-{
-    unsigned int width;     /**< \brief The width of a texture in texels */
-    unsigned int height;    /**< \brief The height of  a texture in texels */
-    unsigned char* data;    /**< \brief The scan lines of a texture */
+struct texture {
+	unsigned int width;
+	unsigned int height;
+	unsigned char *data;
 };
-
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,7 +33,7 @@ extern "C" {
  *
  * \return A pointer to a texture structure on success, NULL on error
  */
-texture* texture_create( unsigned int width, unsigned int height );
+texture *texture_create(unsigned int width, unsigned int height);
 
 /**
  * \brief Destroy a texture object
@@ -49,7 +42,7 @@ texture* texture_create( unsigned int width, unsigned int height );
  *
  * \param t A pointer to a texture structure
  */
-void texture_destroy( texture* t );
+void texture_destroy(texture *t);
 
 /**
  * \brief Read a sample from a texture object
@@ -61,7 +54,7 @@ void texture_destroy( texture* t );
  *
  * \return The resulting color value.
  */
-MATH_CONST vec4 texture_sample( const texture* t, const vec4 tc );
+MATH_CONST vec4 texture_sample(const texture  *t, const vec4 tc);
 
 #ifdef __cplusplus
 }

@@ -6,27 +6,20 @@
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
 
-
-
 #include "predef.h"
 #include "config.h"
-
-
 
 /**
  * \struct framebuffer
  *
  * \brief Holds the data of a frame buffer
  */
-struct framebuffer
-{
-    unsigned char* color;   /**< \brief Color buffer scan line data */
-    float* depth;           /**< \brief Depth buffer scan line data */
-    int width;              /**< \brief Frame buffer width in pixels */
-    int height;             /**< \brief Frame buffer height in pixels */
+struct framebuffer {
+	unsigned char *color;	/**< \brief Color buffer scan line data */
+	float *depth;		/**< \brief Depth buffer scan line data */
+	int width;		/**< \brief Frame buffer width in pixels */
+	int height;		/**< \brief Frame buffer height in pixels */
 };
-
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,8 +37,8 @@ extern "C" {
  *
  * \return Non-zero on success, zero on failure
  */
-int framebuffer_init( framebuffer* fb,
-                      unsigned int width, unsigned int height );
+int framebuffer_init(framebuffer *fb,
+			unsigned int width, unsigned int height);
 
 /**
  * \brief Destroy a frame buffer object and free its resources
@@ -54,7 +47,7 @@ int framebuffer_init( framebuffer* fb,
  *
  * \param fb A pointer to a frame buffer structure
  */
-void framebuffer_cleanup( framebuffer* fb );
+void framebuffer_cleanup(framebuffer *fb);
 
 /**
  * \brief Clear the color buffer of a frame buffer object
@@ -67,8 +60,8 @@ void framebuffer_cleanup( framebuffer* fb );
  * \param b  The blue component of the clear color
  * \param a  The alpha component of the clear color
  */
-void framebuffer_clear( framebuffer* fb, unsigned char r, unsigned char g,
-                                         unsigned char b, unsigned char a );
+void framebuffer_clear(framebuffer *fb, unsigned char r, unsigned char g,
+			unsigned char b, unsigned char a);
 
 /**
  * \brief Clear the depth buffer of a frame buffer object
@@ -78,7 +71,7 @@ void framebuffer_clear( framebuffer* fb, unsigned char r, unsigned char g,
  * \param fb    A pointer to a frame buffer structure
  * \param value The value to write into the depth buffer
  */
-void framebuffer_clear_depth( framebuffer* fb, float value );
+void framebuffer_clear_depth(framebuffer *fb, float value);
 
 #ifdef __cplusplus
 }

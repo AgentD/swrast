@@ -6,34 +6,23 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-
-
 #include "predef.h"
-
-
-
 
 /**
  * \enum SHADER_PROGRAM
  *
  * \brief Shader program enumerator
  */
-typedef enum
-{
-    /**
-     * \brief Do not do any lighting calulation, simply use interpolated
-     *        vertex colors and apply texture colors
-     */
-    SHADER_UNLIT = 0,
+typedef enum {
+	/**
+	 * \brief Do not do any lighting calulation, simply use interpolated
+	 *        vertex colors and apply texture colors
+	 */
+	SHADER_UNLIT = 0,
 
-    /**
-     * \brief Compute colors based on blinn-phong lighting model
-     */
-    SHADER_PHONG = 1
-}
-SHADER_PROGRAM;
-
-
+	/** \brief Compute colors based on blinn-phong lighting model */
+	SHADER_PHONG = 1
+} SHADER_PROGRAM;
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,7 +34,7 @@ extern "C" {
  * \param ctx  A pointer to a context
  * \param vert A pointer to a vertex to process
  */
-void shader_process_vertex( const context* ctx, rs_vertex* vert );
+void shader_process_vertex(const context *ctx, rs_vertex *vert);
 
 /**
  * \brief Run the frament shader on the interpolated vertex attributes
@@ -55,7 +44,7 @@ void shader_process_vertex( const context* ctx, rs_vertex* vert );
  *
  * \return A color value for the fragment
  */
-vec4 shader_process_fragment( const context* ctx, const rs_vertex* frag );
+vec4 shader_process_fragment(const context *ctx, const rs_vertex *frag);
 
 #ifdef __cplusplus
 }
