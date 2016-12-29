@@ -43,30 +43,6 @@ static vec4 blinn_phong(const context *ctx, int i, const vec4 V, const vec4 N)
 	return vec4_add(vec4_scale(cd, kd * att), vec4_scale(cs, ks * att));
 }
 
-static void calculate_lighting(const context *ctx, rs_vertex *v)
-{
-	vec4 color = { 0.0f, 0.0f, 0.0f, 1.0f }, V, N, ca;
-	int i;
-
-	V = vec4_normalize(vec4_invert(v->attribs[ATTRIB_POS]));
-	V.w = 0.0f;
-	N = vec4_normalize(v->attribs[ATTRIB_NORMAL]);
-
-	for (i = 0; i < MAX_LIGHTS; ++i) {
-		if (!ctx->light[i].enable)
-			continue;
-		ca = vec4_mul(ctx->light[i].ambient, ctx->material.ambient);
-		color = vec4_add(blinn_phong(ctx, i, V, N), ca);
-	}
-
-	color = vec4_add(color, ctx->material.emission);
-	color.w = 1.0f;
-
-	/* modulate color */
-	v->attribs[ATTRIB_COLOR] = vec4_mul(v->attribs[ATTRIB_COLOR], color);
-	v->used |= ATTRIB_FLAG_COLOR;
-}
-
 static void mv_transform(const context *ctx, rs_vertex *v)
 {
 	/* transform normal to viewspace */
