@@ -22,27 +22,30 @@ obj/%.o: src/%.c
 
 obj/rsvertex.o: src/rsvertex.c include/shader.h include/rasterizer.h\
 				include/predef.h include/context.h\
-				include/config.h include/vector.h
+				include/config.h include/vector.h\
+				include/color.h
 obj/rasterizer.o: src/rasterizer.c include/shader.h include/rasterizer.h\
 				include/predef.h include/context.h\
-				include/config.h include/vector.h
+				include/config.h include/vector.h\
+				include/color.h
 obj/context.o: src/context.c include/context.h include/predef.h\
 				include/config.h include/framebuffer.h\
-				include/rasterizer.h include/vector.h include/shader.h
+				include/rasterizer.h include/vector.h\
+				include/shader.h
 obj/inputassembler.o: src/inputassembler.c include/inputassembler.h\
-					include/rasterizer.h include/shader.h include/predef.h\
-					include/context.h include/config.h include/vector.h
+			include/rasterizer.h include/shader.h include/predef.h\
+			include/context.h include/config.h include/vector.h
 obj/framebuffer.o: src/framebuffer.c include/framebuffer.h include/predef.h\
-					include/config.h
+			include/config.h include/color.h include/vector.h
 obj/rspixel.o: src/rspixel.c include/rasterizer.h include/framebuffer.h\
-				include/shader.h include/predef.h include/context.h\
-				include/config.h include/vector.h
+			include/shader.h include/predef.h include/context.h\
+			include/config.h include/vector.h include/color.h
 obj/texture.o: src/texture.c include/texture.h include/predef.h\
-				include/config.h include/vector.h
+			include/config.h include/vector.h include/color.h
 obj/shader.o: src/shader.c include/shader.h include/rasterizer.h\
-				include/predef.h include/context.h include/config.h\
-				include/vector.h
+			include/predef.h include/context.h include/config.h\
+			include/vector.h include/color.h
 obj/rsflat.o: src/rsflat.c include/rasterizer.h include/framebuffer.h\
-				include/shader.h include/predef.h include/context.h\
-				include/config.h include/vector.h
+			include/shader.h include/predef.h include/context.h\
+			include/config.h include/vector.h include/color.h
 

@@ -5,6 +5,7 @@
 #include "context.h"
 #include "window.h"
 #include "vector.h"
+#include "color.h"
 #include "3ds.h"
 
 #include <math.h>
@@ -165,15 +166,13 @@ int main( void )
         /* draw center cross */
         for( x=0; x<(unsigned int)w->fb.width; ++x )
         {
-            ptr = w->fb.color + ((w->fb.height/2 - 1)*w->fb.width + x)*4;
-            ptr[0] = ptr[1] = ptr[2] = 0xFF;
+            w->fb.color[(w->fb.height/2 - 1)*w->fb.width + x].ui = 0xFFFFFFFF;
             *(w->fb.depth + (w->fb.height/2 - 1)*w->fb.width + x) = 0.0f;
         }
 
         for( y=0; y<(unsigned int)w->fb.height; ++y )
         {
-            ptr = w->fb.color + (y*w->fb.width + w->fb.width/2 - 1)*4;
-            ptr[0] = ptr[1] = ptr[2] = 0xFF;
+            w->fb.color[y*w->fb.width + w->fb.width/2 - 1].ui = 0xFFFFFFFF;
             *(w->fb.depth + y*w->fb.width + w->fb.width/2 - 1) = 0.0f;
         }
 

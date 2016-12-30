@@ -3,6 +3,7 @@
 #include "context.h"
 #include "texture.h"
 #include "shader.h"
+#include "color.h"
 #include <math.h>
 
 typedef struct {
@@ -60,7 +61,7 @@ static void scaled_vertex_add(rs_vertex *V, const rs_vertex *A,
 static void draw_scanline(int y, context *ctx, const edge_data *s)
 {
 	float sub_pixel, z, w, *z_buffer;
-	unsigned char *start, *end;
+	color4 *start, *end;
 	int x0, x1, i, j;
 	rs_vertex frag;
 	scan_line l;
@@ -95,8 +96,8 @@ static void draw_scanline(int y, context *ctx, const edge_data *s)
 		return;
 
 	z_buffer = ctx->target->depth + (y*ctx->target->width + x0);
-	start = ctx->target->color + (y*ctx->target->width + x0) * 4;
-	end = ctx->target->color + (y*ctx->target->width + x1) * 4;
+	start = ctx->target->color + y * ctx->target->width + x0;
+	end = ctx->target->color + y * ctx->target->width + x1;
 
 	/* for each fragment */
 	while (start != end && x0 <= ctx->draw_area.maxx) {
@@ -119,7 +120,7 @@ static void draw_scanline(int y, context *ctx, const edge_data *s)
 		write_fragment(ctx, c, z, start, z_buffer);
 	skip_fragment:
 		scaled_vertex_add(&l.v, &l.v, &l.dvdx, 1.0f);
-		start += 4;
+		++start;
 		++z_buffer;
 		++x0;
 	}

@@ -11,6 +11,7 @@ typedef struct framebuffer framebuffer;
 typedef struct context context;
 typedef struct rs_vertex rs_vertex;
 typedef struct vec4 vec4 __attribute__ ((aligned (16)));
+typedef union color4 color4 __attribute__ ((aligned (4)));
 
 #ifndef MATH_INLINE
 	#define MATH_INLINE __inline__

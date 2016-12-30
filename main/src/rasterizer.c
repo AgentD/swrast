@@ -3,6 +3,7 @@
 #include "context.h"
 #include "texture.h"
 #include "shader.h"
+#include "color.h"
 #include <math.h>
 
 extern void draw_triangle_flat(vec4 A, vec4 B, vec4 C,
@@ -15,15 +16,13 @@ extern void draw_triangle_per_vertex(rs_vertex *A, rs_vertex *B,
 					rs_vertex *C, context *ctx);
 
 void write_fragment(const context *ctx, const vec4 frag_color,
-		float frag_depth, unsigned char *color_buffer,
+		float frag_depth, color4 *color_buffer,
 		float *depth_buffer)
 {
 	vec4 old, new;
 
 	if (ctx->flags & BLEND_ENABLE) {
-		old = vec4_set(color_buffer[RED], color_buffer[GREEN],
-				color_buffer[BLUE], color_buffer[ALPHA]);
-		old = vec4_scale(old, 1.0f / 255.0f);
+		old = color_to_vec(*color_buffer);
 		new = vec4_mix(old, frag_color, frag_color.w);
 	} else {
 		new = frag_color;
@@ -32,16 +31,16 @@ void write_fragment(const context *ctx, const vec4 frag_color,
 	new = vec4_scale(new, 255.0f);
 
 	if (ctx->flags & WRITE_RED)
-		color_buffer[RED] = new.x;
+		color_buffer->components[RED] = new.x;
 
 	if (ctx->flags & WRITE_GREEN)
-		color_buffer[GREEN] = new.y;
+		color_buffer->components[GREEN] = new.y;
 
 	if (ctx->flags & WRITE_BLUE)
-		color_buffer[BLUE ] = new.z;
+		color_buffer->components[BLUE] = new.z;
 
 	if (ctx->flags & WRITE_ALPHA)
-		color_buffer[ALPHA] = new.w;
+		color_buffer->components[ALPHA] = new.w;
 
 	if (ctx->flags & DEPTH_WRITE)
 		*depth_buffer = frag_depth;

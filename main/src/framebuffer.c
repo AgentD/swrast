@@ -1,4 +1,5 @@
 #include "framebuffer.h"
+#include "color.h"
 
 #include <stdlib.h>
 
@@ -27,18 +28,13 @@ void framebuffer_cleanup(framebuffer *fb)
 	free(fb->color);
 }
 
-void framebuffer_clear(framebuffer *fb, unsigned char r, unsigned char g,
-			unsigned char b, unsigned char a)
+void framebuffer_clear(framebuffer *fb, int r, int g, int b, int a)
 {
+	color4 *ptr = fb->color, val = color_set(r, g, b, a);
 	unsigned int i, count = fb->height * fb->width;
-	unsigned char *ptr;
 
-	for (ptr = fb->color, i = 0; i < count; ++i, ptr += 4) {
-		ptr[RED] = r;
-		ptr[GREEN] = g;
-		ptr[BLUE] = b;
-		ptr[ALPHA] = a;
-	}
+	for (i = 0; i < count; ++i)
+		*(ptr++) = val;
 }
 
 void framebuffer_clear_depth(framebuffer *fb, float value)

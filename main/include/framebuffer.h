@@ -15,7 +15,7 @@
  * \brief Holds the data of a frame buffer
  */
 struct framebuffer {
-	unsigned char *color;	/**< \brief Color buffer scan line data */
+	color4 *color;		/**< \brief Color buffer scan line data */
 	float *depth;		/**< \brief Depth buffer scan line data */
 	int width;		/**< \brief Frame buffer width in pixels */
 	int height;		/**< \brief Frame buffer height in pixels */
@@ -60,8 +60,7 @@ void framebuffer_cleanup(framebuffer *fb);
  * \param b  The blue component of the clear color
  * \param a  The alpha component of the clear color
  */
-void framebuffer_clear(framebuffer *fb, unsigned char r, unsigned char g,
-			unsigned char b, unsigned char a);
+void framebuffer_clear(framebuffer *fb, int r, int g, int b, int a);
 
 /**
  * \brief Clear the depth buffer of a frame buffer object
