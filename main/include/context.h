@@ -11,6 +11,7 @@
 #include "rasterizer.h"
 #include "shader.h"
 #include "vector.h"
+#include "color.h"
 
 /**
  * \enum COMPARE_FUNCTION
@@ -202,6 +203,9 @@ struct context {
 
 	/** \brief Frame buffer that the rasterizer draws to */
 	framebuffer *target;
+
+	/** \brief Color mask determined from flags */
+	color4 colormask;
 };
 
 static MATH_CONST int depth_test(const context* ctx,
@@ -284,6 +288,11 @@ void context_set_projection_matrix(context *ctx, float *f);
  */
 void context_set_viewport(context *ctx, int x, int y,
 			unsigned int width, unsigned int height);
+
+/**
+ * \memberof context
+ */
+void context_set_flags(context *ctx, int flags);
 
 #ifdef __cplusplus
 }

@@ -17,7 +17,7 @@ typedef struct {
 } edge_data;
 
 static void draw_scanline(int y, const context *ctx, const edge_data *s,
-			vec4 color)
+			const color4 color)
 {
 	float sub_pixel, *z_buffer, pixelscale, z, dzdx;
 	color4 *start, *end;
@@ -63,7 +63,7 @@ static void draw_scanline(int y, const context *ctx, const edge_data *s,
 }
 
 static void draw_half_triangle(edge_data *s, const vec4 A, const vec4 B,
-				const vec4 color, context *ctx)
+				const color4 color, context *ctx)
 {
 	float scale;
 	int y0, y1;
@@ -97,6 +97,7 @@ static void draw_half_triangle(edge_data *s, const vec4 A, const vec4 B,
 
 void draw_triangle_flat(vec4 A, vec4 B, vec4 C, vec4 color, context *ctx)
 {
+	color4 frag_color = color_from_vec(color);
 	float temp[4], linescale[3];
 	vec4 temp_v;
 	edge_data s;
@@ -146,7 +147,7 @@ void draw_triangle_flat(vec4 A, vec4 B, vec4 C, vec4 color, context *ctx)
 		s.edge[1].dvdy = vec4_scale(vec4_sub(B, A), linescale[1]);
 
 		/* rasterize the edge scanlines */
-		draw_half_triangle(&s, A, B, color, ctx);
+		draw_half_triangle(&s, A, B, frag_color, ctx);
 	}
 
 	/* rasterize lower sub-triangle */
@@ -162,6 +163,6 @@ void draw_triangle_flat(vec4 A, vec4 B, vec4 C, vec4 color, context *ctx)
 		s.edge[1].v = B;
 		s.edge[1].dvdy = vec4_scale(vec4_sub(C, B), linescale[2]);
 
-		draw_half_triangle(&s, B, C, color, ctx);
+		draw_half_triangle(&s, B, C, frag_color, ctx);
 	}
 }

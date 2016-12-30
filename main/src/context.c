@@ -99,7 +99,8 @@ void context_init(context *ctx)
 	ctx->shade_mode = SHADE_PER_VERTEX;
 	ctx->depth_test = COMPARE_ALWAYS;
 	ctx->depth_far = 1.0f;
-	ctx->flags = DEPTH_CLIP|DEPTH_WRITE|WRITE_COLOR|FRONT_CCW;
+
+	context_set_flags(ctx, DEPTH_CLIP|DEPTH_WRITE|WRITE_COLOR|FRONT_CCW);
 }
 
 void context_set_modelview_matrix(context *ctx, float *f)
@@ -141,4 +142,19 @@ void context_set_viewport(context *ctx, int x, int y,
 		ctx->draw_area.minx = ctx->target->width - 1;
 	if (ctx->draw_area.miny >= (int)ctx->target->height)
 		ctx->draw_area.miny = ctx->target->height - 1;
+}
+
+void context_set_flags(context *ctx, int flags)
+{
+	ctx->flags = flags;
+
+	ctx->colormask.ui = 0;
+	if (flags & WRITE_RED)
+		ctx->colormask.components[RED] = 0xFF;
+	if (flags & WRITE_GREEN)
+		ctx->colormask.components[GREEN] = 0xFF;
+	if (flags & WRITE_BLUE)
+		ctx->colormask.components[BLUE] = 0xFF;
+	if (flags & WRITE_ALPHA)
+		ctx->colormask.components[ALPHA] = 0xFF;
 }

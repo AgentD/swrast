@@ -15,32 +15,22 @@ extern void draw_triangle_per_pixel(rs_vertex *A, rs_vertex *B,
 extern void draw_triangle_per_vertex(rs_vertex *A, rs_vertex *B,
 					rs_vertex *C, context *ctx);
 
-void write_fragment(const context *ctx, const vec4 frag_color,
+void write_fragment(const context *ctx, const color4 frag_color,
 		float frag_depth, color4 *color_buffer,
 		float *depth_buffer)
 {
-	vec4 old, new;
+	color4 new;
 
-	if (ctx->flags & BLEND_ENABLE) {
-		old = color_to_vec(*color_buffer);
-		new = vec4_mix(old, frag_color, frag_color.w);
-	} else {
-		new = frag_color;
+	if (ctx->flags & (WRITE_RED|WRITE_GREEN|WRITE_BLUE|WRITE_ALPHA)) {
+		if (ctx->flags & BLEND_ENABLE) {
+			new = color_blend(*color_buffer, frag_color);
+		} else {
+			new = frag_color;
+		}
+
+		color_buffer->ui &= ~ctx->colormask.ui;
+		color_buffer->ui |= new.ui & ctx->colormask.ui;
 	}
-
-	new = vec4_scale(new, 255.0f);
-
-	if (ctx->flags & WRITE_RED)
-		color_buffer->components[RED] = new.x;
-
-	if (ctx->flags & WRITE_GREEN)
-		color_buffer->components[GREEN] = new.y;
-
-	if (ctx->flags & WRITE_BLUE)
-		color_buffer->components[BLUE] = new.z;
-
-	if (ctx->flags & WRITE_ALPHA)
-		color_buffer->components[ALPHA] = new.w;
 
 	if (ctx->flags & DEPTH_WRITE)
 		*depth_buffer = frag_depth;

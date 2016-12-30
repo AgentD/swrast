@@ -49,10 +49,9 @@ static void scaled_vertex_add(rs_vertex_min *V, const rs_vertex_min *A,
 static void draw_scanline(int y, context *ctx, const edge_data *s)
 {
 	float sub_pixel, z, w, *z_buffer;
-	color4 *start, *end;
+	color4 *start, *end, color;
 	scan_line l;
 	int x0, x1;
-	vec4 color;
 
 	/* get line start and end */
 	x0 = ceil(s->edge[s->left].v.pos.x);
@@ -92,7 +91,7 @@ static void draw_scanline(int y, context *ctx, const edge_data *s)
 
 		if (depth_test(ctx, z, *z_buffer)) {
 			w = 1.0f / l.v.pos.w;
-			color = vec4_scale(l.v.color, w);
+			color = color_from_vec(vec4_scale(l.v.color, w));
 			write_fragment(ctx, color, z, start, z_buffer);
 		}
 

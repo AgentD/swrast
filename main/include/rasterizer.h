@@ -87,7 +87,7 @@ void rasterizer_process_triangle(context *ctx, const rs_vertex *v0,
  *                     to write to.
  * \param depth_buffer A pointer into the detph buffer to write to.
  */
-void write_fragment(const context *ctx, const vec4 frag_color,
+void write_fragment(const context *ctx, const color4 frag_color,
 		float frag_depth, color4 *color_buffer,
 		float *depth_buffer);
 
