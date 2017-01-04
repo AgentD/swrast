@@ -5,125 +5,122 @@
 #include <unistd.h>
 #include <time.h>
 
+struct window {
+	Atom atom_wm_delete;
+	framebuffer fb;
+	Display* dpy;
+	XImage* img;
+	Window wnd;
+	GC gc;
+};
 
-
-window* window_create( unsigned int width, unsigned int height )
+window *window_create(size_t width, size_t height)
 {
-    XSizeHints hints;
-    window* wnd;
+	window *wnd = malloc(sizeof(*wnd));
+	XSizeHints hints;
 
-    wnd = malloc( sizeof(window) );
+	if (!wnd)
+		return NULL;
 
-    if( !wnd )
-        return NULL;
+	if (!framebuffer_init(&wnd->fb, width, height))
+		goto fail;
 
-    /********** create framebuffer **********/
-    if( !framebuffer_init( &wnd->fb, width, height ) )
-        goto fail;
+	wnd->dpy = XOpenDisplay(0);
+	if (!wnd->dpy)
+		goto fail_fb;
 
-    /********** open X11 display connection **********/
-    wnd->dpy = XOpenDisplay( 0 );
+	wnd->wnd = XCreateSimpleWindow(wnd->dpy, DefaultRootWindow(wnd->dpy),
+					0, 0, width, height, 0, 0, 0);
+	if (!wnd->wnd)
+		goto fail_dpy;
 
-    if( !wnd->dpy )
-        goto fail_fb;
+	memset(&hints, 0, sizeof(hints));
+	hints.flags = PSize | PMinSize | PMaxSize;
+	hints.min_width = hints.max_width = hints.base_width = width;
+	hints.min_height = hints.max_height = hints.base_height = height;
 
-    /********** create a window **********/
-    wnd->wnd = XCreateSimpleWindow( wnd->dpy, DefaultRootWindow( wnd->dpy ),
-                                    0, 0, width, height, 0, 0, 0 );
+	XSetWMNormalHints(wnd->dpy, wnd->wnd, &hints);
 
-    if( !wnd->wnd )
-        goto fail_dpy;
+	wnd->atom_wm_delete = XInternAtom(wnd->dpy, "WM_DELETE_WINDOW", True);
 
-    /********** make the window non resizeable **********/
-    memset( &hints, 0, sizeof(hints) );
-    hints.flags = PSize | PMinSize | PMaxSize;
-    hints.min_width = hints.max_width = hints.base_width = width;
-    hints.min_height = hints.max_height = hints.base_height = height;
+	XSelectInput(wnd->dpy, wnd->wnd, StructureNotifyMask | KeyReleaseMask);
+	XSetWMProtocols(wnd->dpy, wnd->wnd, &(wnd->atom_wm_delete), 1);
+	XFlush(wnd->dpy);
 
-    XSetWMNormalHints( wnd->dpy, wnd->wnd, &hints );
+	XStoreName(wnd->dpy, wnd->wnd, "SW Rasterizer");
+	XMapWindow(wnd->dpy, wnd->wnd);
 
-    /********** tell the X server what events we will handle **********/
-    wnd->atom_wm_delete = XInternAtom( wnd->dpy, "WM_DELETE_WINDOW", True );
+	wnd->gc = XCreateGC(wnd->dpy, wnd->wnd, 0, NULL);
+	if (!wnd->gc)
+		goto fail_wnd;
 
-    XSelectInput( wnd->dpy, wnd->wnd, StructureNotifyMask | KeyReleaseMask );
-    XSetWMProtocols( wnd->dpy, wnd->wnd, &(wnd->atom_wm_delete), 1 );
-    XFlush( wnd->dpy );
+	wnd->img = XCreateImage(wnd->dpy, NULL, 24, ZPixmap, 0, 0,
+				width, height, 32, 0);
+	if (!wnd->img)
+		goto fail_gc;
 
-    /********** make the window visible **********/
-    XStoreName( wnd->dpy, wnd->wnd, "SW Rasterizer" );
-    XMapWindow( wnd->dpy, wnd->wnd );
-
-    /********** create a graphics context **********/
-    wnd->gc = XCreateGC( wnd->dpy, wnd->wnd, 0, NULL );
-
-    if( !wnd->gc )
-        goto fail_wnd;
-
-    /********** create XImage structure **********/
-    wnd->img = XCreateImage( wnd->dpy, NULL, 24, ZPixmap, 0, 0,
-			                 width, height, 32, 0 );
-
-    if( !wnd->img )
-        goto fail_gc;
-
-    return wnd;
-fail_gc:  XFreeGC( wnd->dpy, wnd->gc );
-fail_wnd: XDestroyWindow( wnd->dpy, wnd->wnd );
-fail_dpy: XCloseDisplay( wnd->dpy );
-fail_fb:  framebuffer_cleanup( &wnd->fb );
-fail:     free( wnd );
-    return NULL;
+	return wnd;
+fail_gc:
+	XFreeGC(wnd->dpy, wnd->gc);
+fail_wnd:
+	XDestroyWindow(wnd->dpy, wnd->wnd);
+fail_dpy:
+	XCloseDisplay(wnd->dpy);
+fail_fb:
+	framebuffer_cleanup(&wnd->fb);
+fail:
+	free(wnd);
+	return NULL;
 }
 
-void window_destroy( window* wnd )
+void window_destroy(window *wnd)
 {
-    if( wnd )
-    {
-        XDestroyImage( wnd->img );
-        XFreeGC( wnd->dpy, wnd->gc );
-        XDestroyWindow( wnd->dpy, wnd->wnd );
-        XCloseDisplay( wnd->dpy );
-        framebuffer_cleanup( &wnd->fb );
-        free( wnd );
-    }
+	XDestroyImage(wnd->img);
+	XFreeGC(wnd->dpy, wnd->gc);
+	XDestroyWindow(wnd->dpy, wnd->wnd);
+	XCloseDisplay(wnd->dpy);
+	framebuffer_cleanup(&wnd->fb);
+	free(wnd);
 }
 
-int window_handle_events( window* wnd )
+int window_handle_events(window *wnd)
 {
-    XEvent e;
+	XEvent e;
 
-    if( XPending( wnd->dpy ) )
-    {
-        XNextEvent( wnd->dpy, &e );
+	if (XPending(wnd->dpy)) {
+		XNextEvent(wnd->dpy, &e);
 
-        switch( e.type )
-        {
-        case ClientMessage:
-            if( e.xclient.data.l[0] == (long)wnd->atom_wm_delete )
-            {
-                XUnmapWindow( wnd->dpy, wnd->wnd );
-                return 0;
-            }
-            break;
-        }
-    }
-    return 1;
+		switch (e.type) {
+		case ClientMessage:
+			if (e.xclient.data.l[0] == (long)wnd->atom_wm_delete) {
+				XUnmapWindow(wnd->dpy, wnd->wnd);
+				return 0;
+			}
+			break;
+		}
+	}
+	return 1;
 }
 
-void window_display_framebuffer( window* wnd )
+void window_display_framebuffer(window *wnd)
 {
-    struct timespec tim;
-    struct timespec tim2;
+	struct timespec tim;
+	struct timespec tim2;
 
-    /* copy framebuffer data */
-    wnd->img->data = (char*)wnd->fb.color;
-    XPutImage( wnd->dpy, wnd->wnd, wnd->gc, wnd->img,
-               0, 0, 0, 0, wnd->fb.width, wnd->fb.height );
-    wnd->img->data = NULL;
+	/* copy framebuffer data */
+	wnd->img->data = (char*)wnd->fb.color;
+	XPutImage(wnd->dpy, wnd->wnd, wnd->gc, wnd->img,
+		0, 0, 0, 0, wnd->fb.width, wnd->fb.height);
 
-    /* wait for ~16.666 ms -> ~60 fps */
-    tim.tv_sec  = 0;
-    tim.tv_nsec = 16666666L;
-    nanosleep( &tim, &tim2 );
+	wnd->img->data = NULL;
+
+	/* wait for ~16.666 ms -> ~60 fps */
+	tim.tv_sec = 0;
+	tim.tv_nsec = 16666666L;
+	nanosleep(&tim, &tim2);
 }
 
+framebuffer *window_get_framebuffer(window *wnd)
+{
+	return &wnd->fb;
+}

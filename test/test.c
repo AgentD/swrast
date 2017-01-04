@@ -12,7 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+#define WIDTH 1024
+#define HEIGHT 768
 
 static context ctx;
 static float a = 0.0f;
@@ -100,10 +101,11 @@ int main( void )
     float far, near, aspect, f, iNF, m[16];
     unsigned char* ptr;
     unsigned int x, y;
+    framebuffer *fb;
     window* w;
 
     /************* initalisation *************/
-    if( !(w = window_create( 1024, 768 )) )
+    if( !(w = window_create( WIDTH, HEIGHT )) )
         return -1;
 
     teapot = load_3ds( "teapot.3ds" );
@@ -113,7 +115,7 @@ int main( void )
     /* intialize projection matrix */
     far    = 0.5f;
     near   = 500.0f;
-    aspect = ((float)w->fb.width) / ((float)w->fb.height);
+    aspect = (float)WIDTH / (float)HEIGHT;
     f      = 1.0 / tan( 60.0f * (3.14159265359f/180.0f) * 0.5f );
     iNF    = 1.0 / ( near - far );
 
@@ -154,48 +156,46 @@ int main( void )
     ctx.material.emission = vec4_set( 0.0f, 0.0f, 0.0f, 1.0f );
     ctx.material.shininess = 127;
 
-    ctx.target = &w->fb;
+    fb = window_get_framebuffer( w );
+    ctx.target = fb;
 
     /************* drawing loop *************/
     while( window_handle_events( w ) )
     {
         /* clear framebuffer */
-        framebuffer_clear( &w->fb, 0, 0, 0, 0xFF );
-        framebuffer_clear_depth( &w->fb, 1.0 );
+        framebuffer_clear( fb, 0, 0, 0, 0xFF );
+        framebuffer_clear_depth( fb, 1.0 );
 
         /* draw center cross */
-        for( x=0; x<(unsigned int)w->fb.width; ++x )
+        for( x=0; x<WIDTH; ++x )
         {
-            w->fb.color[(w->fb.height/2 - 1)*w->fb.width + x].ui = 0xFFFFFFFF;
-            *(w->fb.depth + (w->fb.height/2 - 1)*w->fb.width + x) = 0.0f;
+            fb->color[(HEIGHT/2 - 1)*WIDTH + x].ui = 0xFFFFFFFF;
+            *(fb->depth + (HEIGHT/2 - 1)*WIDTH + x) = 0.0f;
         }
 
-        for( y=0; y<(unsigned int)w->fb.height; ++y )
+        for( y=0; y<HEIGHT; ++y )
         {
-            w->fb.color[y*w->fb.width + w->fb.width/2 - 1].ui = 0xFFFFFFFF;
-            *(w->fb.depth + y*w->fb.width + w->fb.width/2 - 1) = 0.0f;
+            fb->color[y*WIDTH + WIDTH/2 - 1].ui = 0xFFFFFFFF;
+            *(fb->depth + y*WIDTH + WIDTH/2 - 1) = 0.0f;
         }
 
         /* draw scene into multiple view ports */
-        context_set_viewport( &ctx, 0, 0, w->fb.width/2, w->fb.height/2 );
+        context_set_viewport( &ctx, 0, 0, WIDTH/2, HEIGHT/2 );
         ctx.shader = SHADER_PHONG;
         ctx.shade_mode = SHADE_PER_VERTEX;
         draw_scene( );
 
-        context_set_viewport( &ctx, w->fb.width/2, 0,
-                                    w->fb.width/2, w->fb.height/2 );
+        context_set_viewport( &ctx, WIDTH/2, 0, WIDTH/2, HEIGHT/2 );
         ctx.shader = SHADER_PHONG;
         ctx.shade_mode = SHADE_FLAT;
         draw_scene( );
 
-        context_set_viewport( &ctx, 0, w->fb.height/2,
-                                    w->fb.width/2, w->fb.height/2 );
+        context_set_viewport( &ctx, 0, HEIGHT/2, WIDTH/2, HEIGHT/2 );
         ctx.shader = SHADER_PHONG;
         ctx.shade_mode = SHADE_PER_PIXEL;
         draw_scene( );
 
-        context_set_viewport( &ctx, w->fb.width/2, w->fb.height/2,
-                                    w->fb.width/2, w->fb.height/2 );
+        context_set_viewport( &ctx, WIDTH/2, HEIGHT/2, WIDTH/2, HEIGHT/2 );
         ctx.shader = SHADER_PHONG;
         ctx.shade_mode = SHADE_PER_PIXEL;
         draw_scene( );

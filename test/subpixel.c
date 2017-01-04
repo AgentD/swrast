@@ -3,25 +3,26 @@
 #include "context.h"
 #include "window.h"
 
-
+#define WIDTH 640
+#define HEIGHT 480
 
 int main( void )
 {
     context ctx;
     window* w;
 
-    if( !(w = window_create( 640, 480 )) )
+    if( !(w = window_create( WIDTH, HEIGHT )) )
         return -1;
 
     context_init( &ctx );
-    ctx.target = &w->fb;
+    ctx.target = window_get_framebuffer( w );
     ctx.shader = SHADER_UNLIT;
 
-    context_set_viewport( &ctx, 0, 0, w->fb.width, w->fb.height );
+    context_set_viewport( &ctx, 0, 0, WIDTH, HEIGHT );
 
     while( window_handle_events( w ) )
     {
-        framebuffer_clear( &w->fb, 0, 0, 0, 0xFF );
+        framebuffer_clear( ctx.target, 0, 0, 0, 0xFF );
 
         ia_begin( &ctx );
 
