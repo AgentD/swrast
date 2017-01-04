@@ -95,12 +95,12 @@ void context_init(context *ctx)
 	ctx->projection[10] = ctx->modelview[10] = ctx->normalmatrix[10] = 1.0f;
 	ctx->projection[15] = ctx->modelview[15] = ctx->normalmatrix[15] = 1.0f;
 
+	ctx->colormask.ui = 0xFFFFFFFF;
 	ctx->shader = SHADER_PHONG;
 	ctx->shade_mode = SHADE_PER_VERTEX;
 	ctx->depth_test = COMPARE_ALWAYS;
 	ctx->depth_far = 1.0f;
-
-	context_set_flags(ctx, DEPTH_CLIP|DEPTH_WRITE|WRITE_COLOR|FRONT_CCW);
+	ctx->flags = DEPTH_CLIP|DEPTH_WRITE|FRONT_CCW;
 }
 
 void context_set_modelview_matrix(context *ctx, float *f)
@@ -142,19 +142,4 @@ void context_set_viewport(context *ctx, int x, int y,
 		ctx->draw_area.minx = ctx->target->width - 1;
 	if (ctx->draw_area.miny >= (int)ctx->target->height)
 		ctx->draw_area.miny = ctx->target->height - 1;
-}
-
-void context_set_flags(context *ctx, int flags)
-{
-	ctx->flags = flags;
-
-	ctx->colormask.ui = 0;
-	if (flags & WRITE_RED)
-		ctx->colormask.components[RED] = 0xFF;
-	if (flags & WRITE_GREEN)
-		ctx->colormask.components[GREEN] = 0xFF;
-	if (flags & WRITE_BLUE)
-		ctx->colormask.components[BLUE] = 0xFF;
-	if (flags & WRITE_ALPHA)
-		ctx->colormask.components[ALPHA] = 0xFF;
 }

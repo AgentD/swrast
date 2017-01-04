@@ -21,7 +21,7 @@ void write_fragment(const context *ctx, const color4 frag_color,
 {
 	color4 new;
 
-	if (ctx->flags & (WRITE_RED|WRITE_GREEN|WRITE_BLUE|WRITE_ALPHA)) {
+	if (ctx->colormask.ui) {
 		if (ctx->flags & BLEND_ENABLE) {
 			new = color_blend(*color_buffer, frag_color);
 		} else {

@@ -71,24 +71,14 @@ typedef enum {
 	DEPTH_WRITE = 0x0002,
 	/** \brief Enable depth test */
 	DEPTH_TEST = 0x0004,
-	/** \brief Enable write to red color channel */
-	WRITE_RED = 0x0008,
-	/** \brief Enable write to green color channel */
-	WRITE_GREEN = 0x0010,
-	/** \brief Enable write to blue color channel */
-	WRITE_BLUE = 0x0020,
-	/** \brief Enable write to alpha color channel */
-	WRITE_ALPHA = 0x0040,
-	/** \brief Enable write to all color channels */
-	WRITE_COLOR = 0x0078,
 	/** \brief Counter-clock-wise is front facing */
-	FRONT_CCW = 0x0080,
+	FRONT_CCW = 0x0008,
 	/** \brief Cull front facing triangles */
-	CULL_FRONT = 0x0100,
+	CULL_FRONT = 0x0010,
 	/** \brief Cull back facing triangles */
-	CULL_BACK = 0x0200,
+	CULL_BACK = 0x0020,
 	/** \brief Enable color blending */
-	BLEND_ENABLE = 0x0400
+	BLEND_ENABLE = 0x0040
 } CONTEXT_FLAGS;
 
 /**
@@ -288,11 +278,6 @@ void context_set_projection_matrix(context *ctx, float *f);
  */
 void context_set_viewport(context *ctx, int x, int y,
 			unsigned int width, unsigned int height);
-
-/**
- * \memberof context
- */
-void context_set_flags(context *ctx, int flags);
 
 #ifdef __cplusplus
 }
