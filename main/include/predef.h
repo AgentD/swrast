@@ -9,6 +9,7 @@
 typedef struct texture texture;
 typedef struct framebuffer framebuffer;
 typedef struct context context;
+typedef struct shader_program shader_program;
 typedef struct rs_vertex rs_vertex;
 typedef struct vec4 vec4 __attribute__ ((aligned (16)));
 typedef union color4 color4 __attribute__ ((aligned (4)));

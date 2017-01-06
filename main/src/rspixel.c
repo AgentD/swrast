@@ -115,7 +115,8 @@ static void draw_scanline(int y, context *ctx, const edge_data *s)
 				frag.attribs[i] = vec4_scale(l.v.attribs[i],w);
 		}
 
-		c = color_from_vec(shader_process_fragment(ctx, &frag));
+		c = color_from_vec(ctx->shader->fragment(ctx->shader, ctx,
+							&frag));
 
 		write_fragment(ctx, c, z, start, z_buffer);
 	skip_fragment:

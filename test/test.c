@@ -22,8 +22,8 @@ static mesh* teapot;
 
 static void draw_scene( void )
 {
+    const shader_program *old;
     float c, s, m[16];
-    int model;
 
     /* rasterize triangles */
     c = cos( a ), s = sin( a );
@@ -46,8 +46,8 @@ static void draw_scene( void )
         ctx.texture_enable[0] = 0;
         ctx.textures[0] = NULL;
     }
-    model = ctx.shader;
-    ctx.shader = SHADER_UNLIT;
+    old = ctx.shader;
+    ctx.shader = shader_internal(SHADER_UNLIT);
     context_set_modelview_matrix( &ctx, m );
 
     ia_begin( &ctx );
@@ -78,7 +78,7 @@ static void draw_scene( void )
     ia_vertex( &ctx, 0.0f, 2.0f, 0.0f, 1.0f );
     ia_end( &ctx );
 
-    ctx.shader = model;
+    ctx.shader = old;
 
     /* rasterize teapot */
     m[0] =    c*0.05f; m[4] = 0.0f;  m[ 8] =    s*0.05f; m[12] =  2.0f;
@@ -181,22 +181,22 @@ int main( void )
 
         /* draw scene into multiple view ports */
         context_set_viewport( &ctx, 0, 0, WIDTH/2, HEIGHT/2 );
-        ctx.shader = SHADER_PHONG;
+        ctx.shader = shader_internal(SHADER_PHONG);
         ctx.shade_mode = SHADE_PER_VERTEX;
         draw_scene( );
 
         context_set_viewport( &ctx, WIDTH/2, 0, WIDTH/2, HEIGHT/2 );
-        ctx.shader = SHADER_PHONG;
+        ctx.shader = shader_internal(SHADER_PHONG);
         ctx.shade_mode = SHADE_FLAT;
         draw_scene( );
 
         context_set_viewport( &ctx, 0, HEIGHT/2, WIDTH/2, HEIGHT/2 );
-        ctx.shader = SHADER_PHONG;
+        ctx.shader = shader_internal(SHADER_PHONG);
         ctx.shade_mode = SHADE_PER_PIXEL;
         draw_scene( );
 
         context_set_viewport( &ctx, WIDTH/2, HEIGHT/2, WIDTH/2, HEIGHT/2 );
-        ctx.shader = SHADER_PHONG;
+        ctx.shader = shader_internal(SHADER_PHONG);
         ctx.shade_mode = SHADE_PER_PIXEL;
         draw_scene( );
 

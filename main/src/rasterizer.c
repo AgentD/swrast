@@ -158,17 +158,17 @@ static void per_vertex(context *ctx, const rs_vertex *v0,
 
 	/* prepare vertices */
 	temp.attribs[ATTRIB_POS] = v0->attribs[ATTRIB_POS];
-	temp.attribs[ATTRIB_COLOR] = shader_process_fragment(ctx, v0);
+	temp.attribs[ATTRIB_COLOR] = ctx->shader->fragment(ctx->shader,ctx,v0);
 	temp.used = ATTRIB_FLAG_POS | ATTRIB_FLAG_COLOR;
 	vertex_prepare(&A, &temp, ctx);
 
 	temp.attribs[ATTRIB_POS] = v1->attribs[ATTRIB_POS];
-	temp.attribs[ATTRIB_COLOR] = shader_process_fragment(ctx, v1);
+	temp.attribs[ATTRIB_COLOR] = ctx->shader->fragment(ctx->shader,ctx,v1);
 	temp.used = ATTRIB_FLAG_POS | ATTRIB_FLAG_COLOR;
 	vertex_prepare(&B, &temp, ctx);
 
 	temp.attribs[ATTRIB_POS] = v2->attribs[ATTRIB_POS];
-	temp.attribs[ATTRIB_COLOR] = shader_process_fragment(ctx, v2);
+	temp.attribs[ATTRIB_COLOR] = ctx->shader->fragment(ctx->shader,ctx,v2);
 	temp.used = ATTRIB_FLAG_POS | ATTRIB_FLAG_COLOR;
 	vertex_prepare(&C, &temp, ctx);
 
@@ -212,7 +212,7 @@ static void rsflat(context *ctx, const rs_vertex *v0, const rs_vertex *v1,
 		break;
 	}
 
-	color = shader_process_fragment(ctx, &ref);
+	color = ctx->shader->fragment(ctx->shader, ctx, &ref);
 	draw_triangle_flat(A, B, C, color, ctx);
 }
 

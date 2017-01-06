@@ -92,9 +92,9 @@ static unsigned char *read_vertex(rs_vertex *v, unsigned char *ptr,
 static void draw_triangle(context *ctx, rs_vertex *v0, rs_vertex *v1,
 			rs_vertex *v2)
 {
-	shader_process_vertex(ctx, v0);
-	shader_process_vertex(ctx, v1);
-	shader_process_vertex(ctx, v2);
+	ctx->shader->vertex(ctx->shader, ctx, v0);
+	ctx->shader->vertex(ctx->shader, ctx, v1);
+	ctx->shader->vertex(ctx->shader, ctx, v2);
 
 	rasterizer_process_triangle(ctx, v0, v1, v2);
 }
@@ -121,7 +121,7 @@ static void get_cached_index(context *ctx, rs_vertex *v,
 			((unsigned char *)ctx->vertexbuffer) + vsize * i,
 			ctx->vertex_format);
 
-		shader_process_vertex(ctx, v);
+		ctx->shader->vertex(ctx->shader, ctx, v);
 
 		ctx->post_tl_cache[slot].vtx = *v;
 		ctx->post_tl_cache[slot].index = i;

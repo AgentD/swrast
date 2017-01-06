@@ -6,7 +6,7 @@
 #include <math.h>
 #include <stddef.h>
 
-static vec4 blinn_phong(const context *ctx, int i, const vec4 V, const vec4 N)
+vec4 blinn_phong(const context *ctx, int i, const vec4 V, const vec4 N)
 {
 	float dist, att, ks, kd;
 	vec4 L, H, cd, cs;
@@ -73,26 +73,32 @@ static vec4 apply_textures(const context *ctx, const rs_vertex *frag)
 
 /****************************************************************************/
 
-static void shader_unlit_vertex(const context *ctx, rs_vertex *v)
+static void shader_unlit_vertex(const shader_program *prog, const context *ctx,
+				rs_vertex *v)
 {
 	vec4 V = vec4_transform(ctx->modelview, v->attribs[ATTRIB_POS]);
+	(void)prog;
 
 	v->attribs[ATTRIB_POS] = vec4_transform(ctx->projection, V);
 	v->used &= ~(ATTRIB_FLAG_NORMAL|ATTRIB_FLAG_USR0|ATTRIB_FLAG_USR1);
 }
 
-static vec4 shader_default_fragment(const context *ctx, const rs_vertex *frag)
+static vec4 shader_unlit_fragment(const shader_program *prog,
+				const context *ctx, const rs_vertex *frag)
 {
+	(void)prog;
 	return vec4_mul(apply_textures(ctx, frag),
 			frag->attribs[ATTRIB_COLOR]);
 }
 
 /****************************************************************************/
 
-static void shader_phong_vertex(const context *ctx, rs_vertex *vert)
+static void shader_phong_vertex(const shader_program *prog, const context *ctx,
+				rs_vertex *vert)
 {
 	vec4 V;
 	int i;
+	(void)prog;
 
 	mv_transform(ctx, vert);
 
@@ -116,10 +122,12 @@ static void shader_phong_vertex(const context *ctx, rs_vertex *vert)
 						vert->attribs[ATTRIB_POS]);
 }
 
-static vec4 shader_phong_fragment(const context *ctx, const rs_vertex *frag)
+static vec4 shader_phong_fragment(const shader_program *prog,
+				const context *ctx, const rs_vertex *frag)
 {
 	vec4 color, V, N;
 	int i;
+	(void)prog;
 
 	color = frag->attribs[ATTRIB_USR1];
 	V = vec4_normalize(frag->attribs[ATTRIB_USR0]);
@@ -140,20 +148,12 @@ static vec4 shader_phong_fragment(const context *ctx, const rs_vertex *frag)
 
 /****************************************************************************/
 
-static struct shader {
-	void(* vertex )(const context *ctx, rs_vertex *vert);
-	vec4(* fragment )(const context *ctx, const rs_vertex *frag);
-} shaders[] = {
-	{ shader_unlit_vertex, shader_default_fragment },
+static const shader_program shaders[] = {
+	{ shader_unlit_vertex, shader_unlit_fragment },
 	{ shader_phong_vertex, shader_phong_fragment },
 };
 
-void shader_process_vertex(const context *ctx, rs_vertex *vert)
+const shader_program *shader_internal(unsigned int id)
 {
-	shaders[ctx->shader].vertex(ctx, vert);
-}
-
-vec4 shader_process_fragment(const context *ctx, const rs_vertex *frag)
-{
-	return shaders[ctx->shader].fragment(ctx, frag);
+	return id < sizeof(shaders)/sizeof(shaders[0]) ? shaders + id : NULL;
 }

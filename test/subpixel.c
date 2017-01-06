@@ -16,7 +16,7 @@ int main( void )
 
     context_init( &ctx );
     ctx.target = window_get_framebuffer( w );
-    ctx.shader = SHADER_UNLIT;
+    ctx.shader = shader_internal(SHADER_UNLIT);
 
     context_set_viewport( &ctx, 0, 0, WIDTH, HEIGHT );
 

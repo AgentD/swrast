@@ -47,7 +47,7 @@ static void run_fillrate_test( int shader, int mode )
     context_init( &ctx );
 
     ctx.target = &fb;
-    ctx.shader = shader;
+    ctx.shader = shader_internal(shader);
     ctx.shade_mode = mode;
 
     context_set_viewport( &ctx, 0, 0, 1024, 768 );
@@ -111,7 +111,7 @@ static void run_vertex_throughput_test( int shader, int mode )
     ctx.vertex_format  = teapot->format;
     ctx.vertexbuffer   = teapot->vertexbuffer;
     ctx.indexbuffer    = teapot->indexbuffer;
-    ctx.shader         = shader;
+    ctx.shader         = shader_internal(shader);
     ctx.shade_mode     = mode;
 
     context_set_viewport( &ctx, 0, 0, 320, 200 );

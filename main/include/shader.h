@@ -24,27 +24,62 @@ typedef enum {
 	SHADER_PHONG = 1
 } SHADER_PROGRAM;
 
+/**
+ * \interface shader_program
+ *
+ * \brief Abstracts entry points of a shader program
+ */
+struct shader_program {
+	/**
+	 * \brief Run the vertex shader on a vertex
+	 *
+	 * \param prog A pointer to the program itself
+	 * \param ctx  A pointer to a context
+	 * \param vert A pointer to a vertex to process
+	 */
+	void(* vertex )(const shader_program *prog,
+			const context *ctx, rs_vertex *vert);
+
+	/**
+	 * \brief Run the frament shader on the interpolated vertex attributes
+	 *
+	 * \param prog A pointer to the program itself
+	 * \param ctx  A pointer to a context
+	 * \param frag A pointer to a the interpolated vertex attributes
+	 *
+	 * \return A color value for the fragment
+	 */
+	vec4(* fragment )(const shader_program *prog,
+			const context *ctx, const rs_vertex *frag);
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * \brief Run the vertex shader on a vertex
+ * \brief Get a pointer to an internal shader program by ID
  *
- * \param ctx  A pointer to a context
- * \param vert A pointer to a vertex to process
+ * \param id A \ref SHADER_PROGRAM identifier
+ *
+ * \return A shader on success, NULL on failure
  */
-void shader_process_vertex(const context *ctx, rs_vertex *vert);
+const shader_program *shader_internal(unsigned int id);
 
 /**
- * \brief Run the frament shader on the interpolated vertex attributes
+ * \brief Helper function for shaders to compute lighting values
  *
- * \param ctx  A pointer to a context
- * \param frag A pointer to a the interpolated vertex attributes
+ * Computes the color resulting from the blinn-phong ilumination model for a
+ * light index in the context.
  *
- * \return A color value for the fragment
+ * \param ctx The context to take the light and material parameters from
+ * \param i   The light index, i.e. which light from the context to use
+ * \param V   A vector pointing from the surface towards the viewer
+ * \param N   The normal vector at the specified surface location
+ *
+ * \return The resulting color value
  */
-vec4 shader_process_fragment(const context *ctx, const rs_vertex *frag);
+vec4 blinn_phong(const context *ctx, int i, const vec4 V, const vec4 N);
 
 #ifdef __cplusplus
 }

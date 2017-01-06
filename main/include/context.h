@@ -180,7 +180,7 @@ struct context {
 	unsigned short *indexbuffer;
 
 	/** \brief Which shader program to use */
-	SHADER_PROGRAM shader;
+	const shader_program *shader;
 
 	/** \brief Vertex used for flat shading */
 	int provoking_vertex;
