@@ -28,34 +28,6 @@ static MATH_CONST color4 color_from_vec(vec4 v)
 	return color_set(v.x, v.y, v.z, v.w);
 }
 
-static MATH_CONST vec4 color_to_vec(color4 c)
-{
-	return vec4_set((float)c.components[RED] / 255.0f,
-			(float)c.components[GREEN] / 255.0f,
-			(float)c.components[BLUE] / 255.0f,
-			(float)c.components[ALPHA] / 255.0f);
-}
-
-static MATH_CONST int color_red(color4 c)
-{
-	return c.components[RED];
-}
-
-static MATH_CONST int color_green(color4 c)
-{
-	return c.components[GREEN];
-}
-
-static MATH_CONST int color_blue(color4 c)
-{
-	return c.components[BLUE];
-}
-
-static MATH_CONST int color_alpha(color4 c)
-{
-	return c.components[ALPHA];
-}
-
 static MATH_CONST color4 color_blend(color4 lower, color4 upper)
 {
 	uint32_t a, ia;

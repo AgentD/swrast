@@ -105,18 +105,5 @@ static MATH_CONST vec4 vec4_normalize(const vec4 v)
 	return vec4_scale(v, s);
 }
 
-static MATH_CONST vec4 vec4_mix(const vec4 a, const vec4 b, float s)
-{
-	float inv = 1.0f - s;
-	vec4 v;
-
-	v.x = a.x * inv + b.x * s;
-	v.y = a.y * inv + b.y * s;
-	v.z = a.z * inv + b.z * s;
-	v.w = a.w * inv + b.w * s;
-
-	return v;
-}
-
 #endif /* VECTOR_H */
 
