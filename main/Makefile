@@ -10,7 +10,7 @@ all: libraster.a
 clean:
 	$(RM) libraster.a -r obj
 
-libraster.a: obj/inputassembler.o obj/framebuffer.o obj/rspixel.o \
+libraster.a: obj/inputassembler.o obj/framebuffer.o \
 		obj/texture.o obj/shader.o obj/context.o \
 		obj/rasterizer.o obj/window.o
 	$(AR) rcs $@ $^
@@ -33,9 +33,6 @@ obj/inputassembler.o: src/inputassembler.c include/inputassembler.h\
 			include/context.h include/config.h include/vector.h
 obj/framebuffer.o: src/framebuffer.c include/framebuffer.h include/predef.h\
 			include/config.h include/color.h include/vector.h
-obj/rspixel.o: src/rspixel.c include/rasterizer.h include/framebuffer.h\
-			include/shader.h include/predef.h include/context.h\
-			include/config.h include/vector.h include/color.h
 obj/texture.o: src/texture.c include/texture.h include/predef.h\
 			include/config.h include/vector.h include/color.h
 obj/shader.o: src/shader.c include/shader.h include/rasterizer.h\
