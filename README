@@ -15,7 +15,6 @@
      - Default shaders implement fixed function OpenGL(R) style
        transform & lighting with model view & projection matrix and
        up to 8 independend light sources
-     - Flat, Gouraud and Phong shading for lighting
   - Perspective correct interpolation of vertex attributes
   - Multpile texture layers with nearest neighbour sampling
   - Depth buffering (OpenGL(R) style comparison function)
@@ -40,10 +39,6 @@
     |_________________|     vertex lighting values are computed in viewspace.
             | |             Other arbitrary values can be generated that are
            _| |_            later interpolated across the triangle area.
-     ______\___/______
-    | Geometry Shader |     Optional, per primitive operations can be
-    |_________________|     performed here, depending on the shader used.
-           _| |_
      ______\___/______
     |  Rasterization  |     Pixels are generated from tripples of vertices.
     |_________________|     Vertex attributes are interpolated over the
@@ -77,6 +72,9 @@
     include/vector.h          - Helper functions for working with
                                 four component vectors
 
+    include/color.h           - Helper functions for working with packed
+                                four component color values
+
     include/context.h         - Context structure. Encapsulates all global
     src/context.c               state of the pipeline.
 
@@ -96,13 +94,12 @@
     include/framebuffer.h     - Implementation of framebuffer objects
     src/framebuffer.c
 
+    include/window.h          - A simple window implementation. Handles a
+    src/window.c                window and blits a framebuffer
+
 
  The directory "test" contains testing and demo programs, currently consisting
  of the following files:
-
-    window.h                  - A simple Xlib based window implementation for
-    window.c                    testing. Handles a window and
-                                blits a framebuffer
 
     3ds.h                     - A quick & dirty 3ds loader for testing
     3ds.c
