@@ -33,7 +33,7 @@ static void print_eng( double d )
 
 
 
-static void run_fillrate_test( int shader, int mode )
+static void run_fillrate_test( int shader )
 {
     double t0, t1, dt;
     framebuffer fb;
@@ -48,7 +48,6 @@ static void run_fillrate_test( int shader, int mode )
 
     ctx.target = &fb;
     ctx.shader = shader_internal(shader);
-    ctx.shade_mode = mode;
 
     context_set_viewport( &ctx, 0, 0, 1024, 768 );
 
@@ -93,7 +92,7 @@ static void run_fillrate_test( int shader, int mode )
     puts( " pixels per second" );
 }
 
-static void run_vertex_throughput_test( int shader, int mode )
+static void run_vertex_throughput_test( int shader )
 {
     double t0, t1, dt;
     framebuffer fb;
@@ -112,7 +111,6 @@ static void run_vertex_throughput_test( int shader, int mode )
     ctx.vertexbuffer   = teapot->vertexbuffer;
     ctx.indexbuffer    = teapot->indexbuffer;
     ctx.shader         = shader_internal(shader);
-    ctx.shade_mode     = mode;
 
     context_set_viewport( &ctx, 0, 0, 320, 200 );
 
@@ -153,23 +151,15 @@ int main( void )
 
     puts( "*********** VERTEX THROUGHPUT TEST ***********" );
     fputs( "BUILT IN UNLIT SHADER: ", stdout );
-    run_vertex_throughput_test( SHADER_UNLIT, SHADE_PER_PIXEL );
-    fputs( "BUILT IN FLAT SHADER: ", stdout );
-    run_vertex_throughput_test( SHADER_PHONG, SHADE_FLAT );
-    fputs( "BUILT IN GOURAUD SHADER: ", stdout );
-    run_vertex_throughput_test( SHADER_PHONG, SHADE_PER_VERTEX );
+    run_vertex_throughput_test( SHADER_UNLIT );
     fputs( "BUILT IN PHONG SHADER: ", stdout );
-    run_vertex_throughput_test( SHADER_PHONG, SHADE_PER_PIXEL );
+    run_vertex_throughput_test( SHADER_PHONG );
 
     puts( "*************** FILL RATE TEST ***************" );
     fputs( "BUILT IN UNLIT SHADER: ", stdout );
-    run_fillrate_test( SHADER_UNLIT, SHADE_PER_PIXEL );
-    fputs( "BUILT IN FLAT SHADER: ", stdout );
-    run_fillrate_test( SHADER_PHONG, SHADE_FLAT );
-    fputs( "BUILT IN GOURAUD SHADER: ", stdout );
-    run_fillrate_test( SHADER_PHONG, SHADE_PER_VERTEX );
+    run_fillrate_test( SHADER_UNLIT );
     fputs( "BUILT IN PHONG SHADER: ", stdout );
-    run_fillrate_test( SHADER_PHONG, SHADE_PER_PIXEL );
+    run_fillrate_test( SHADER_PHONG );
 
     free( teapot->vertexbuffer );
     free( teapot->indexbuffer );

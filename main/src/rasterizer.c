@@ -6,13 +6,7 @@
 #include "color.h"
 #include <math.h>
 
-extern void draw_triangle_flat(vec4 A, vec4 B, vec4 C,
-				vec4 color, context *ctx);
-
 extern void draw_triangle_per_pixel(rs_vertex *A, rs_vertex *B,
-					rs_vertex *C, context *ctx);
-
-extern void draw_triangle_per_vertex(rs_vertex *A, rs_vertex *B,
 					rs_vertex *C, context *ctx);
 
 void write_fragment(const context *ctx, const color4 frag_color,
@@ -151,71 +145,6 @@ static void per_pixel(context *ctx, const rs_vertex *v0,
 	draw_triangle_per_pixel(&A, &B, &C, ctx);
 }
 
-static void per_vertex(context *ctx, const rs_vertex *v0,
-			const rs_vertex *v1, const rs_vertex *v2)
-{
-	rs_vertex A, B, C, temp;
-
-	/* prepare vertices */
-	temp.attribs[ATTRIB_POS] = v0->attribs[ATTRIB_POS];
-	temp.attribs[ATTRIB_COLOR] = ctx->shader->fragment(ctx->shader,ctx,v0);
-	temp.used = ATTRIB_FLAG_POS | ATTRIB_FLAG_COLOR;
-	vertex_prepare(&A, &temp, ctx);
-
-	temp.attribs[ATTRIB_POS] = v1->attribs[ATTRIB_POS];
-	temp.attribs[ATTRIB_COLOR] = ctx->shader->fragment(ctx->shader,ctx,v1);
-	temp.used = ATTRIB_FLAG_POS | ATTRIB_FLAG_COLOR;
-	vertex_prepare(&B, &temp, ctx);
-
-	temp.attribs[ATTRIB_POS] = v2->attribs[ATTRIB_POS];
-	temp.attribs[ATTRIB_COLOR] = ctx->shader->fragment(ctx->shader,ctx,v2);
-	temp.used = ATTRIB_FLAG_POS | ATTRIB_FLAG_COLOR;
-	vertex_prepare(&C, &temp, ctx);
-
-	/* clipping */
-	if (clip(ctx, A.attribs[ATTRIB_POS], B.attribs[ATTRIB_POS],
-			C.attribs[ATTRIB_POS])) {
-		return;
-	}
-
-	/* culling */
-	if (cull(ctx, A.attribs[ATTRIB_POS], B.attribs[ATTRIB_POS],
-			C.attribs[ATTRIB_POS])) {
-		return;
-	}
-
-	draw_triangle_per_vertex(&A, &B, &C, ctx);
-}
-
-static void rsflat(context *ctx, const rs_vertex *v0, const rs_vertex *v1,
-		const rs_vertex *v2)
-{
-	vec4 A, B, C, color;
-	rs_vertex ref;
-
-	A = vertex_transform(v0, ctx);
-	B = vertex_transform(v1, ctx);
-	C = vertex_transform(v2, ctx);
-
-	if (clip(ctx, A, B, C) || cull(ctx, A, B, C))
-		return;
-
-	switch (ctx->provoking_vertex & 0x0F) {
-	default:
-		ref = *v0;
-		break;
-	case 1:
-		ref = *v1;
-		break;
-	case 2:
-		ref = *v2;
-		break;
-	}
-
-	color = ctx->shader->fragment(ctx->shader, ctx, &ref);
-	draw_triangle_flat(A, B, C, color, ctx);
-}
-
 void rasterizer_process_triangle(context *ctx, const rs_vertex *v0,
 				const rs_vertex *v1, const rs_vertex *v2)
 {
@@ -236,15 +165,5 @@ void rasterizer_process_triangle(context *ctx, const rs_vertex *v0,
 		return;
 	}
 
-	switch (ctx->shade_mode) {
-	case SHADE_PER_PIXEL:
-		per_pixel(ctx, v0, v1, v2);
-		break;
-	case SHADE_FLAT:
-		rsflat(ctx, v0, v1, v2);
-		break;
-	case SHADE_PER_VERTEX:
-		per_vertex(ctx, v0, v1, v2);
-		break;
-	}
+	per_pixel(ctx, v0, v1, v2);
 }

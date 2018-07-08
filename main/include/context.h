@@ -152,9 +152,6 @@ struct context {
 	/** \brief Depth test comparison function */
 	COMPARE_FUNCTION depth_test;
 
-	/** \brief How shading is done on triangles */
-	SHADING_MODE shade_mode;
-
 	/** \brief Non-zero to enable a texture layer, zero to disable */
 	int texture_enable[MAX_TEXTURES];
 
@@ -181,9 +178,6 @@ struct context {
 
 	/** \brief Which shader program to use */
 	const shader_program *shader;
-
-	/** \brief Vertex used for flat shading */
-	int provoking_vertex;
 
 	/** \brief Depth value that minimum distance is mapped to */
 	float depth_near;

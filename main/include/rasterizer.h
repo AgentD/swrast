@@ -32,17 +32,6 @@ typedef enum {
 	ATTRIB_FLAG_USR1 = 0x40
 } ATTRIB_FLAGS;
 
-typedef enum {
-	/** \brief Compute final color per pixel */
-	SHADE_PER_PIXEL = 0,
-
-	/** \brief Compute color for one vertex, use result for all pixels */
-	SHADE_FLAT = 1,
-
-	/** \brief Compute color for each vertex and interpolate results */
-	SHADE_PER_VERTEX = 2
-} SHADING_MODE;
-
 /**
  * \struct rs_vertex
  *

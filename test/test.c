@@ -22,7 +22,6 @@ static mesh* teapot;
 
 static void draw_scene( void )
 {
-    const shader_program *old;
     float c, s, m[16];
 
     /* rasterize triangles */
@@ -36,17 +35,9 @@ static void draw_scene( void )
     ctx.flags &= ~(CULL_FRONT|CULL_BACK);
     ctx.vertex_format = 0;
     ctx.vertexbuffer = NULL;
-    if( ctx.shade_mode==SHADE_PER_PIXEL )
-    {
-        ctx.texture_enable[0] = 1;
-        ctx.textures[0] = tex;
-    }
-    else
-    {
-        ctx.texture_enable[0] = 0;
-        ctx.textures[0] = NULL;
-    }
-    old = ctx.shader;
+    ctx.texture_enable[0] = 1;
+    ctx.textures[0] = tex;
+
     ctx.shader = shader_internal(SHADER_UNLIT);
     context_set_modelview_matrix( &ctx, m );
 
@@ -78,7 +69,7 @@ static void draw_scene( void )
     ia_vertex( &ctx, 0.0f, 2.0f, 0.0f, 1.0f );
     ia_end( &ctx );
 
-    ctx.shader = old;
+    ctx.shader = shader_internal(SHADER_PHONG);
 
     /* rasterize teapot */
     m[0] =    c*0.05f; m[4] = 0.0f;  m[ 8] =    s*0.05f; m[12] =  2.0f;
@@ -159,50 +150,18 @@ int main( void )
     fb = window_get_framebuffer( w );
     ctx.target = fb;
 
+    context_set_viewport( &ctx, 0, 0, WIDTH, HEIGHT );
+
     /************* drawing loop *************/
     while( window_handle_events( w ) )
     {
-        /* clear framebuffer */
         framebuffer_clear( fb, 0, 0, 0, 0xFF );
         framebuffer_clear_depth( fb, 1.0 );
 
-        /* draw center cross */
-        for( x=0; x<WIDTH; ++x )
-        {
-            fb->color[(HEIGHT/2 - 1)*WIDTH + x].ui = 0xFFFFFFFF;
-            *(fb->depth + (HEIGHT/2 - 1)*WIDTH + x) = 0.0f;
-        }
-
-        for( y=0; y<HEIGHT; ++y )
-        {
-            fb->color[y*WIDTH + WIDTH/2 - 1].ui = 0xFFFFFFFF;
-            *(fb->depth + y*WIDTH + WIDTH/2 - 1) = 0.0f;
-        }
-
-        /* draw scene into multiple view ports */
-        context_set_viewport( &ctx, 0, 0, WIDTH/2, HEIGHT/2 );
-        ctx.shader = shader_internal(SHADER_PHONG);
-        ctx.shade_mode = SHADE_PER_VERTEX;
-        draw_scene( );
-
-        context_set_viewport( &ctx, WIDTH/2, 0, WIDTH/2, HEIGHT/2 );
-        ctx.shader = shader_internal(SHADER_PHONG);
-        ctx.shade_mode = SHADE_FLAT;
-        draw_scene( );
-
-        context_set_viewport( &ctx, 0, HEIGHT/2, WIDTH/2, HEIGHT/2 );
-        ctx.shader = shader_internal(SHADER_PHONG);
-        ctx.shade_mode = SHADE_PER_PIXEL;
-        draw_scene( );
-
-        context_set_viewport( &ctx, WIDTH/2, HEIGHT/2, WIDTH/2, HEIGHT/2 );
-        ctx.shader = shader_internal(SHADER_PHONG);
-        ctx.shade_mode = SHADE_PER_PIXEL;
         draw_scene( );
 
         a += 0.02f;
 
-        /* copy to window */
         window_display_framebuffer( w );
     }
 
