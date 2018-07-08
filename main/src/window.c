@@ -1,5 +1,9 @@
 #include "window.h"
 
+#include <X11/X.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>

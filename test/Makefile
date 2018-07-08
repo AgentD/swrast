@@ -10,29 +10,28 @@ all: a.out subpixel benchmark
 clean:
 	$(RM) a.out subpixel benchmark *.o
 
-a.out: window.o test.o 3ds.o ../main/libraster.a
+a.out: test.o 3ds.o ../main/libraster.a
 	$(CC) $^ -lX11 -lm -o $@
 
-subpixel: subpixel.o window.o ../main/libraster.a
+subpixel: subpixel.o ../main/libraster.a
 	$(CC) $^ -lX11 -lm -o $@
 
-benchmark: benchmark.o window.o 3ds.o ../main/libraster.a
+benchmark: benchmark.o 3ds.o ../main/libraster.a
 	$(CC) $^ -lX11 -lm -o $@
 
 ../main/libraster.a:
 	$(MAKE) -C ../main
 
 # test program source
-window.o: window.c window.h ../main/include/framebuffer.h
-test.o: test.c window.h window.h 3ds.h ../main/include/inputassembler.h \
+test.o: test.c 3ds.h ../main/include/inputassembler.h \
 		../main/include/framebuffer.h ../main/include/rasterizer.h \
 		../main/include/texture.h ../main/include/context.h \
 		../main/include/shader.h ../main/include/vector.h
-benchmark.o: test.c window.h window.h 3ds.h ../main/include/inputassembler.h \
+benchmark.o: test.c 3ds.h ../main/include/inputassembler.h \
 		../main/include/framebuffer.h ../main/include/rasterizer.h \
 		../main/include/texture.h ../main/include/context.h \
 		../main/include/shader.h ../main/include/vector.h
 3ds.o: 3ds.c 3ds.h ../main/include/inputassembler.h ../main/include/context.h
-subpixel.o: subpixel.c window.h ../main/include/context.h \
+subpixel.o: subpixel.c ../main/include/context.h \
 		../main/include/framebuffer.h \
 		../main/include/inputassembler.h ../main/include/vector.h

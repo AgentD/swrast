@@ -12,7 +12,7 @@ clean:
 
 libraster.a: obj/inputassembler.o obj/framebuffer.o obj/rspixel.o \
 		obj/texture.o obj/shader.o obj/context.o obj/rsflat.o \
-		obj/rasterizer.o obj/rsvertex.o
+		obj/rasterizer.o obj/rsvertex.o obj/window.o
 	$(AR) rcs $@ $^
 	ranlib $@
 
@@ -49,3 +49,4 @@ obj/rsflat.o: src/rsflat.c include/rasterizer.h include/framebuffer.h\
 			include/shader.h include/predef.h include/context.h\
 			include/config.h include/vector.h include/color.h
 
+obj/window.o: src/window.c include/window.h include/framebuffer.h

@@ -1,13 +1,9 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include "framebuffer.h"
-
 #include <stddef.h>
 
-#include <X11/X.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
+#include "framebuffer.h"
 
 typedef struct window window;
 
